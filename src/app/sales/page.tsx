@@ -25,6 +25,12 @@ export default function SalesPage() {
   const [currentWeight, setCurrentWeight] = useState<number>(0);
   const [totalPrice, setTotalPrice] = useState<number>(0);
 
+  const [deferredSelectedAnimal, setDeferredSelectedAnimal] = useState<Livestock | null>(null);
+  const [deferredInitialWeight, setDeferredInitialWeight] = useState<number>(0);
+  const [deferredPricePerKg, setDeferredPricePerKg] = useState<number>(0);
+  const [deferredTotalPrice, setDeferredTotalPrice] = useState<number>(0);
+
+
   const getAnimalTag = (animalId: string) => {
     return livestock.find((animal) => animal.id === animalId)?.tagId || 'N/A';
   };
@@ -52,6 +58,14 @@ export default function SalesPage() {
       setTotalPrice(0);
     }
   }, [selectedAnimal, currentWeight, pricePerKg]);
+
+  useEffect(() => {
+    if (deferredSelectedAnimal) {
+      setDeferredTotalPrice(deferredInitialWeight * deferredPricePerKg);
+    } else {
+      setDeferredTotalPrice(0);
+    }
+  }, [deferredSelectedAnimal, deferredInitialWeight, deferredPricePerKg]);
 
 
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
@@ -82,7 +96,7 @@ export default function SalesPage() {
                       بدء عملية بيع آجل
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
+                  <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>بدء عملية بيع آجل جديدة</DialogTitle>
                       <DialogDescription>
@@ -92,7 +106,15 @@ export default function SalesPage() {
                     <div className="grid gap-4 py-4">
                        <div className="grid gap-2">
                           <Label htmlFor="deferred-animal-select">اختر الحيوان</Label>
-                           <Select>
+                           <Select onValueChange={(animalId) => {
+                             const animal = livestock.find(a => a.id === animalId);
+                             setDeferredSelectedAnimal(animal || null);
+                             if (animal) {
+                               setDeferredInitialWeight(animal.weight);
+                             } else {
+                               setDeferredInitialWeight(0);
+                             }
+                           }}>
                             <SelectTrigger id="deferred-animal-select">
                               <SelectValue placeholder="اختر حيوانًا من المتاحين..." />
                             </SelectTrigger>
@@ -111,10 +133,29 @@ export default function SalesPage() {
                             <Label htmlFor="deferred-customer-name">اسم العميل</Label>
                             <Input id="deferred-customer-name" placeholder="اسم المشتري" />
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="deferred-initial-weight">الوزن الأولي (كجم)</Label>
-                            <Input id="deferred-initial-weight" type="number" placeholder="وزن الحيوان عند البيع" />
-                        </div>
+
+                        {deferredSelectedAnimal && (
+                           <Card>
+                             <CardHeader>
+                               <CardTitle className="text-lg">تفاصيل السعر</CardTitle>
+                             </CardHeader>
+                             <CardContent className="grid md:grid-cols-3 gap-4">
+                               <div className="grid gap-2">
+                                 <Label htmlFor="deferred-initial-weight">الوزن الأولي (كجم)</Label>
+                                 <Input id="deferred-initial-weight" type="number" value={deferredInitialWeight} onChange={(e) => setDeferredInitialWeight(parseFloat(e.target.value) || 0)}/>
+                               </div>
+                               <div className="grid gap-2">
+                                 <Label htmlFor="deferred-price-per-kg">سعر الكيلو (ج.م)</Label>
+                                 <Input id="deferred-price-per-kg" type="number" placeholder="أدخل سعر الكيلو" onChange={(e) => setDeferredPricePerKg(parseFloat(e.target.value) || 0)} />
+                               </div>
+                               <div className="grid gap-2">
+                                 <Label htmlFor="deferred-total-price">السعر الإجمالي</Label>
+                                 <Input id="deferred-total-price" type="number" value={deferredTotalPrice} onChange={(e) => setDeferredTotalPrice(parseFloat(e.target.value) || 0)} />
+                               </div>
+                             </CardContent>
+                           </Card>
+                        )}
+                        
                         <div className="grid gap-2">
                             <Label htmlFor="deferred-deposit">العربون (ج.م)</Label>
                             <Input id="deferred-deposit" type="number" placeholder="المبلغ المدفوع مقدماً" />
