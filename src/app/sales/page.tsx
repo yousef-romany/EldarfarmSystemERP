@@ -21,6 +21,7 @@ export default function SalesPage() {
   const [payments, setPayments] = useState<Partial<Payment[]>>([{}]);
   const [selectedAnimal, setSelectedAnimal] = useState<Livestock | null>(null);
   const [pricePerKg, setPricePerKg] = useState<number>(0);
+  const [currentWeight, setCurrentWeight] = useState<number>(0);
 
   const getAnimalTag = (animalId: string) => {
     return livestock.find((animal) => animal.id === animalId)?.tagId || 'N/A';
@@ -43,7 +44,7 @@ export default function SalesPage() {
   };
 
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
-  const totalPrice = selectedAnimal ? selectedAnimal.weight * pricePerKg : 0;
+  const totalPrice = selectedAnimal ? currentWeight * pricePerKg : 0;
   const remainingBalance = totalPrice - totalPaid;
 
   return (
@@ -140,6 +141,11 @@ export default function SalesPage() {
                   <Select onValueChange={(animalId) => {
                       const animal = livestock.find(a => a.id === animalId);
                       setSelectedAnimal(animal || null);
+                      if (animal) {
+                        setCurrentWeight(animal.weight);
+                      } else {
+                        setCurrentWeight(0);
+                      }
                     }}>
                     <SelectTrigger id="animal-select">
                       <SelectValue placeholder="اختر حيوانًا من المتاحين..." />
@@ -168,8 +174,8 @@ export default function SalesPage() {
                   </CardHeader>
                   <CardContent className='grid md:grid-cols-3 gap-4'>
                     <div className="grid gap-2">
-                      <Label>الوزن الحالي (كجم)</Label>
-                      <Input value={selectedAnimal.weight} disabled />
+                      <Label htmlFor="current-weight">الوزن الحالي (كجم)</Label>
+                      <Input id="current-weight" type="number" value={currentWeight} onChange={(e) => setCurrentWeight(parseFloat(e.target.value) || 0)} />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="price-per-kg">سعر الكيلو (ج.م)</Label>
