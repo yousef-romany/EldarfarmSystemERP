@@ -1,6 +1,6 @@
 
 'use client';
-import { MoreHorizontal, PlusCircle, Trash2, ChevronsUpDown, Check, ArrowDownUp, Printer } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, ChevronsUpDown, Check, ArrowDownUp, Printer, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -198,6 +198,12 @@ export default function SalesPage() {
                                         تحديث الوزن و إتمام البيع
                                     </DropdownMenuItem>
                                 )}
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/sales/edit/${sale.id}`}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        تعديل
+                                    </Link>
+                                </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handlePrint(sale.id)}>
                                 <Printer className="mr-2 h-4 w-4" />
                                 طباعة الفاتورة
