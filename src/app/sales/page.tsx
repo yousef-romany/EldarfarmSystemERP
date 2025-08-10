@@ -1,4 +1,6 @@
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+
+'use client';
+import { MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,19 +10,36 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { livestock, sales } from '@/lib/data';
+import { livestock, sales, wallets } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import { format } from 'date-fns';
+import { useState } from 'react';
+import type { Payment } from '@/lib/types';
+
 
 export default function SalesPage() {
+  const [payments, setPayments] = useState<Partial<Payment[]>>([{}]);
+
   const getAnimalTag = (animalId: string) => {
     return livestock.find((animal) => animal.id === animalId)?.tagId || 'N/A';
   };
+  
+  const handleAddPayment = () => {
+    setPayments([...payments, {}]);
+  };
+
+  const handleRemovePayment = (index: number) => {
+    const newPayments = [...payments];
+    newPayments.splice(index, 1);
+    setPayments(newPayments);
+  };
+  
+  const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
 
   return (
     <>
       <PageHeader title="إدارة المبيعات" />
-      <Tabs defaultValue="deferred" dir="rtl">
+      <Tabs defaultValue="immediate" dir="rtl">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="deferred">بيع آجل</TabsTrigger>
           <TabsTrigger value="immediate">بيع فوري</TabsTrigger>
@@ -105,31 +124,82 @@ export default function SalesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="animal-select">اختر الحيوان</Label>
-                <Select>
-                  <SelectTrigger id="animal-select">
-                    <SelectValue placeholder="اختر حيوانًا من المتاحين..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {livestock
-                      .filter((a) => a.status === 'Available')
-                      .map((animal) => (
-                        <SelectItem key={animal.id} value={animal.id}>
-                          {animal.tagId} - {animal.type === 'Cow' ? 'بقرة' : 'خروف'} - {animal.weight} كجم
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="animal-select">اختر الحيوان</Label>
+                  <Select>
+                    <SelectTrigger id="animal-select">
+                      <SelectValue placeholder="اختر حيوانًا من المتاحين..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {livestock
+                        .filter((a) => a.status === 'Available')
+                        .map((animal) => (
+                          <SelectItem key={animal.id} value={animal.id}>
+                            {animal.tagId} - {animal.type === 'Cow' ? 'بقرة' : 'خروف'} - {animal.weight} كجم
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="customer-name">اسم العميل</Label>
+                  <Input id="customer-name" placeholder="اسم المشتري" />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="customer-name">اسم العميل</Label>
-                <Input id="customer-name" placeholder="اسم المشتري" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="sale-price">سعر البيع النهائي (ج.م)</Label>
-                <Input id="sale-price" type="number" placeholder="المبلغ الإجمالي" />
-              </div>
+              
+              <Card>
+                <CardHeader>
+                    <CardTitle className='text-lg'>تفاصيل الدفع</CardTitle>
+                    <CardDescription>أضف الدفعات المستلمة من العميل.</CardDescription>
+                </CardHeader>
+                <CardContent className='space-y-4'>
+                  <div className="space-y-3">
+                    {payments.map((payment, index) => (
+                      <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
+                        <div className="grid gap-2 flex-1">
+                          <Label htmlFor={`wallet-${index}`}>المحفظة / الحساب</Label>
+                          <Select>
+                            <SelectTrigger id={`wallet-${index}`}>
+                              <SelectValue placeholder="اختر محفظة..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {wallets.map((wallet) => (
+                                <SelectItem key={wallet.id} value={wallet.id}>
+                                  {wallet.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor={`amount-${index}`}>المبلغ</Label>
+                          <Input id={`amount-${index}`} type="number" placeholder="المبلغ" />
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemovePayment(index)}
+                          disabled={payments.length === 1}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleAddPayment}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    إضافة دفعة أخرى
+                  </Button>
+                  <div className='flex justify-between items-center p-3 bg-muted rounded-md'>
+                      <span className='font-semibold'>الإجمالي المدفوع:</span>
+                      <span className='font-bold text-lg'>
+                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalPaid)}
+                      </span>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="flex justify-end">
                 <Button>تسجيل البيع</Button>
               </div>
@@ -140,3 +210,4 @@ export default function SalesPage() {
     </>
   );
 }
+

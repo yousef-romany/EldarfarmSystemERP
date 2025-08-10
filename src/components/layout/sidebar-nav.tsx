@@ -25,6 +25,7 @@ import {
   LogOut,
   Beef,
   ChevronDown,
+  Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -48,22 +49,23 @@ export function SidebarNav() {
     { href: '/purchases', label: 'المشتريات', icon: ShoppingCart },
     { href: '/sales', label: 'المبيعات', icon: DollarSign },
     { href: '/expenses', label: 'المصروفات', icon: ClipboardList },
+    { href: '/wallets', label: 'المحافظ', icon: Wallet },
   ];
 
   return (
     <>
       <SidebarHeader>
-        <div className="flex items-center gap-2">
-          <Beef className="h-8 w-8 text-sidebar-primary" />
-          <div className="flex flex-col overflow-hidden transition-all duration-300 ease-in-out group-data-[collapsible=icon]:w-0">
-             <h1 className="text-xl font-semibold text-white">مدير المواشي</h1>
+        <div className="flex items-center gap-2 overflow-hidden">
+          <Beef className="h-8 w-8 text-sidebar-primary flex-shrink-0" />
+          <div className="flex flex-col transition-all duration-200 ease-in-out group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
+             <h1 className="text-xl font-semibold text-white truncate">مدير المواشي</h1>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-            <Collapsible open={managementOpen} onOpenChange={setManagementOpen}>
-                <CollapsibleTrigger className="w-full" disabled={state === 'collapsed'}>
+            <Collapsible open={managementOpen} onOpenChange={setManagementOpen} disabled={state === 'collapsed'}>
+                <CollapsibleTrigger className="w-full" asChild>
                     <SidebarMenuButton className="w-full justify-between" tooltip="الإدارة">
                         <div className="flex items-center gap-2">
                             <Users />
@@ -87,8 +89,8 @@ export function SidebarNav() {
                     </SidebarMenuSub>
                 </CollapsibleContent>
             </Collapsible>
-            <Collapsible open={operationsOpen} onOpenChange={setOperationsOpen}>
-                <CollapsibleTrigger className="w-full" disabled={state === 'collapsed'}>
+            <Collapsible open={operationsOpen} onOpenChange={setOperationsOpen} disabled={state === 'collapsed'}>
+                <CollapsibleTrigger className="w-full" asChild>
                      <SidebarMenuButton className="w-full justify-between" tooltip="العمليات">
                         <div className="flex items-center gap-2">
                             <ClipboardList />

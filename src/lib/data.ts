@@ -1,4 +1,4 @@
-import type { User, Barn, Livestock, Expense, Sale } from './types';
+import type { User, Barn, Livestock, Expense, Sale, Wallet } from './types';
 
 export const users: User[] = [
   { id: '1', name: 'أحمد محمود', email: 'ahmad@example.com', role: 'Admin', avatar: 'https://placehold.co/40x40.png' },
@@ -33,4 +33,11 @@ export const expenses: Expense[] = [
 export const sales: Sale[] = [
     { id: 's1', animalId: 'l3', customerName: 'شركة النور', saleDate: '2024-05-10', type: 'Immediate', totalPrice: 25000, status: 'Completed' },
     { id: 's2', animalId: 'l2', customerName: 'محمد عبد الله', saleDate: '2024-04-25', type: 'Deferred', totalPrice: 8000, deposit: 2000, initialWeight: 60, status: 'Pending' }
+];
+
+export const wallets: Wallet[] = [
+  { id: 'w1', name: 'فودافون كاش', balance: 15200.50, icon: 'https://placehold.co/40x40.png' },
+  { id: 'w2', name: 'Instapay', balance: 85000.00, icon: 'https://placehold.co/40x40.png' },
+  { id: 'w3', name: 'حساب بنكي', balance: 320500.75, icon: 'https://placehold.co/40x40.png' },
+  { id: 'w4', name: 'اتصالات كاش', balance: 5000.00, icon: 'https://placehold.co/40x40.png' },
 ];

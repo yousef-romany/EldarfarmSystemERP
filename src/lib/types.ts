@@ -25,11 +25,16 @@ export type Livestock = {
 };
 
 export type Expense = {
-  id: string;
+  id:string;
   date: string; // ISO date string
   category: 'Feed' | 'Vet' | 'Maintenance' | 'Other';
   amount: number;
   description: string;
+};
+
+export type Payment = {
+  walletId: string;
+  amount: number;
 };
 
 export type Sale = {
@@ -39,8 +44,16 @@ export type Sale = {
   saleDate: string; // ISO date string
   type: 'Immediate' | 'Deferred';
   totalPrice: number;
+  payments?: Payment[];
   deposit?: number;
   initialWeight?: number;
   finalWeight?: number;
   status: 'Pending' | 'Completed';
+};
+
+export type Wallet = {
+  id: string;
+  name: string;
+  balance: number;
+  icon: string;
 };
