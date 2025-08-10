@@ -8,12 +8,10 @@ import {
   SidebarFooter,
   SidebarSeparator,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { usePathname } from 'next/navigation';
 import {
@@ -36,6 +34,7 @@ import { cn } from '@/lib/utils';
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { state } = useSidebar();
   const [managementOpen, setManagementOpen] = useState(true);
   const [operationsOpen, setOperationsOpen] = useState(true);
 
@@ -56,16 +55,21 @@ export function SidebarNav() {
       <SidebarHeader>
         <div className="flex items-center gap-2">
           <Beef className="h-8 w-8 text-sidebar-primary" />
-          <h1 className="text-xl font-semibold text-white">مدير المواشي</h1>
+          <div className="flex flex-col overflow-hidden transition-all duration-300 ease-in-out group-data-[collapsible=icon]:w-0">
+             <h1 className="text-xl font-semibold text-white">مدير المواشي</h1>
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
             <Collapsible open={managementOpen} onOpenChange={setManagementOpen}>
-                <CollapsibleTrigger className="w-full">
-                    <SidebarMenuButton className="w-full justify-between">
-                        <span>الإدارة</span>
-                        <ChevronDown className={cn("h-4 w-4 transition-transform", managementOpen && "rotate-180")} />
+                <CollapsibleTrigger className="w-full" disabled={state === 'collapsed'}>
+                    <SidebarMenuButton className="w-full justify-between" tooltip="الإدارة">
+                        <div className="flex items-center gap-2">
+                            <Users />
+                            <span className="truncate">الإدارة</span>
+                        </div>
+                        <ChevronDown className={cn("h-4 w-4 transition-transform group-data-[collapsible=icon]:hidden", managementOpen && "rotate-180")} />
                     </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -73,7 +77,7 @@ export function SidebarNav() {
                     {managementItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
                             <Link href={item.href} className="w-full">
-                                <SidebarMenuSubButton isActive={pathname === item.href}>
+                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
                                     <item.icon />
                                     <span>{item.label}</span>
                                 </SidebarMenuSubButton>
@@ -84,10 +88,13 @@ export function SidebarNav() {
                 </CollapsibleContent>
             </Collapsible>
             <Collapsible open={operationsOpen} onOpenChange={setOperationsOpen}>
-                <CollapsibleTrigger className="w-full">
-                    <SidebarMenuButton className="w-full justify-between">
-                        <span>العمليات</span>
-                        <ChevronDown className={cn("h-4 w-4 transition-transform", operationsOpen && "rotate-180")} />
+                <CollapsibleTrigger className="w-full" disabled={state === 'collapsed'}>
+                     <SidebarMenuButton className="w-full justify-between" tooltip="العمليات">
+                        <div className="flex items-center gap-2">
+                            <ClipboardList />
+                            <span className="truncate">العمليات</span>
+                        </div>
+                        <ChevronDown className={cn("h-4 w-4 transition-transform group-data-[collapsible=icon]:hidden", operationsOpen && "rotate-180")} />
                     </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -95,7 +102,7 @@ export function SidebarNav() {
                     {operationsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
                             <Link href={item.href} className="w-full">
-                                <SidebarMenuSubButton isActive={pathname === item.href}>
+                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
                                     <item.icon />
                                     <span>{item.label}</span>
                                 </SidebarMenuSubButton>
