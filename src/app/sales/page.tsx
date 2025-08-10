@@ -1,6 +1,6 @@
 
 'use client';
-import { MoreHorizontal, PlusCircle, Trash2, ChevronsUpDown, Check } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, ChevronsUpDown, Check, ArrowDownUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +44,7 @@ export default function SalesPage() {
 
   const settlementTotalPaid = settlementPayments.reduce((acc, p) => acc + (p?.amount || 0), 0);
   const settlementRemainingBalance = finalTotalPrice - (settlementSale?.deposit || 0) - settlementTotalPaid;
+  const weightDifference = settlementSale ? finalWeight - (settlementSale.initialWeight || 0) : 0;
 
 
   const getAnimalTag = (animalId: string) => {
@@ -392,14 +393,21 @@ export default function SalesPage() {
                 <CardHeader>
                     <CardTitle className='text-lg'>تحديث الوزن والتسعير النهائي</CardTitle>
                 </CardHeader>
-                <CardContent className='grid md:grid-cols-2 gap-4'>
+                <CardContent className='grid md:grid-cols-3 gap-4'>
                     <div className="grid gap-2">
                       <Label htmlFor="final-weight">الوزن النهائي (كجم)</Label>
                       <Input id="final-weight" type="number" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} />
                     </div>
+                     <div className="grid gap-2">
+                        <Label>فرق الوزن</Label>
+                        <div className={cn("flex items-center justify-center h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm", weightDifference > 0 ? "text-green-600" : "text-red-600")}>
+                            <ArrowDownUp className="mr-2 h-4 w-4" />
+                            <span className="font-bold">{weightDifference.toFixed(2)} كجم</span>
+                        </div>
+                    </div>
                     <div className="grid gap-2">
                         <Label htmlFor="final-total-price">السعر الإجمالي النهائي</Label>
-                        <Input id="final-total-price" type="number" value={finalTotalPrice} readOnly />
+                        <Input id="final-total-price" type="number" value={finalTotalPrice.toFixed(2)} readOnly className='font-bold' />
                     </div>
                 </CardContent>
               </Card>
