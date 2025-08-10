@@ -14,14 +14,16 @@ import { livestock, sales, wallets } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
-import type { Payment, Livestock } from '@/lib/types';
+import type { Payment, Livestock, Sale } from '@/lib/types';
 import Link from 'next/link';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 
 export default function SalesPage() {
+  // State for Immediate Sale
   const [payments, setPayments] = useState<Partial<Payment[]>>([{}]);
   const [selectedAnimal, setSelectedAnimal] = useState<Livestock | null>(null);
   const [pricePerKg, setPricePerKg] = useState<number>(0);
@@ -29,10 +31,26 @@ export default function SalesPage() {
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
+  // State for Deferred Sale Settlement
+  const [isSettlementDialogOpen, setIsSettlementDialogOpen] = useState(false);
+  const [settlementSale, setSettlementSale] = useState<Sale | null>(null);
+  const [finalWeight, setFinalWeight] = useState(0);
+  const [settlementPricePerKg, setSettlementPricePerKg] = useState(0);
+  const [finalTotalPrice, setFinalTotalPrice] = useState(0);
+  const [settlementPayments, setSettlementPayments] = useState<Partial<Payment[]>>([{}]);
+  
+  const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
+  const remainingBalance = totalPrice - totalPaid;
+
+  const settlementTotalPaid = settlementPayments.reduce((acc, p) => acc + (p?.amount || 0), 0);
+  const settlementRemainingBalance = finalTotalPrice - (settlementSale?.deposit || 0) - settlementTotalPaid;
+
+
   const getAnimalTag = (animalId: string) => {
     return livestock.find((animal) => animal.id === animalId)?.tagId || 'N/A';
   };
   
+  // Handlers for Immediate Sale
   const handleAddPayment = () => {
     setPayments([...payments, {}]);
   };
@@ -57,10 +75,6 @@ export default function SalesPage() {
     }
   }, [selectedAnimal, currentWeight, pricePerKg]);
 
-
-  const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
-  const remainingBalance = totalPrice - totalPaid;
-
   const handleAnimalSelect = (animalId: string) => {
     const animal = livestock.find(a => a.id === animalId);
     setSelectedAnimal(animal || null);
@@ -71,6 +85,41 @@ export default function SalesPage() {
     }
     setComboboxOpen(false);
   };
+  
+  // Handlers for Deferred Sale Settlement
+  const openSettlementDialog = (sale: Sale) => {
+    const animal = livestock.find(a => a.id === sale.animalId);
+    setSettlementSale(sale);
+    setFinalWeight(animal?.weight || sale.initialWeight || 0);
+    const calculatedPricePerKg = sale.totalPrice / (sale.initialWeight || 1);
+    setSettlementPricePerKg(calculatedPricePerKg);
+    setSettlementPayments([{}]);
+    setIsSettlementDialogOpen(true);
+  };
+  
+  useEffect(() => {
+    if (settlementSale) {
+        const pricePerKg = settlementSale.totalPrice / (settlementSale.initialWeight || 1);
+        setFinalTotalPrice(finalWeight * pricePerKg);
+    }
+  }, [settlementSale, finalWeight]);
+
+  const handleAddSettlementPayment = () => {
+    setSettlementPayments([...settlementPayments, {}]);
+  };
+
+  const handleRemoveSettlementPayment = (index: number) => {
+    const newPayments = [...settlementPayments];
+    newPayments.splice(index, 1);
+    setSettlementPayments(newPayments);
+  };
+
+  const handleSettlementPaymentAmountChange = (index: number, amount: string) => {
+    const newPayments = [...settlementPayments];
+    newPayments[index] = { ...newPayments[index], amount: parseFloat(amount) || 0 };
+    setSettlementPayments(newPayments);
+  };
+
 
   return (
     <>
@@ -138,7 +187,11 @@ export default function SalesPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                              <DropdownMenuItem>تحديث الوزن و إتمام البيع</DropdownMenuItem>
+                                {sale.status === 'Pending' && (
+                                    <DropdownMenuItem onClick={() => openSettlementDialog(sale)}>
+                                        تحديث الوزن و إتمام البيع
+                                    </DropdownMenuItem>
+                                )}
                               <DropdownMenuItem>عرض التفاصيل</DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive">
                                 إلغاء العملية
@@ -303,6 +356,125 @@ export default function SalesPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Deferred Sale Settlement Dialog */}
+      <Dialog open={isSettlementDialogOpen} onOpenChange={setIsSettlementDialogOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>إتمام عملية بيع آجل</DialogTitle>
+            <DialogDescription>
+              تحديث الوزن النهائي وتسوية المبلغ المتبقي للعميل: {settlementSale?.customerName}
+            </DialogDescription>
+          </DialogHeader>
+          {settlementSale && (
+            <div className="space-y-4 py-4">
+              <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg">ملخص الاتفاق الأولي</CardTitle>
+                </CardHeader>
+                <CardContent className="grid md:grid-cols-3 gap-4">
+                     <div className="grid gap-1">
+                        <Label className="text-sm text-muted-foreground">الوزن الأولي</Label>
+                        <p className="font-semibold">{settlementSale.initialWeight} كجم</p>
+                    </div>
+                    <div className="grid gap-1">
+                        <Label className="text-sm text-muted-foreground">سعر الكيلو المتفق عليه</Label>
+                        <p className="font-semibold">{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(settlementPricePerKg)}</p>
+                    </div>
+                    <div className="grid gap-1">
+                        <Label className="text-sm text-muted-foreground">العربون المدفوع</Label>
+                        <p className="font-semibold">{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(settlementSale.deposit || 0)}</p>
+                    </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                    <CardTitle className='text-lg'>تحديث الوزن والتسعير النهائي</CardTitle>
+                </CardHeader>
+                <CardContent className='grid md:grid-cols-2 gap-4'>
+                    <div className="grid gap-2">
+                      <Label htmlFor="final-weight">الوزن النهائي (كجم)</Label>
+                      <Input id="final-weight" type="number" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="final-total-price">السعر الإجمالي النهائي</Label>
+                        <Input id="final-total-price" type="number" value={finalTotalPrice} readOnly />
+                    </div>
+                </CardContent>
+              </Card>
+              
+               <Card>
+                <CardHeader>
+                    <CardTitle className='text-lg'>تسوية المبلغ المتبقي</CardTitle>
+                </CardHeader>
+                <CardContent className='space-y-4'>
+                  <div className="space-y-3">
+                    {settlementPayments.map((payment, index) => (
+                      <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
+                        <div className="grid gap-2 flex-1">
+                          <Label htmlFor={`settlement-wallet-${index}`}>المحفظة / الحساب</Label>
+                          <Select>
+                            <SelectTrigger id={`settlement-wallet-${index}`}>
+                              <SelectValue placeholder="اختر محفظة..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {wallets.map((wallet) => (
+                                <SelectItem key={wallet.id} value={wallet.id}>
+                                  {wallet.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor={`settlement-amount-${index}`}>المبلغ</Label>
+                          <Input id={`settlement-amount-${index}`} type="number" placeholder="المبلغ" onChange={(e) => handleSettlementPaymentAmountChange(index, e.target.value)} />
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveSettlementPayment(index)}
+                          disabled={settlementPayments.length === 1}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleAddSettlementPayment}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    إضافة دفعة أخرى
+                  </Button>
+                </CardContent>
+                <CardContent>
+                   <div className='flex justify-between items-center p-3 bg-muted rounded-md mb-2'>
+                        <span className='font-semibold'>الإجمالي المدفوع (شامل العربون):</span>
+                        <span className='font-bold text-lg'>
+                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format((settlementSale.deposit || 0) + settlementTotalPaid)}
+                        </span>
+                    </div>
+                    <div className='flex justify-between items-center p-3 bg-muted rounded-md'>
+                        <span className='font-semibold'>المبلغ المتبقي:</span>
+                        <span className='font-bold text-lg text-destructive'>
+                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(settlementRemainingBalance)}
+                        </span>
+                    </div>
+                </CardContent>
+              </Card>
+
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">إلغاء</Button>
+            </DialogClose>
+            <Button type="button" disabled={settlementRemainingBalance !== 0}>
+                إتمام البيع والتسوية
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
