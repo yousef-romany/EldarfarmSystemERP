@@ -359,7 +359,7 @@ export default function SalesPage() {
       
       {/* Deferred Sale Settlement Dialog */}
       <Dialog open={isSettlementDialogOpen} onOpenChange={setIsSettlementDialogOpen}>
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>إتمام عملية بيع آجل</DialogTitle>
             <DialogDescription>
@@ -367,7 +367,7 @@ export default function SalesPage() {
             </DialogDescription>
           </DialogHeader>
           {settlementSale && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 overflow-y-auto flex-1 pr-6">
               <Card>
                 <CardHeader>
                     <CardTitle className="text-lg">ملخص الاتفاق الأولي</CardTitle>
