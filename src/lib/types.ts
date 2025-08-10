@@ -1,0 +1,46 @@
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Admin' | 'Manager' | 'Staff';
+  avatar: string;
+};
+
+export type Barn = {
+  id: string;
+  name: string;
+  capacity: number;
+  currentOccupancy: number;
+};
+
+export type Livestock = {
+  id: string;
+  tagId: string;
+  type: 'Cow' | 'Sheep' | 'Goat';
+  breed: string;
+  weight: number; // in kg
+  age: number; // in months
+  barnId: string;
+  status: 'Available' | 'Sold' | 'Quarantined';
+};
+
+export type Expense = {
+  id: string;
+  date: string; // ISO date string
+  category: 'Feed' | 'Vet' | 'Maintenance' | 'Other';
+  amount: number;
+  description: string;
+};
+
+export type Sale = {
+  id: string;
+  animalId: string;
+  customerName: string;
+  saleDate: string; // ISO date string
+  type: 'Immediate' | 'Deferred';
+  totalPrice: number;
+  deposit?: number;
+  initialWeight?: number;
+  finalWeight?: number;
+  status: 'Pending' | 'Completed';
+};
