@@ -14,11 +14,13 @@ import { livestock, sales, wallets } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import { format } from 'date-fns';
 import { useState } from 'react';
-import type { Payment } from '@/lib/types';
+import type { Payment, Livestock } from '@/lib/types';
 
 
 export default function SalesPage() {
   const [payments, setPayments] = useState<Partial<Payment[]>>([{}]);
+  const [selectedAnimal, setSelectedAnimal] = useState<Livestock | null>(null);
+  const [pricePerKg, setPricePerKg] = useState<number>(0);
 
   const getAnimalTag = (animalId: string) => {
     return livestock.find((animal) => animal.id === animalId)?.tagId || 'N/A';
@@ -34,7 +36,15 @@ export default function SalesPage() {
     setPayments(newPayments);
   };
   
+  const handlePaymentAmountChange = (index: number, amount: string) => {
+    const newPayments = [...payments];
+    newPayments[index] = { ...newPayments[index], amount: parseFloat(amount) || 0 };
+    setPayments(newPayments);
+  };
+
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
+  const totalPrice = selectedAnimal ? selectedAnimal.weight * pricePerKg : 0;
+  const remainingBalance = totalPrice - totalPaid;
 
   return (
     <>
@@ -127,7 +137,10 @@ export default function SalesPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="animal-select">اختر الحيوان</Label>
-                  <Select>
+                  <Select onValueChange={(animalId) => {
+                      const animal = livestock.find(a => a.id === animalId);
+                      setSelectedAnimal(animal || null);
+                    }}>
                     <SelectTrigger id="animal-select">
                       <SelectValue placeholder="اختر حيوانًا من المتاحين..." />
                     </SelectTrigger>
@@ -148,6 +161,30 @@ export default function SalesPage() {
                 </div>
               </div>
               
+              {selectedAnimal && (
+                <Card>
+                  <CardHeader>
+                      <CardTitle className='text-lg'>تفاصيل السعر</CardTitle>
+                  </CardHeader>
+                  <CardContent className='grid md:grid-cols-3 gap-4'>
+                    <div className="grid gap-2">
+                      <Label>الوزن الحالي (كجم)</Label>
+                      <Input value={selectedAnimal.weight} disabled />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="price-per-kg">سعر الكيلو (ج.م)</Label>
+                      <Input id="price-per-kg" type="number" placeholder="أدخل سعر الكيلو" onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>السعر الإجمالي</Label>
+                       <div className='flex items-center justify-center h-10 px-3 py-2 text-sm font-bold bg-muted rounded-md'>
+                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalPrice)}
+                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card>
                 <CardHeader>
                     <CardTitle className='text-lg'>تفاصيل الدفع</CardTitle>
@@ -174,7 +211,7 @@ export default function SalesPage() {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor={`amount-${index}`}>المبلغ</Label>
-                          <Input id={`amount-${index}`} type="number" placeholder="المبلغ" />
+                          <Input id={`amount-${index}`} type="number" placeholder="المبلغ" onChange={(e) => handlePaymentAmountChange(index, e.target.value)} />
                         </div>
                         <Button
                           variant="ghost"
@@ -191,17 +228,25 @@ export default function SalesPage() {
                     <PlusCircle className="mr-2 h-4 w-4" />
                     إضافة دفعة أخرى
                   </Button>
-                  <div className='flex justify-between items-center p-3 bg-muted rounded-md'>
+                </CardContent>
+                <CardContent>
+                  <div className='flex justify-between items-center p-3 bg-muted rounded-md mb-2'>
                       <span className='font-semibold'>الإجمالي المدفوع:</span>
                       <span className='font-bold text-lg'>
                         {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalPaid)}
+                      </span>
+                  </div>
+                   <div className='flex justify-between items-center p-3 bg-muted rounded-md'>
+                      <span className='font-semibold'>المبلغ المتبقي:</span>
+                      <span className='font-bold text-lg text-destructive'>
+                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(remainingBalance)}
                       </span>
                   </div>
                 </CardContent>
               </Card>
 
               <div className="flex justify-end">
-                <Button>تسجيل البيع</Button>
+                <Button disabled={!selectedAnimal || !pricePerKg || remainingBalance !== 0}>تسجيل البيع</Button>
               </div>
             </CardContent>
           </Card>
@@ -210,4 +255,3 @@ export default function SalesPage() {
     </>
   );
 }
-
