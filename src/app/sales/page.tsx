@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/page-header';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import type { Payment, Livestock } from '@/lib/types';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 
 export default function SalesPage() {
@@ -74,10 +75,56 @@ export default function SalesPage() {
                     إدارة عمليات البيع التي يتم فيها دفع جزء من المبلغ مقدماً.
                   </CardDescription>
                 </div>
-                <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  بدء عملية بيع آجل
-                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      بدء عملية بيع آجل
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>بدء عملية بيع آجل جديدة</DialogTitle>
+                      <DialogDescription>
+                        املأ النموذج أدناه لتسجيل عملية بيع آجل.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                       <div className="grid gap-2">
+                          <Label htmlFor="deferred-animal-select">اختر الحيوان</Label>
+                           <Select>
+                            <SelectTrigger id="deferred-animal-select">
+                              <SelectValue placeholder="اختر حيوانًا من المتاحين..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {livestock
+                                .filter((a) => a.status === 'Available')
+                                .map((animal) => (
+                                  <SelectItem key={animal.id} value={animal.id}>
+                                    {animal.tagId} - {animal.type === 'Cow' ? 'بقرة' : 'خروف'} - {animal.weight} كجم
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                       </div>
+                       <div className="grid gap-2">
+                            <Label htmlFor="deferred-customer-name">اسم العميل</Label>
+                            <Input id="deferred-customer-name" placeholder="اسم المشتري" />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="deferred-initial-weight">الوزن الأولي (كجم)</Label>
+                            <Input id="deferred-initial-weight" type="number" placeholder="وزن الحيوان عند البيع" />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="deferred-deposit">العربون (ج.م)</Label>
+                            <Input id="deferred-deposit" type="number" placeholder="المبلغ المدفوع مقدماً" />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="submit">حفظ العملية</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
