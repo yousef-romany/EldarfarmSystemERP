@@ -11,21 +11,25 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarNav } from './sidebar-nav';
 import Link from 'next/link';
+import { SidebarTrigger } from '../ui/sidebar';
 
 export function Header() {
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0 md:hidden">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">فتح قائمة التنقل</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="right" className="flex flex-col p-0 bg-sidebar text-sidebar-foreground">
-          <SidebarNav />
-        </SheetContent>
-      </Sheet>
+        <div className="flex items-center gap-2">
+            <Sheet>
+                <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">فتح قائمة التنقل</span>
+                </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="flex flex-col p-0 bg-sidebar text-sidebar-foreground">
+                <SidebarNav />
+                </SheetContent>
+            </Sheet>
+            <SidebarTrigger className="hidden md:flex" />
+        </div>
       <div className="w-full flex-1">
         {/* Can add search bar here if needed */}
       </div>
