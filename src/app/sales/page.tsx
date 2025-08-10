@@ -124,7 +124,7 @@ export default function SalesPage() {
   return (
     <>
       <PageHeader title="إدارة المبيعات" />
-      <Tabs defaultValue="immediate" dir="rtl">
+      <Tabs defaultValue="deferred" dir="rtl">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="deferred">بيع آجل</TabsTrigger>
           <TabsTrigger value="immediate">بيع فوري</TabsTrigger>
