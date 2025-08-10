@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { livestock, sales, wallets } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import { format } from 'date-fns';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Payment, Livestock } from '@/lib/types';
 
 
@@ -22,6 +22,7 @@ export default function SalesPage() {
   const [selectedAnimal, setSelectedAnimal] = useState<Livestock | null>(null);
   const [pricePerKg, setPricePerKg] = useState<number>(0);
   const [currentWeight, setCurrentWeight] = useState<number>(0);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
 
   const getAnimalTag = (animalId: string) => {
     return livestock.find((animal) => animal.id === animalId)?.tagId || 'N/A';
@@ -43,8 +44,16 @@ export default function SalesPage() {
     setPayments(newPayments);
   };
 
+  useEffect(() => {
+    if (selectedAnimal) {
+      setTotalPrice(currentWeight * pricePerKg);
+    } else {
+      setTotalPrice(0);
+    }
+  }, [selectedAnimal, currentWeight, pricePerKg]);
+
+
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
-  const totalPrice = selectedAnimal ? currentWeight * pricePerKg : 0;
   const remainingBalance = totalPrice - totalPaid;
 
   return (
@@ -182,10 +191,8 @@ export default function SalesPage() {
                       <Input id="price-per-kg" type="number" placeholder="أدخل سعر الكيلو" onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} />
                     </div>
                     <div className="grid gap-2">
-                      <Label>السعر الإجمالي</Label>
-                       <div className='flex items-center justify-center h-10 px-3 py-2 text-sm font-bold bg-muted rounded-md'>
-                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalPrice)}
-                       </div>
+                      <Label htmlFor="total-price">السعر الإجمالي</Label>
+                      <Input id="total-price" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} />
                     </div>
                   </CardContent>
                 </Card>
