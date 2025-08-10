@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { livestock } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import { useState, useEffect } from 'react';
 import type { Livestock } from '@/lib/types';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronsUpDown, Check } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 
 export default function NewDeferredSalePage() {
@@ -18,6 +20,8 @@ export default function NewDeferredSalePage() {
   const [deferredInitialWeight, setDeferredInitialWeight] = useState<number>(0);
   const [deferredPricePerKg, setDeferredPricePerKg] = useState<number>(0);
   const [deferredTotalPrice, setDeferredTotalPrice] = useState<number>(0);
+  const [comboboxOpen, setComboboxOpen] = useState(false);
+
 
   useEffect(() => {
     if (deferredSelectedAnimal) {
@@ -26,6 +30,17 @@ export default function NewDeferredSalePage() {
       setDeferredTotalPrice(0);
     }
   }, [deferredSelectedAnimal, deferredInitialWeight, deferredPricePerKg]);
+
+  const handleAnimalSelect = (animalId: string) => {
+    const animal = livestock.find(a => a.id === animalId);
+    setDeferredSelectedAnimal(animal || null);
+    if (animal) {
+      setDeferredInitialWeight(animal.weight);
+    } else {
+      setDeferredInitialWeight(0);
+    }
+    setComboboxOpen(false);
+  };
 
   return (
     <>
@@ -48,28 +63,48 @@ export default function NewDeferredSalePage() {
             <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor="deferred-animal-select">اختر الحيوان</Label>
-                    <Select onValueChange={(animalId) => {
-                        const animal = livestock.find(a => a.id === animalId);
-                        setDeferredSelectedAnimal(animal || null);
-                        if (animal) {
-                        setDeferredInitialWeight(animal.weight);
-                        } else {
-                        setDeferredInitialWeight(0);
-                        }
-                    }}>
-                    <SelectTrigger id="deferred-animal-select">
-                        <SelectValue placeholder="اختر حيوانًا من المتاحين..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {livestock
-                        .filter((a) => a.status === 'Available')
-                        .map((animal) => (
-                            <SelectItem key={animal.id} value={animal.id}>
-                            {animal.tagId} - {animal.type === 'Cow' ? 'بقرة' : 'خروف'} - {animal.weight} كجم
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
+                    <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={comboboxOpen}
+                          className="w-full justify-between"
+                        >
+                          {deferredSelectedAnimal
+                            ? `${deferredSelectedAnimal.tagId} - ${deferredSelectedAnimal.type === 'Cow' ? 'بقرة' : 'خروف'} - ${deferredSelectedAnimal.weight} كجم`
+                            : "اختر حيوانًا..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput placeholder="ابحث بالرقم التعريفي..." />
+                          <CommandList>
+                            <CommandEmpty>لم يتم العثور على حيوان.</CommandEmpty>
+                            <CommandGroup>
+                              {livestock
+                                .filter((a) => a.status === 'Available')
+                                .map((animal) => (
+                                  <CommandItem
+                                    key={animal.id}
+                                    value={animal.id}
+                                    onSelect={() => handleAnimalSelect(animal.id)}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        deferredSelectedAnimal?.id === animal.id ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {animal.tagId} - {animal.type === 'Cow' ? 'بقرة' : 'خروف'} - {animal.weight} كجم
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor="deferred-customer-name">اسم العميل</Label>
@@ -116,4 +151,3 @@ export default function NewDeferredSalePage() {
     </>
   );
 }
-
