@@ -31,8 +31,9 @@ export const expenses: Expense[] = [
 ];
 
 export const sales: Sale[] = [
-    { id: 's1', animalId: 'l3', customerName: 'شركة النور', saleDate: '2024-05-10', type: 'Immediate', totalPrice: 25000, status: 'Completed' },
-    { id: 's2', animalId: 'l2', customerName: 'محمد عبد الله', saleDate: '2024-04-25', type: 'Deferred', totalPrice: 8000, deposit: 2000, initialWeight: 60, status: 'Pending' }
+    { id: 's1', animalId: 'l3', customerName: 'شركة النور', saleDate: '2024-05-10', type: 'Immediate', totalPrice: 25000, status: 'Completed', pricePerKg: 384.6, initialWeight: 65, finalWeight: 65, payments: [{walletId: 'w1', amount: 25000, date: '2024-05-10'}] },
+    { id: 's2', animalId: 'l2', customerName: 'محمد عبد الله', saleDate: '2024-04-25', settlementDate: '2024-05-25', type: 'Deferred', totalPrice: 8000, deposit: 2000, initialWeight: 60, finalWeight: 80, status: 'Completed', pricePerKg: 133.33, payments: [{walletId: 'w2', amount: 6000, date: '2024-05-25'}] },
+    { id: 's3', animalId: 'l4', customerName: 'مزارع الخير', saleDate: '2024-05-20', type: 'Deferred', totalPrice: 90000, deposit: 20000, initialWeight: 600, status: 'Pending', pricePerKg: 150 }
 ];
 
 export const wallets: Wallet[] = [

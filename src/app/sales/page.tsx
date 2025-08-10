@@ -1,6 +1,6 @@
 
 'use client';
-import { MoreHorizontal, PlusCircle, Trash2, ChevronsUpDown, Check, ArrowDownUp } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, ChevronsUpDown, Check, ArrowDownUp, Printer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +51,11 @@ export default function SalesPage() {
     return livestock.find((animal) => animal.id === animalId)?.tagId || 'N/A';
   };
   
+  const handlePrint = (saleId: string) => {
+    const url = `/sales/invoice/${saleId}`;
+    window.open(url, '_blank');
+  };
+  
   // Handlers for Immediate Sale
   const handleAddPayment = () => {
     setPayments([...payments, {}]);
@@ -92,7 +97,7 @@ export default function SalesPage() {
     const animal = livestock.find(a => a.id === sale.animalId);
     setSettlementSale(sale);
     setFinalWeight(animal?.weight || sale.initialWeight || 0);
-    const calculatedPricePerKg = sale.totalPrice / (sale.initialWeight || 1);
+    const calculatedPricePerKg = sale.pricePerKg || sale.totalPrice / (sale.initialWeight || 1);
     setSettlementPricePerKg(calculatedPricePerKg);
     setSettlementPayments([{}]);
     setIsSettlementDialogOpen(true);
@@ -100,7 +105,7 @@ export default function SalesPage() {
   
   useEffect(() => {
     if (settlementSale) {
-        const pricePerKg = settlementSale.totalPrice / (settlementSale.initialWeight || 1);
+        const pricePerKg = settlementSale.pricePerKg || settlementSale.totalPrice / (settlementSale.initialWeight || 1);
         setFinalTotalPrice(finalWeight * pricePerKg);
     }
   }, [settlementSale, finalWeight]);
@@ -193,7 +198,10 @@ export default function SalesPage() {
                                         تحديث الوزن و إتمام البيع
                                     </DropdownMenuItem>
                                 )}
-                              <DropdownMenuItem>عرض التفاصيل</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handlePrint(sale.id)}>
+                                <Printer className="mr-2 h-4 w-4" />
+                                طباعة الفاتورة
+                              </DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive">
                                 إلغاء العملية
                               </DropdownMenuItem>
@@ -473,13 +481,19 @@ export default function SalesPage() {
 
             </div>
           )}
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="secondary">إلغاء</Button>
-            </DialogClose>
-            <Button type="button" disabled={settlementRemainingBalance !== 0}>
-                إتمام البيع والتسوية
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button type="button" variant="outline" onClick={() => handlePrint(settlementSale!.id)}>
+                <Printer className="mr-2 h-4 w-4" />
+                طباعة الفاتورة
             </Button>
+            <div className='flex gap-2'>
+                <DialogClose asChild>
+                <Button type="button" variant="secondary">إلغاء</Button>
+                </DialogClose>
+                <Button type="button" disabled={settlementRemainingBalance !== 0}>
+                    إتمام البيع والتسوية
+                </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

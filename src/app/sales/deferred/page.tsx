@@ -59,7 +59,7 @@ export default function NewDeferredSalePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-6">
+          <form className="grid gap-6">
             <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor="deferred-animal-select">اختر الحيوان</Label>
@@ -128,7 +128,7 @@ export default function NewDeferredSalePage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="deferred-total-price">السعر الإجمالي</Label>
-                    <Input id="deferred-total-price" type="number" value={deferredTotalPrice} onChange={(e) => setDeferredTotalPrice(parseFloat(e.target.value) || 0)} />
+                    <Input id="deferred-total-price" type="number" value={deferredTotalPrice} readOnly />
                   </div>
                 </CardContent>
               </Card>
@@ -145,7 +145,7 @@ export default function NewDeferredSalePage() {
                 </Button>
                 <Button>حفظ العملية</Button>
             </div>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </>

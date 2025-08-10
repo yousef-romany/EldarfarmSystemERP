@@ -35,6 +35,7 @@ export type Expense = {
 export type Payment = {
   walletId: string;
   amount: number;
+  date?: string; // ISO date string
 };
 
 export type Sale = {
@@ -42,7 +43,9 @@ export type Sale = {
   animalId: string;
   customerName: string;
   saleDate: string; // ISO date string
+  settlementDate?: string; // ISO date string for deferred sales
   type: 'Immediate' | 'Deferred';
+  pricePerKg: number;
   totalPrice: number;
   payments?: Payment[];
   deposit?: number;
