@@ -125,10 +125,12 @@ export function SidebarNav() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="الإعدادات">
-              <Settings />
-              <span>الإعدادات</span>
-            </SidebarMenuButton>
+            <Link href="/settings" className="w-full">
+              <SidebarMenuButton tooltip="الإعدادات">
+                <Settings />
+                <span>الإعدادات</span>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <Link href="/login" className="w-full">
