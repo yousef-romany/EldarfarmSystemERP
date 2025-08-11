@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -78,10 +79,12 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {managementItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href} className="w-full">
-                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
+                            <Link href={item.href} legacyBehavior passHref>
+                                <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                                  <a>
                                     <item.icon />
                                     <span>{item.label}</span>
+                                  </a>
                                 </SidebarMenuSubButton>
                             </Link>
                         </SidebarMenuSubItem>
@@ -103,10 +106,12 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {operationsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href} className="w-full">
-                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
+                             <Link href={item.href} legacyBehavior passHref>
+                                <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                                  <a>
                                     <item.icon />
                                     <span>{item.label}</span>
+                                  </a>
                                 </SidebarMenuSubButton>
                             </Link>
                         </SidebarMenuSubItem>
