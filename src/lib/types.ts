@@ -1,9 +1,29 @@
+
+export type Permission = {
+  view: boolean;
+  add: boolean;
+  edit: boolean;
+  delete: boolean;
+};
+
+export type UserPermissions = {
+  overview: Permission;
+  users: Permission;
+  barns: Permission;
+  purchases: Permission;
+  sales: Permission;
+  expenses: Permission;
+  wallets: Permission;
+  settings: Permission;
+};
+
 export type User = {
   id: string;
   name: string;
   email: string;
   role: 'Admin' | 'Manager' | 'Staff';
   avatar: string;
+  permissions: UserPermissions;
 };
 
 export type Barn = {

@@ -1,10 +1,44 @@
+
 import type { User, Barn, Livestock, Expense, Sale, Wallet } from './types';
 
+const adminPermissions = {
+  overview: { view: true, add: true, edit: true, delete: true },
+  users: { view: true, add: true, edit: true, delete: true },
+  barns: { view: true, add: true, edit: true, delete: true },
+  purchases: { view: true, add: true, edit: true, delete: true },
+  sales: { view: true, add: true, edit: true, delete: true },
+  expenses: { view: true, add: true, edit: true, delete: true },
+  wallets: { view: true, add: true, edit: true, delete: true },
+  settings: { view: true, add: true, edit: true, delete: true },
+};
+
+const managerPermissions = {
+  overview: { view: true, add: false, edit: false, delete: false },
+  users: { view: false, add: false, edit: false, delete: false },
+  barns: { view: true, add: true, edit: true, delete: false },
+  purchases: { view: true, add: true, edit: true, delete: false },
+  sales: { view: true, add: true, edit: true, delete: false },
+  expenses: { view: true, add: true, edit: true, delete: false },
+  wallets: { view: true, add: false, edit: false, delete: false },
+  settings: { view: true, add: false, edit: false, delete: false },
+};
+
+const staffPermissions = {
+  overview: { view: true, add: false, edit: false, delete: false },
+  users: { view: false, add: false, edit: false, delete: false },
+  barns: { view: true, add: false, edit: false, delete: false },
+  purchases: { view: true, add: true, edit: false, delete: false },
+  sales: { view: false, add: false, edit: false, delete: false },
+  expenses: { view: true, add: true, edit: false, delete: false },
+  wallets: { view: false, add: false, edit: false, delete: false },
+  settings: { view: false, add: false, edit: false, delete: false },
+};
+
 export const users: User[] = [
-  { id: '1', name: 'أحمد محمود', email: 'ahmad@example.com', role: 'Admin', avatar: 'https://placehold.co/40x40.png' },
-  { id: '2', name: 'فاطمة علي', email: 'fatima@example.com', role: 'Manager', avatar: 'https://placehold.co/40x40.png' },
-  { id: '3', name: 'كريم يوسف', email: 'karim@example.com', role: 'Staff', avatar: 'https://placehold.co/40x40.png' },
-  { id: '4', name: 'سارة إبراهيم', email: 'sara@example.com', role: 'Staff', avatar: 'https://placehold.co/40x40.png' },
+  { id: '1', name: 'أحمد محمود', email: 'ahmad@example.com', role: 'Admin', avatar: 'https://placehold.co/40x40.png', permissions: adminPermissions },
+  { id: '2', name: 'فاطمة علي', email: 'fatima@example.com', role: 'Manager', avatar: 'https://placehold.co/40x40.png', permissions: managerPermissions },
+  { id: '3', name: 'كريم يوسف', email: 'karim@example.com', role: 'Staff', avatar: 'https://placehold.co/40x40.png', permissions: staffPermissions },
+  { id: '4', name: 'سارة إبراهيم', email: 'sara@example.com', role: 'Staff', avatar: 'https://placehold.co/40x40.png', permissions: staffPermissions },
 ];
 
 export const barns: Barn[] = [
