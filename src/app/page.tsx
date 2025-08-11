@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { livestock, barns } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
+import type { Livestock } from '@/lib/types';
 
 export default function LivestockPage() {
   const getBarnName = (barnId: string) => {
@@ -38,6 +39,20 @@ export default function LivestockPage() {
         return status;
     }
   }
+  
+  const getTypeText = (animal: Livestock) => {
+    if (animal.isBatch) {
+      return 'دفعة دجاج';
+    }
+    switch (animal.type) {
+      case 'Cow': return 'بقرة';
+      case 'Sheep': return 'خروف';
+      case 'Goat': return 'ماعز';
+      case 'Chicken': return 'دجاج';
+      default: return animal.type;
+    }
+  }
+
 
   return (
     <>
@@ -67,6 +82,7 @@ export default function LivestockPage() {
                   <SelectItem value="cow">أبقار</SelectItem>
                   <SelectItem value="sheep">أغنام</SelectItem>
                   <SelectItem value="goat">ماعز</SelectItem>
+                  <SelectItem value="chicken">دواجن</SelectItem>
                 </SelectContent>
               </Select>
               <Select>
@@ -89,7 +105,7 @@ export default function LivestockPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>الرقم التعريفي</TableHead>
+                <TableHead>الرقم التعريفي / الكمية</TableHead>
                 <TableHead>النوع</TableHead>
                 <TableHead>السلالة</TableHead>
                 <TableHead>الوزن (كجم)</TableHead>
@@ -101,10 +117,12 @@ export default function LivestockPage() {
             <TableBody>
               {livestock.map((animal) => (
                 <TableRow key={animal.id}>
-                  <TableCell className="font-medium">{animal.tagId}</TableCell>
-                  <TableCell>{animal.type === 'Cow' ? 'بقرة' : animal.type === 'Sheep' ? 'خروف' : 'ماعز'}</TableCell>
+                  <TableCell className="font-medium">
+                    {animal.isBatch ? `${animal.quantity} رأس` : animal.tagId}
+                  </TableCell>
+                  <TableCell>{getTypeText(animal)}</TableCell>
                   <TableCell>{animal.breed}</TableCell>
-                  <TableCell>{animal.weight}</TableCell>
+                  <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
                   <TableCell>{animal.age}</TableCell>
                   <TableCell>{getBarnName(animal.barnId)}</TableCell>
                   <TableCell>

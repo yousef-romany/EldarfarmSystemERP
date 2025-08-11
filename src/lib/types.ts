@@ -15,13 +15,15 @@ export type Barn = {
 
 export type Livestock = {
   id: string;
-  tagId: string;
-  type: 'Cow' | 'Sheep' | 'Goat';
+  tagId?: string; // Optional for batches
+  type: 'Cow' | 'Sheep' | 'Goat' | 'Chicken';
   breed: string;
-  weight: number; // in kg
+  weight: number; // in kg - for batches, this can be average weight
   age: number; // in months
   barnId: string;
   status: 'Available' | 'Sold' | 'Quarantined';
+  isBatch?: boolean;
+  quantity?: number;
 };
 
 export type Expense = {

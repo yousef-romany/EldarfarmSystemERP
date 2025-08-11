@@ -1,3 +1,5 @@
+
+'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -5,43 +7,76 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { barns } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useState } from 'react';
 
 export default function PurchasesPage() {
+  const [purchaseType, setPurchaseType] = useState('individual');
+
   return (
     <>
       <PageHeader title="إضافة عملية شراء جديدة" />
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle>تفاصيل الحيوان الجديد</CardTitle>
-          <CardDescription>املأ النموذج أدناه لتسجيل حيوان جديد في النظام.</CardDescription>
+          <CardTitle>تفاصيل الشراء</CardTitle>
+          <CardDescription>املأ النموذج أدناه لتسجيل حيوان جديد أو دفعة جديدة في النظام.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="grid gap-6">
+
+            <div className="grid gap-2">
+                <Label>نوع التسجيل</Label>
+                <RadioGroup defaultValue="individual" onValueChange={setPurchaseType} className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="individual" id="r-individual" />
+                        <Label htmlFor="r-individual">حيوان فردي</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="batch" id="r-batch" />
+                        <Label htmlFor="r-batch">دفعة (دواجن)</Label>
+                    </div>
+                </RadioGroup>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="tagId">الرقم التعريفي</Label>
-                <Input id="tagId" placeholder="e.g., COW-004" />
-              </div>
-              <div className="grid gap-2">
+              {purchaseType === 'individual' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="tagId">الرقم التعريفي</Label>
+                  <Input id="tagId" placeholder="e.g., COW-004" />
+                </div>
+              )}
+               <div className="grid gap-2">
                 <Label htmlFor="type">النوع</Label>
                 <Select>
                   <SelectTrigger id="type">
                     <SelectValue placeholder="اختر النوع" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cow">بقرة</SelectItem>
-                    <SelectItem value="sheep">خروف</SelectItem>
-                    <SelectItem value="goat">ماعز</SelectItem>
+                    {purchaseType === 'individual' ? (
+                      <>
+                        <SelectItem value="cow">بقرة</SelectItem>
+                        <SelectItem value="sheep">خروف</SelectItem>
+                        <SelectItem value="goat">ماعز</SelectItem>
+                      </>
+                    ) : (
+                      <SelectItem value="chicken">دجاج</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="breed">السلالة</Label>
-                <Input id="breed" placeholder="e.g., هولشتاين" />
+                <Input id="breed" placeholder="e.g., هولشتاين, ساسو" />
               </div>
+              {purchaseType === 'batch' && (
+                 <div className="grid gap-2">
+                    <Label htmlFor="quantity">الكمية</Label>
+                    <Input id="quantity" type="number" placeholder="e.g., 500" />
+                </div>
+              )}
               <div className="grid gap-2">
                 <Label htmlFor="weight">الوزن عند الشراء (كجم)</Label>
-                <Input id="weight" type="number" placeholder="e.g., 450" />
+                <Input id="weight" type="number" placeholder={purchaseType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="age">العمر عند الشراء (أشهر)</Label>
@@ -49,7 +84,7 @@ export default function PurchasesPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="purchase-price">سعر الشراء (ج.م)</Label>
-                <Input id="purchase-price" type="number" placeholder="e.g., 50000" />
+                <Input id="purchase-price" type="number" placeholder={purchaseType === 'individual' ? "السعر للرأس الواحد" : "التكلفة الإجمالية للدفعة"} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="barn">العنبر</Label>

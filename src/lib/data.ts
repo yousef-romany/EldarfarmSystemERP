@@ -12,6 +12,7 @@ export const barns: Barn[] = [
   { id: 'b2', name: 'العنبر الجنوبي', capacity: 50, currentOccupancy: 30 },
   { id: 'b3', name: 'عنبر التسمين', capacity: 75, currentOccupancy: 70 },
   { id: 'b4', name: 'عنبر الحجر الصحي', capacity: 20, currentOccupancy: 5 },
+  { id: 'b5', name: 'عنبر الدواجن أ', capacity: 1000, currentOccupancy: 500 },
 ];
 
 export const livestock: Livestock[] = [
@@ -21,6 +22,7 @@ export const livestock: Livestock[] = [
   { id: 'l4', tagId: 'COW-002', type: 'Cow', breed: 'براون سويس', weight: 600, age: 30, barnId: 'b1', status: 'Available' },
   { id: 'l5', tagId: 'COW-003', type: 'Cow', breed: 'هولشتاين', weight: 300, age: 10, barnId: 'b3', status: 'Quarantined' },
   { id: 'l6', tagId: 'SHP-015', type: 'Sheep', breed: 'رحماني', weight: 75, age: 11, barnId: 'b2', status: 'Available' },
+  { id: 'l7', isBatch: true, type: 'Chicken', breed: 'ساسو', weight: 1.5, age: 2, barnId: 'b5', status: 'Available', quantity: 500 },
 ];
 
 export const expenses: Expense[] = [
