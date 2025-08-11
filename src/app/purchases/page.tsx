@@ -33,7 +33,7 @@ export default function PurchasesPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="batch" id="r-batch" />
-                        <Label htmlFor="r-batch">دفعة (دواجن)</Label>
+                        <Label htmlFor="r-batch">دفعة</Label>
                     </div>
                 </RadioGroup>
             </div>
@@ -59,7 +59,11 @@ export default function PurchasesPage() {
                         <SelectItem value="goat">ماعز</SelectItem>
                       </>
                     ) : (
-                      <SelectItem value="chicken">دجاج</SelectItem>
+                      <>
+                        <SelectItem value="chicken">دجاج</SelectItem>
+                        <SelectItem value="sheep">غنم</SelectItem>
+                        <SelectItem value="goat">ماعز</SelectItem>
+                      </>
                     )}
                   </SelectContent>
                 </Select>

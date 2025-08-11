@@ -42,7 +42,12 @@ export default function LivestockPage() {
   
   const getTypeText = (animal: Livestock) => {
     if (animal.isBatch) {
-      return 'دفعة دجاج';
+       switch (animal.type) {
+         case 'Chicken': return 'دفعة دجاج';
+         case 'Sheep': return 'دفعة غنم';
+         case 'Goat': return 'دفعة ماعز';
+         default: return `دفعة ${animal.type}`;
+       }
     }
     switch (animal.type) {
       case 'Cow': return 'بقرة';
