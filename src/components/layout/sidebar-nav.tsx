@@ -29,6 +29,7 @@ import {
   Wallet,
   Gift,
   Coins,
+  BookCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -55,6 +56,10 @@ export function SidebarNav() {
     { href: '/contributions', label: 'المساهمات النقدية', icon: Coins },
     { href: '/expenses', label: 'المصروفات', icon: ClipboardList },
     { href: '/wallets', label: 'المحافظ', icon: Wallet },
+  ];
+  
+  const reportsItems = [
+    { href: '/daily-report', label: 'التقرير اليومي', icon: BookCheck },
   ];
 
   return (
@@ -119,6 +124,14 @@ export function SidebarNav() {
                     </SidebarMenuSub>
                 </CollapsibleContent>
             </Collapsible>
+             <SidebarMenuItem>
+                <Link href="/daily-report" className="w-full">
+                    <SidebarMenuButton tooltip="التقرير اليومي" isActive={pathname === '/daily-report'}>
+                        <BookCheck />
+                        <span>التقرير اليومي</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
       <SidebarSeparator />
