@@ -18,10 +18,15 @@ const SettlementReportPage = () => {
   const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
 
   const dailyTransactions = wallets.map(wallet => {
+    const cashSalesDeposits = sales
+        .filter(s => s.deposit && s.type === 'Deferred' && s.saleDate && format(new Date(s.saleDate), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd'))
+        .flatMap(s => (s.payments || []).filter(p => p.walletId === wallet.id).map(p => ({...p, description: `عربون للعملية #${s.id}`})));
+
     const inflows = [
-      ...sales.flatMap(s => s.payments || []).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),
-      ...contributions.flatMap(c => c.payments.map(p => ({...p, date: c.date}))).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),
+      ...sales.flatMap(s => s.payments || []).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')).map(p => ({...p, description: 'دفعة من عملية بيع'})),
+      ...contributions.flatMap(c => c.payments.map(p => ({...p, date: c.date, description: `دفعة من ${c.donorName}`}))).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),
     ];
+
     const outflows = [
       ...expenses.filter(e => e.payment?.walletId === wallet.id && format(new Date(e.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),
     ];
@@ -77,7 +82,7 @@ const SettlementReportPage = () => {
                 </CardHeader>
                 <CardContent className="p-0 mt-8">
                   {dailyTransactions.map(t => (
-                    <div key={t.wallet.id} className='mb-8 break-after-page'>
+                    <div key={t.wallet.id} className='mb-8 break-inside-avoid'>
                       <CardHeader className='p-0 mb-4'>
                           <CardTitle className='text-xl border-b pb-2 mb-2'>تقرير محفظة: {t.wallet.name}</CardTitle>
                       </CardHeader>
@@ -88,7 +93,7 @@ const SettlementReportPage = () => {
                                   <TableHeader><TableRow><TableHead>المصدر</TableHead><TableHead className='text-right'>المبلغ</TableHead></TableRow></TableHeader>
                                   <TableBody>
                                       {t.inflows.map((inflow, i) => (
-                                          <TableRow key={`in-${i}`}><TableCell>دفعة عملية</TableCell><TableCell className='text-right'>{formatCurrency(inflow.amount)}</TableCell></TableRow>
+                                          <TableRow key={`in-${i}`}><TableCell>{inflow.description || 'دفعة عملية'}</TableCell><TableCell className='text-right'>{formatCurrency(inflow.amount)}</TableCell></TableRow>
                                       ))}
                                       {t.inflows.length === 0 && <TableRow><TableCell colSpan={2} className='text-center text-muted-foreground'>لا توجد مقبوضات</TableCell></TableRow>}
                                   </TableBody>
@@ -125,6 +130,7 @@ const SettlementReportPage = () => {
                       </CardFooter>
                     </div>
                   ))}
+                  <div className='break-before-page'></div>
                   <CardFooter className='p-0 mt-8 flex flex-col items-end space-y-2 bg-muted p-4 rounded-lg'>
                      <Separator className="my-4" />
                      <div className="flex justify-between w-full font-bold text-2xl">
@@ -161,8 +167,11 @@ const SettlementReportPage = () => {
                   box-shadow: none;
                   border: none;
               }
-              .break-after-page {
-                page-break-after: always;
+              .break-inside-avoid {
+                page-break-inside: avoid;
+              }
+               .break-before-page {
+                page-break-before: always;
               }
             }
         `}</style>
