@@ -10,7 +10,7 @@ export default function WalletsPage() {
   return (
     <>
       <PageHeader
-        title="إدارة المحافظ"
+        title="إدارة المحافظ والخزائن"
         action={
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -24,7 +24,7 @@ export default function WalletsPage() {
             <CardHeader>
                 <div className='flex items-center justify-between'>
                     <div className='flex items-center gap-3'>
-                        <Image src={wallet.icon} alt={wallet.name} width={40} height={40} className='rounded-md' data-ai-hint="logo" />
+                        { wallet.id === 'w5' ? <WalletIcon className="h-10 w-10 text-muted-foreground" /> : <Image src={wallet.icon} alt={wallet.name} width={40} height={40} className='rounded-md' data-ai-hint="logo" /> }
                         <CardTitle>{wallet.name}</CardTitle>
                     </div>
                     <DropdownMenu>
@@ -57,3 +57,5 @@ export default function WalletsPage() {
     </>
   );
 }
+
+    

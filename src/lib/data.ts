@@ -81,6 +81,7 @@ export const sales: Sale[] = [
 ];
 
 export const wallets: Wallet[] = [
+  { id: 'w5', name: 'الخزينة النقدية', balance: 12530.00, icon: 'https://placehold.co/40x40.png' },
   { id: 'w1', name: 'فودافون كاش', balance: 15200.50, icon: 'https://placehold.co/40x40.png' },
   { id: 'w2', name: 'Instapay', balance: 85000.00, icon: 'https://placehold.co/40x40.png' },
   { id: 'w3', name: 'حساب بنكي', balance: 320500.75, icon: 'https://placehold.co/40x40.png' },
@@ -100,3 +101,5 @@ export const contributions: Contribution[] = [
     { walletId: 'w3', amount: 5000 }
   ]},
 ];
+
+    
