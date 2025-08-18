@@ -46,8 +46,8 @@ export default function ContributionsPage() {
   return (
     <>
       <PageHeader title="إدارة المساهمات النقدية" />
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="grid gap-8 md:grid-cols-5">
+        <div className="md:col-span-3">
             <Card>
                 <CardHeader>
                 <CardTitle>سجل المساهمات</CardTitle>
@@ -101,7 +101,7 @@ export default function ContributionsPage() {
                 </CardContent>
             </Card>
         </div>
-        <div>
+        <div className="md:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>تسجيل مساهمة جديدة</CardTitle>
@@ -152,7 +152,7 @@ export default function ContributionsPage() {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor={`amount-${index}`}>المبلغ</Label>
-                          <Input id={`amount-${index}`} type="number" placeholder="المبلغ" onChange={(e) => handlePaymentChange(index, 'amount', e.target.value)} />
+                          <Input id={`amount-${index}`} type="number" placeholder="المبلغ" onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
                         </div>
                         <Button
                           variant="ghost"
@@ -196,4 +196,3 @@ export default function ContributionsPage() {
     </>
   );
 }
-
