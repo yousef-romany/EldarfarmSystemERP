@@ -27,6 +27,7 @@ import {
   Beef,
   ChevronDown,
   Wallet,
+  Gift,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -49,6 +50,7 @@ export function SidebarNav() {
   const operationsItems = [
     { href: '/purchases', label: 'المشتريات', icon: ShoppingCart },
     { href: '/sales', label: 'المبيعات', icon: DollarSign },
+    { href: '/vows', label: 'النذور', icon: Gift },
     { href: '/expenses', label: 'المصروفات', icon: ClipboardList },
     { href: '/wallets', label: 'المحافظ', icon: Wallet },
   ];
@@ -79,12 +81,10 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {managementItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href} legacyBehavior passHref>
-                                <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                                  <a>
+                            <Link href={item.href}>
+                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
                                     <item.icon />
                                     <span>{item.label}</span>
-                                  </a>
                                 </SidebarMenuSubButton>
                             </Link>
                         </SidebarMenuSubItem>
@@ -106,12 +106,10 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {operationsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                             <Link href={item.href} legacyBehavior passHref>
-                                <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                                  <a>
+                             <Link href={item.href}>
+                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
                                     <item.icon />
                                     <span>{item.label}</span>
-                                  </a>
                                 </SidebarMenuSubButton>
                             </Link>
                         </SidebarMenuSubItem>
