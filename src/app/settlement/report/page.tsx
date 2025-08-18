@@ -19,8 +19,8 @@ const SettlementReportPage = () => {
 
   const dailyTransactions = wallets.map(wallet => {
     const inflows = [
-      ...sales.flatMap(s => s.payments || []).filter(p => p.walletId === wallet.id && format(new Date(p.date!), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),
-      ...contributions.flatMap(c => c.payments).filter(p => p.walletId === wallet.id && format(new Date(c.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),
+      ...sales.flatMap(s => s.payments || []).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),
+      ...contributions.flatMap(c => c.payments.map(p => ({...p, date: c.date}))).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),
     ];
     const outflows = [
       ...expenses.filter(e => e.payment?.walletId === wallet.id && format(new Date(e.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),

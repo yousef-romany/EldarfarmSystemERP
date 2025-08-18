@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarIcon, Printer, AlertTriangle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { sales, contributions, expenses, purchases, wallets } from '@/lib/data';
+import { sales, contributions, expenses, wallets } from '@/lib/data';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useRouter } from 'next/navigation';
@@ -22,8 +22,8 @@ export default function SettlementPage() {
 
   const dailyTransactions = wallets.map(wallet => {
     const inflows = [
-      ...sales.flatMap(s => s.payments || []).filter(p => p.walletId === wallet.id && format(new Date(p.date!), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')),
-      ...contributions.flatMap(c => c.payments).filter(p => p.walletId === wallet.id && format(new Date(c.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')),
+      ...sales.flatMap(s => s.payments || []).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')),
+      ...contributions.flatMap(c => c.payments.map(p => ({...p, date: c.date}))).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')),
     ];
     const outflows = [
       ...expenses.filter(e => e.payment?.walletId === wallet.id && format(new Date(e.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')),
