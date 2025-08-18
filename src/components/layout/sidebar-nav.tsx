@@ -90,10 +90,12 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {managementItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href}>
-                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
-                                    <item.icon />
-                                    <span>{item.label}</span>
+                            <Link href={item.href} passHref legacyBehavior>
+                                <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                                    <div>
+                                        <item.icon />
+                                        <span>{item.label}</span>
+                                    </div>
                                 </SidebarMenuSubButton>
                             </Link>
                         </SidebarMenuSubItem>
@@ -115,10 +117,12 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {operationsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                             <Link href={item.href}>
-                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
-                                    <item.icon />
-                                    <span>{item.label}</span>
+                             <Link href={item.href} passHref legacyBehavior>
+                                <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                                     <div>
+                                        <item.icon />
+                                        <span>{item.label}</span>
+                                    </div>
                                 </SidebarMenuSubButton>
                             </Link>
                         </SidebarMenuSubItem>
