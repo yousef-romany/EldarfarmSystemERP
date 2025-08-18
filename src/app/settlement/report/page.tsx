@@ -18,22 +18,54 @@ const SettlementReportPage = () => {
   const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
 
   const dailyTransactions = wallets.map(wallet => {
-    const cashSalesDeposits = sales
-        .filter(s => s.deposit && s.type === 'Deferred' && s.saleDate && format(new Date(s.saleDate), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd'))
-        .flatMap(s => (s.payments || []).filter(p => p.walletId === wallet.id).map(p => ({...p, description: `عربون للعملية #${s.id}`})));
+    
+    // Inflows
+    const salePayments = sales
+        .filter(s => s.payments && s.payments.length > 0)
+        .flatMap(s => s.payments?.map(p => ({ ...p, description: `دفعة من عملية بيع #${s.id}` })) || [])
+        .filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd'));
+
+    const contributionPayments = contributions
+        .flatMap(c => c.payments.map(p => ({ ...p, description: `مساهمة من ${c.donorName}`, date: c.date })))
+        .filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd'));
+        
+    const deferredSaleDeposits = sales
+      .filter(s => s.type === 'Deferred' && s.deposit && s.saleDate && format(new Date(s.saleDate), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd'))
+      .map(s => ({
+        amount: s.deposit || 0,
+        description: `عربون للعملية #${s.id}`,
+        // Find which wallet the deposit was paid to. This is a simplification.
+        // In a real app, the deposit should also be a `Payment` object.
+        walletId: s.payments?.[0]?.walletId || '' 
+      }))
+      .filter(d => d.walletId === wallet.id && d.amount > 0);
 
     const inflows = [
-      ...sales.flatMap(s => s.payments || []).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')).map(p => ({...p, description: 'دفعة من عملية بيع'})),
-      ...contributions.flatMap(c => c.payments.map(p => ({...p, date: c.date, description: `دفعة من ${c.donorName}`}))).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),
+      ...salePayments,
+      ...contributionPayments,
+      ...deferredSaleDeposits,
     ];
 
+    // Outflows
+    const expensePayments = expenses
+      .filter(e => e.payment?.walletId === wallet.id && e.date && format(new Date(e.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd'))
+      .map(e => ({ amount: e.amount, description: e.description }));
+
+    // Placeholder for purchases, assuming they will have payment details
+    const purchasePayments: any[] = [];
+      
     const outflows = [
-      ...expenses.filter(e => e.payment?.walletId === wallet.id && format(new Date(e.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd')),
+      ...expensePayments,
+      ...purchasePayments
     ];
 
-    const totalIn = inflows.reduce((acc, curr) => acc + curr.amount, 0);
-    const totalOut = outflows.reduce((acc, curr) => acc + curr.amount, 0);
+    const totalIn = inflows.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+    const totalOut = outflows.reduce((acc, curr) => acc + (curr.amount || 0), 0);
     
+    // NOTE: This balance is the overall balance, not the balance at the end of the specified day.
+    // For a true daily settlement, we'd need opening balances.
+    const closingBalance = wallet.balance; 
+
     return {
       wallet,
       inflows,
@@ -41,7 +73,7 @@ const SettlementReportPage = () => {
       totalIn,
       totalOut,
       netChange: totalIn - totalOut,
-      closingBalance: wallet.balance, // This should be calculated based on opening balance + net change
+      closingBalance,
     };
   });
 
@@ -93,7 +125,7 @@ const SettlementReportPage = () => {
                                   <TableHeader><TableRow><TableHead>المصدر</TableHead><TableHead className='text-right'>المبلغ</TableHead></TableRow></TableHeader>
                                   <TableBody>
                                       {t.inflows.map((inflow, i) => (
-                                          <TableRow key={`in-${i}`}><TableCell>{inflow.description || 'دفعة عملية'}</TableCell><TableCell className='text-right'>{formatCurrency(inflow.amount)}</TableCell></TableRow>
+                                          <TableRow key={`in-${i}`}><TableCell>{inflow.description || 'دفعة عملية'}</TableCell><TableCell className='text-right'>{formatCurrency(inflow.amount || 0)}</TableCell></TableRow>
                                       ))}
                                       {t.inflows.length === 0 && <TableRow><TableCell colSpan={2} className='text-center text-muted-foreground'>لا توجد مقبوضات</TableCell></TableRow>}
                                   </TableBody>
@@ -124,7 +156,7 @@ const SettlementReportPage = () => {
                           </div>
                            <Separator className="my-2" />
                            <div className="flex justify-between w-full font-bold text-lg">
-                              <span>الرصيد النهائي للمحفظة:</span>
+                              <span>الرصيد النهائي للمحفظة (المرحّل):</span>
                               <span>{formatCurrency(t.closingBalance)}</span>
                           </div>
                       </CardFooter>
