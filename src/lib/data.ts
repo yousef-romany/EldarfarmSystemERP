@@ -1,5 +1,5 @@
 
-import type { User, Barn, Livestock, Expense, Sale, Wallet } from './types';
+import type { User, Barn, Livestock, Expense, Sale, Wallet, Vow } from './types';
 
 const adminPermissions = {
   overview: { view: true, add: true, edit: true, delete: true },
@@ -57,6 +57,7 @@ export const livestock: Livestock[] = [
   { id: 'l5', tagId: 'COW-003', type: 'Cow', breed: 'هولشتاين', weight: 300, age: 10, barnId: 'b3', status: 'Quarantined' },
   { id: 'l6', tagId: 'SHP-015', type: 'Sheep', breed: 'رحماني', weight: 75, age: 11, barnId: 'b2', status: 'Available' },
   { id: 'l7', isBatch: true, type: 'Chicken', breed: 'ساسو', weight: 1.5, age: 2, barnId: 'b5', status: 'Available', quantity: 500 },
+  { id: 'l8', tagId: 'COW-008', type: 'Cow', breed: 'هولشتاين', weight: 450, age: 20, barnId: 'b1', status: 'Vowed' },
 ];
 
 export const expenses: Expense[] = [
@@ -77,4 +78,8 @@ export const wallets: Wallet[] = [
   { id: 'w2', name: 'Instapay', balance: 85000.00, icon: 'https://placehold.co/40x40.png' },
   { id: 'w3', name: 'حساب بنكي', balance: 320500.75, icon: 'https://placehold.co/40x40.png' },
   { id: 'w4', name: 'اتصالات كاش', balance: 5000.00, icon: 'https://placehold.co/40x40.png' },
+];
+
+export const vows: Vow[] = [
+    { id: 'v1', donorName: 'يوسف نادر', receiptId: '2024-00123', date: '2024-05-28', livestockId: 'l8', notes: 'تم الاستلام بحالة صحية ممتازة.'},
 ];

@@ -41,7 +41,7 @@ export type Livestock = {
   weight: number; // in kg - for batches, this can be average weight
   age: number; // in months
   barnId: string;
-  status: 'Available' | 'Sold' | 'Quarantined';
+  status: 'Available' | 'Sold' | 'Quarantined' | 'Vowed';
   isBatch?: boolean;
   quantity?: number;
 };
@@ -82,3 +82,12 @@ export type Wallet = {
   balance: number;
   icon: string;
 };
+
+export type Vow = {
+    id: string;
+    donorName: string;
+    receiptId: string;
+    date: string; // ISO date string
+    livestockId: string; // The ID of the animal or batch that was vowed
+    notes?: string;
+}
