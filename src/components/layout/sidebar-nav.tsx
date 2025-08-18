@@ -30,6 +30,7 @@ import {
   Gift,
   Coins,
   BookCheck,
+  ArchiveRestore,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -60,6 +61,7 @@ export function SidebarNav() {
   
   const reportsItems = [
     { href: '/daily-report', label: 'التقرير اليومي', icon: BookCheck },
+    { href: '/settlement', label: 'تسوية اليومية', icon: ArchiveRestore },
   ];
 
   return (
@@ -124,11 +126,19 @@ export function SidebarNav() {
                     </SidebarMenuSub>
                 </CollapsibleContent>
             </Collapsible>
-             <SidebarMenuItem>
+            <SidebarMenuItem>
                 <Link href="/daily-report" className="w-full">
-                    <SidebarMenuButton tooltip="التقرير اليومي" isActive={pathname === '/daily-report'}>
+                    <SidebarMenuButton tooltip="التقرير اليومي" isActive={pathname.startsWith('/daily-report')}>
                         <BookCheck />
                         <span>التقرير اليومي</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <Link href="/settlement" className="w-full">
+                    <SidebarMenuButton tooltip="تسوية اليومية" isActive={pathname.startsWith('/settlement')}>
+                        <ArchiveRestore />
+                        <span>تسوية اليومية</span>
                     </SidebarMenuButton>
                 </Link>
             </SidebarMenuItem>
