@@ -31,6 +31,7 @@ import {
   Coins,
   BookCheck,
   ArchiveRestore,
+  FileSpreadsheet,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -43,6 +44,8 @@ export function SidebarNav() {
   const { state } = useSidebar();
   const [managementOpen, setManagementOpen] = useState(true);
   const [operationsOpen, setOperationsOpen] = useState(true);
+  const [reportsOpen, setReportsOpen] = useState(true);
+
 
   const managementItems = [
     { href: '/', label: 'نظرة عامة', icon: LayoutGrid },
@@ -59,10 +62,15 @@ export function SidebarNav() {
     { href: '/wallets', label: 'المحافظ', icon: Wallet },
   ];
   
-  const reportsItems = [
+  const financialReportsItems = [
     { href: '/daily-report', label: 'التقرير اليومي', icon: BookCheck },
     { href: '/settlement', label: 'تسوية اليومية', icon: ArchiveRestore },
   ];
+
+  const livestockReportsItems = [
+      { href: '/reports/bookings', label: 'تقارير الحجوزات', icon: FileSpreadsheet },
+      { href: '/reports/available', label: 'المواشي المتاحة', icon: FileSpreadsheet },
+  ]
 
   return (
     <>
@@ -91,7 +99,7 @@ export function SidebarNav() {
                     {managementItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
                             <Link href={item.href}>
-                                <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
                                     <div>
                                         <item.icon />
                                         <span>{item.label}</span>
@@ -118,7 +126,7 @@ export function SidebarNav() {
                     {operationsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
                              <Link href={item.href}>
-                                <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
                                      <div>
                                         <item.icon />
                                         <span>{item.label}</span>
@@ -130,22 +138,45 @@ export function SidebarNav() {
                     </SidebarMenuSub>
                 </CollapsibleContent>
             </Collapsible>
-            <SidebarMenuItem>
-                <Link href="/daily-report" className="w-full">
-                    <SidebarMenuButton tooltip="التقرير اليومي" isActive={pathname.startsWith('/daily-report')}>
-                        <BookCheck />
-                        <span>التقرير اليومي</span>
+             <Collapsible open={reportsOpen} onOpenChange={setReportsOpen} disabled={state === 'collapsed'}>
+                <CollapsibleTrigger className="w-full" asChild>
+                     <SidebarMenuButton className="w-full justify-between" tooltip="التقارير">
+                        <div className="flex items-center gap-2">
+                            <FileSpreadsheet />
+                            <span className="truncate">التقارير</span>
+                        </div>
+                        <ChevronDown className={cn("h-4 w-4 transition-transform group-data-[collapsible=icon]:hidden", reportsOpen && "rotate-180")} />
                     </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <Link href="/settlement" className="w-full">
-                    <SidebarMenuButton tooltip="تسوية اليومية" isActive={pathname.startsWith('/settlement')}>
-                        <ArchiveRestore />
-                        <span>تسوية اليومية</span>
-                    </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <SidebarMenuSub>
+                    {financialReportsItems.map((item) => (
+                        <SidebarMenuSubItem key={item.href}>
+                             <Link href={item.href}>
+                                <SidebarMenuSubButton isActive={pathname.startsWith(item.href)} tooltip={item.label}>
+                                     <div>
+                                        <item.icon />
+                                        <span>{item.label}</span>
+                                    </div>
+                                </SidebarMenuSubButton>
+                            </Link>
+                        </SidebarMenuSubItem>
+                    ))}
+                     {livestockReportsItems.map((item) => (
+                        <SidebarMenuSubItem key={item.href}>
+                             <Link href={item.href}>
+                                <SidebarMenuSubButton isActive={pathname.startsWith(item.href)} tooltip={item.label}>
+                                     <div>
+                                        <item.icon />
+                                        <span>{item.label}</span>
+                                    </div>
+                                </SidebarMenuSubButton>
+                            </Link>
+                        </SidebarMenuSubItem>
+                    ))}
+                    </SidebarMenuSub>
+                </CollapsibleContent>
+            </Collapsible>
         </SidebarMenu>
       </SidebarContent>
       <SidebarSeparator />
