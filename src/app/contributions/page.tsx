@@ -11,6 +11,11 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 
 export default function ContributionsPage() {
+  
+  const handlePrint = (contributionId: string) => {
+    const url = `/contributions/receipt/${contributionId}`;
+    window.open(url, '_blank');
+  };
 
   return (
     <>
@@ -66,7 +71,7 @@ export default function ContributionsPage() {
                             تعديل
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePrint(contribution.id)}>
                           <Printer className="mr-2 h-4 w-4" />
                           طباعة الإيصال
                         </DropdownMenuItem>
