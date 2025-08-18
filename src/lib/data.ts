@@ -1,6 +1,6 @@
 
 
-import type { User, Barn, Livestock, Expense, Sale, Wallet, Vow } from './types';
+import type { User, Barn, Livestock, Expense, Sale, Wallet, Vow, Contribution } from './types';
 
 const adminPermissions = {
   overview: { view: true, add: true, edit: true, delete: true },
@@ -9,6 +9,7 @@ const adminPermissions = {
   purchases: { view: true, add: true, edit: true, delete: true },
   sales: { view: true, add: true, edit: true, delete: true },
   vows: { view: true, add: true, edit: true, delete: true },
+  contributions: { view: true, add: true, edit: true, delete: true },
   expenses: { view: true, add: true, edit: true, delete: true },
   wallets: { view: true, add: true, edit: true, delete: true },
   settings: { view: true, add: true, edit: true, delete: true },
@@ -21,6 +22,7 @@ const managerPermissions = {
   purchases: { view: true, add: true, edit: true, delete: false },
   sales: { view: true, add: true, edit: true, delete: false },
   vows: { view: true, add: true, edit: true, delete: false },
+  contributions: { view: true, add: true, edit: true, delete: false },
   expenses: { view: true, add: true, edit: true, delete: false },
   wallets: { view: true, add: false, edit: false, delete: false },
   settings: { view: true, add: false, edit: false, delete: false },
@@ -33,6 +35,7 @@ const staffPermissions = {
   purchases: { view: true, add: true, edit: false, delete: false },
   sales: { view: false, add: false, edit: false, delete: false },
   vows: { view: true, add: true, edit: false, delete: false },
+  contributions: { view: true, add: true, edit: false, delete: false },
   expenses: { view: true, add: true, edit: false, delete: false },
   wallets: { view: false, add: false, edit: false, delete: false },
   settings: { view: false, add: false, edit: false, delete: false },
@@ -86,4 +89,14 @@ export const wallets: Wallet[] = [
 
 export const vows: Vow[] = [
     { id: 'v1', donorName: 'يوسف نادر', receiptId: '2024-00123', date: '2024-05-28', livestockId: 'l8', notes: 'تم الاستلام بحالة صحية ممتازة.'},
+];
+
+export const contributions: Contribution[] = [
+  { id: 'c1', donorName: 'يوسف رومانى', description: 'نذر بقيمة خروف', date: '2024-05-29', totalAmount: 12000, payments: [
+    { walletId: 'w1', amount: 8000 },
+    { walletId: 'w2', amount: 4000 }
+  ]},
+  { id: 'c2', donorName: 'فاعل خير', description: 'تبرع عام', date: '2024-05-27', totalAmount: 5000, payments: [
+    { walletId: 'w3', amount: 5000 }
+  ]},
 ];

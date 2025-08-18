@@ -14,6 +14,7 @@ export type UserPermissions = {
   purchases: Permission;
   sales: Permission;
   vows: Permission;
+  contributions: Permission;
   expenses: Permission;
   wallets: Permission;
   settings: Permission;
@@ -92,4 +93,13 @@ export type Vow = {
     date: string; // ISO date string
     livestockId: string; // The ID of the animal or batch that was vowed
     notes?: string;
+}
+
+export type Contribution = {
+    id: string;
+    donorName: string;
+    description: string;
+    date: string; // ISO date string
+    totalAmount: number;
+    payments: Payment[];
 }

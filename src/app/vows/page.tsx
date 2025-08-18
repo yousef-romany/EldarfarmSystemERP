@@ -32,7 +32,7 @@ export default function VowsListPage() {
   return (
     <>
       <PageHeader
-        title="سجل النذور"
+        title="سجل النذور الحية"
         action={
           <Button asChild>
             <Link href="/vows/new">
@@ -79,16 +79,16 @@ export default function VowsListPage() {
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
                         <DropdownMenuItem asChild>
                             <Link href={`/vows/edit/${vow.id}`}>
-                                <Pencil className="ml-2 h-4 w-4" />
+                                <Pencil className="mr-2 h-4 w-4" />
                                 تعديل
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handlePrint(vow.id)}>
-                            <Printer className="ml-2 h-4 w-4" />
+                            <Printer className="mr-2 h-4 w-4" />
                             طباعة الإيصال
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="ml-2 h-4 w-4" />
+                            <Trash2 className="mr-2 h-4 w-4" />
                             حذف
                         </DropdownMenuItem>
                       </DropdownMenuContent>

@@ -28,6 +28,7 @@ import {
   ChevronDown,
   Wallet,
   Gift,
+  Coins,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -50,7 +51,8 @@ export function SidebarNav() {
   const operationsItems = [
     { href: '/purchases', label: 'المشتريات', icon: ShoppingCart },
     { href: '/sales', label: 'المبيعات', icon: DollarSign },
-    { href: '/vows', label: 'النذور', icon: Gift },
+    { href: '/vows', label: 'النذور الحية', icon: Gift },
+    { href: '/contributions', label: 'المساهمات النقدية', icon: Coins },
     { href: '/expenses', label: 'المصروفات', icon: ClipboardList },
     { href: '/wallets', label: 'المحافظ', icon: Wallet },
   ];
