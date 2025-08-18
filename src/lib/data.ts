@@ -68,10 +68,10 @@ export const livestock: Livestock[] = [
 ];
 
 export const expenses: Expense[] = [
-  { id: 'e1', date: '2024-05-20', category: 'Feed', amount: 15000, description: 'شراء علف ذرة' },
-  { id: 'e2', date: '2024-05-18', category: 'Vet', amount: 2500, description: 'تحصينات دورية' },
-  { id: 'e3', date: '2024-05-15', category: 'Maintenance', amount: 3000, description: 'إصلاح سور العنبر الشمالي' },
-  { id: 'e4', date: '2024-05-12', category: 'Other', amount: 1200, description: 'فواتير كهرباء ومياه' },
+  { id: 'e1', date: '2024-05-20', category: 'Feed', amount: 15000, description: 'شراء علف ذرة', payment: { walletId: 'w3', amount: 15000 } },
+  { id: 'e2', date: '2024-05-18', category: 'Vet', amount: 2500, description: 'تحصينات دورية', payment: { walletId: 'w5', amount: 2500 } },
+  { id: 'e3', date: '2024-05-15', category: 'Maintenance', amount: 3000, description: 'إصلاح سور العنبر الشمالي', payment: { walletId: 'w5', amount: 3000 } },
+  { id: 'e4', date: '2024-05-12', category: 'Other', amount: 1200, description: 'فواتير كهرباء ومياه', payment: { walletId: 'w1', amount: 1200 } },
 ];
 
 export const sales: Sale[] = [

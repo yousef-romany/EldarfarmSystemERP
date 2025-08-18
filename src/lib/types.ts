@@ -49,18 +49,19 @@ export type Livestock = {
   quantity?: number;
 };
 
+export type Payment = {
+  walletId: string;
+  amount: number;
+  date?: string; // ISO date string
+};
+
 export type Expense = {
   id:string;
   date: string; // ISO date string
   category: 'Feed' | 'Vet' | 'Maintenance' | 'Other';
   amount: number;
   description: string;
-};
-
-export type Payment = {
-  walletId: string;
-  amount: number;
-  date?: string; // ISO date string
+  payment?: Payment;
 };
 
 export type Sale = {
