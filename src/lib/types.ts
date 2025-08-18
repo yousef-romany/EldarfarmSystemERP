@@ -1,4 +1,5 @@
 
+
 export type Permission = {
   view: boolean;
   add: boolean;
@@ -12,6 +13,7 @@ export type UserPermissions = {
   barns: Permission;
   purchases: Permission;
   sales: Permission;
+  vows: Permission;
   expenses: Permission;
   wallets: Permission;
   settings: Permission;

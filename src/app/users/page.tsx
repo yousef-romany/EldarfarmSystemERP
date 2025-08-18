@@ -44,6 +44,7 @@ export default function UsersPage() {
     barns: 'العنابر',
     purchases: 'المشتريات',
     sales: 'المبيعات',
+    vows: 'النذور',
     expenses: 'المصروفات',
     wallets: 'المحافظ',
     settings: 'الإعدادات',

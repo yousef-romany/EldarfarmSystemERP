@@ -1,4 +1,5 @@
 
+
 import type { User, Barn, Livestock, Expense, Sale, Wallet, Vow } from './types';
 
 const adminPermissions = {
@@ -7,6 +8,7 @@ const adminPermissions = {
   barns: { view: true, add: true, edit: true, delete: true },
   purchases: { view: true, add: true, edit: true, delete: true },
   sales: { view: true, add: true, edit: true, delete: true },
+  vows: { view: true, add: true, edit: true, delete: true },
   expenses: { view: true, add: true, edit: true, delete: true },
   wallets: { view: true, add: true, edit: true, delete: true },
   settings: { view: true, add: true, edit: true, delete: true },
@@ -18,6 +20,7 @@ const managerPermissions = {
   barns: { view: true, add: true, edit: true, delete: false },
   purchases: { view: true, add: true, edit: true, delete: false },
   sales: { view: true, add: true, edit: true, delete: false },
+  vows: { view: true, add: true, edit: true, delete: false },
   expenses: { view: true, add: true, edit: true, delete: false },
   wallets: { view: true, add: false, edit: false, delete: false },
   settings: { view: true, add: false, edit: false, delete: false },
@@ -29,6 +32,7 @@ const staffPermissions = {
   barns: { view: true, add: false, edit: false, delete: false },
   purchases: { view: true, add: true, edit: false, delete: false },
   sales: { view: false, add: false, edit: false, delete: false },
+  vows: { view: true, add: true, edit: false, delete: false },
   expenses: { view: true, add: true, edit: false, delete: false },
   wallets: { view: false, add: false, edit: false, delete: false },
   settings: { view: false, add: false, edit: false, delete: false },

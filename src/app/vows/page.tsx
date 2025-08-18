@@ -9,19 +9,25 @@ import { vows, livestock } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import type { Livestock } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 
 export default function VowsListPage() {
+  const router = useRouter();
 
   const getLivestockDetails = (livestockId: string) => {
     const animal = livestock.find((l) => l.id === livestockId);
     if (!animal) return 'غير معروف';
     if (animal.isBatch) {
-      return `دفعة ${animal.type} (${animal.quantity} رأس)`;
+      return `دفعة ${animal.type === 'Chicken' ? 'دجاج' : animal.type === 'Sheep' ? 'غنم' : 'ماعز'} (${animal.quantity} رأس)`;
     }
     return `${animal.tagId} (${animal.type === 'Cow' ? 'بقرة' : 'خروف'})`;
   }
+  
+  const handlePrint = (vowId: string) => {
+    const url = `/vows/receipt/${vowId}`;
+    window.open(url, '_blank');
+  };
 
   return (
     <>
@@ -71,16 +77,18 @@ export default function VowsListPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            تعديل
+                        <DropdownMenuItem asChild>
+                            <Link href={`/vows/edit/${vow.id}`}>
+                                <Pencil className="ml-2 h-4 w-4" />
+                                تعديل
+                            </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <Printer className="mr-2 h-4 w-4" />
+                        <DropdownMenuItem onClick={() => handlePrint(vow.id)}>
+                            <Printer className="ml-2 h-4 w-4" />
                             طباعة الإيصال
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
+                            <Trash2 className="ml-2 h-4 w-4" />
                             حذف
                         </DropdownMenuItem>
                       </DropdownMenuContent>
