@@ -90,7 +90,7 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {managementItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href} passHref legacyBehavior>
+                            <Link href={item.href}>
                                 <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
                                     <div>
                                         <item.icon />
@@ -117,7 +117,7 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {operationsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                             <Link href={item.href} passHref legacyBehavior>
+                             <Link href={item.href}>
                                 <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
                                      <div>
                                         <item.icon />
