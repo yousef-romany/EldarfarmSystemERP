@@ -52,7 +52,7 @@ export function SidebarNav() {
     { href: '/dashboard', label: 'نظرة عامة', icon: LayoutGrid },
     { href: '/users', label: 'المستخدمون', icon: Users },
     { href: '/barns', label: 'العنابر', icon: Warehouse },
-    { href: '/livestock-types', label: 'أنواع وسلالات المواشي', icon: Box },
+    { href: '/livestock-types', label: 'أنواع المواشي', icon: Box },
   ];
 
   const operationsItems = [
@@ -100,7 +100,7 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {managementItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href} passHref legacyBehavior>
+                            <Link href={item.href}>
                                 <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
                                     <div>
                                         <item.icon />
@@ -127,7 +127,7 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {operationsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href} passHref legacyBehavior>
+                            <Link href={item.href}>
                                 <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
                                      <div>
                                         <item.icon />
@@ -154,7 +154,7 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {financialReportsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                             <Link href={item.href} passHref legacyBehavior>
+                             <Link href={item.href}>
                                 <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
                                      <div>
                                         <item.icon />
@@ -166,7 +166,7 @@ export function SidebarNav() {
                     ))}
                      {livestockReportsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href} passHref legacyBehavior>
+                            <Link href={item.href}>
                                 <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
                                      <div>
                                         <item.icon />
