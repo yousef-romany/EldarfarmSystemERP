@@ -116,7 +116,9 @@ export default function UsersClientPage({ users }: { users: UserWithPermissions[
   
   const handleUpdatePermissions = async (formData: FormData) => {
       if (!selectedUser) return;
-      const result = await updateUserPermissions(selectedUser.id, formData);
+      // We need to bind the userId to the server action
+      const action = updateUserPermissions.bind(null, selectedUser.id);
+      const result = await action(formData);
       if (result?.success) {
         toast({ title: 'نجاح', description: result.message });
         setIsPermissionsDialogOpen(false);

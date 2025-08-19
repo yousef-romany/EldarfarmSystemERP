@@ -58,7 +58,7 @@ export async function createUser(prevState: UserState, formData: FormData): Prom
         username,
         password, // In a real app, this should be hashed!
         role,
-        permissions: permissions as unknown as Prisma.JsonObject,
+        permissions: JSON.stringify(permissions),
         avatar: `https://i.pravatar.cc/150?u=${username}` // Placeholder avatar
       },
     });
@@ -108,7 +108,7 @@ export async function updateUserPermissions(userId: string, formData: FormData) 
     await prisma.user.update({
       where: { id: userId },
       data: {
-        permissions: permissionsObject,
+        permissions: JSON.stringify(permissionsObject),
       },
     });
     
