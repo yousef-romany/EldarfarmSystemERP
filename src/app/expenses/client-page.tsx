@@ -226,10 +226,10 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <DropdownMenuItem asChild disabled>
+                        <DropdownMenuItem asChild>
                             <Link href={`/expenses/edit/${expense.id}`}>
                                 <Pencil className="mr-2 h-4 w-4" />
-                                تعديل (قريبًا)
+                                تعديل
                             </Link>
                         </DropdownMenuItem>
                         <AlertDialogTrigger asChild>

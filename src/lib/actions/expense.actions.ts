@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 
 const paymentSchema = z.object({
+  id: z.string().optional(),
   walletId: z.string().min(1, "يجب تحديد المحفظة"),
   amount: z.coerce.number().positive("المبلغ يجب أن يكون أكبر من صفر"),
 });
@@ -21,8 +22,12 @@ const expenseSchema = z.object({
   payments: z.array(paymentSchema).min(1, "يجب تحديد دفعة واحدة على الأقل"),
 });
 
+const updateExpenseSchema = expenseSchema.omit({ amount: true }).extend({
+    totalAmount: z.coerce.number().positive("المبلغ الإجمالي يجب أن يكون أكبر من صفر")
+});
+
 export type ExpenseState = {
-  errors?: z.ZodError<typeof expenseSchema>['formErrors']['fieldErrors'];
+  errors?: z.ZodError<any>['formErrors']['fieldErrors'];
   message?: string | null;
   success?: boolean;
 }
@@ -130,6 +135,131 @@ export async function createExpense(prevState: ExpenseState, formData: FormData)
     return { message: 'فشل في تسجيل المصروف. حدث خطأ غير متوقع.', success: false };
   }
 }
+
+export async function getExpenseById(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn) {
+        redirect('/');
+    }
+
+    try {
+        const expense = await prisma.expense.findUnique({
+            where: { id },
+            include: {
+                payments: {
+                  include: {
+                    wallet: true
+                  }
+                }
+            }
+        });
+        return expense;
+    } catch (error) {
+        console.error("Failed to get expense by ID:", error);
+        return null;
+    }
+}
+
+export async function updateExpense(expenseId: string, prevState: ExpenseState, formData: FormData): Promise<ExpenseState> {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.permissions?.expenses?.edit) {
+        return { message: "ليس لديك الصلاحية لتعديل المصروفات.", success: false };
+    }
+    
+    const paymentsData = JSON.parse(formData.get('payments') as string || '[]');
+    const validatedFields = updateExpenseSchema.safeParse({
+        description: formData.get('description'),
+        date: formData.get('date'),
+        category: formData.get('category'),
+        totalAmount: formData.get('totalAmount'),
+        payments: paymentsData,
+    });
+
+    if (!validatedFields.success) {
+        return { errors: validatedFields.error.flatten().fieldErrors, message: "بيانات غير صالحة.", success: false };
+    }
+
+    const { description, date, category, totalAmount, payments: newPayments } = validatedFields.data;
+    const totalPaid = newPayments.reduce((acc, p) => acc + p.amount, 0);
+
+    if (Math.abs(totalPaid - totalAmount) > 0.01) {
+        return { message: "مجموع الدفعات يجب أن يساوي المبلغ الإجمالي المحدث.", success: false };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const originalExpense = await tx.expense.findUnique({
+                where: { id: expenseId },
+                include: { payments: true }
+            });
+
+            if (!originalExpense) throw new Error("Expense not found");
+
+            // 1. Revert original payment amounts from wallets
+            for (const oldPayment of originalExpense.payments) {
+                await tx.wallet.update({
+                    where: { id: oldPayment.walletId },
+                    data: { balance: { increment: oldPayment.amount } }
+                });
+            }
+
+            // 2. Delete old payments
+            await tx.payment.deleteMany({ where: { expenseId: expenseId } });
+
+            // 3. Create new payments
+            await tx.payment.createMany({
+                data: newPayments.map(p => ({
+                    amount: p.amount,
+                    walletId: p.walletId,
+                    expenseId: expenseId,
+                    date: new Date(date),
+                    type: 'Expense',
+                    description: `(تعديل) مصروف: ${description}`
+                }))
+            });
+
+            // 4. Apply new payment amounts to wallets
+            for (const newPayment of newPayments) {
+                await tx.wallet.update({
+                    where: { id: newPayment.walletId },
+                    data: { balance: { decrement: newPayment.amount } }
+                });
+            }
+
+            // 5. Update the expense record itself
+            await tx.expense.update({
+                where: { id: expenseId },
+                data: {
+                    description,
+                    date: new Date(date),
+                    category,
+                    amount: totalAmount,
+                }
+            });
+
+            // 6. Log the update
+            await tx.log.create({
+                data: {
+                    userId: session.userId!,
+                    action: 'UPDATE',
+                    entityType: 'EXPENSE',
+                    entityId: expenseId,
+                    details: `تعديل بيانات المصروف: ${description}.`
+                }
+            });
+        });
+
+        revalidatePath('/expenses');
+        revalidatePath(`/expenses/edit/${expenseId}`);
+        revalidatePath('/wallets');
+        revalidatePath('/daily-report');
+        return { message: "تم تحديث المصروف بنجاح!", success: true };
+    } catch (error) {
+        console.error("Error updating expense:", error);
+        return { message: "فشل في تحديث المصروف.", success: false };
+    }
+}
+
 
 export async function deleteExpense(id: string) {
     const session = await getSession();
