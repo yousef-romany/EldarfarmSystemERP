@@ -45,6 +45,7 @@ export default function UsersPage() {
     purchases: 'المشتريات',
     sales: 'المبيعات',
     vows: 'النذور',
+    contributions: 'المساهمات النقدية',
     expenses: 'المصروفات',
     wallets: 'المحافظ',
     settings: 'الإعدادات',
