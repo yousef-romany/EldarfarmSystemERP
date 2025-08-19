@@ -1,4 +1,3 @@
-
 'use server';
 
 import { z } from 'zod';
@@ -73,14 +72,28 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
     };
   }
   
-  const { totalCost, payments } = validatedFields.data;
+  const { totalCost, payments, barnId, quantity } = validatedFields.data;
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
-  if (totalPaid > totalCost) {
-      return { message: 'المبلغ المدفوع لا يمكن أن يكون أكبر من التكلفة الإجمالية.', success: false };
+  if (Math.abs(totalPaid - totalCost) > 0.01) {
+      return { message: 'مجموع الدفعات يجب أن يساوي التكلفة الإجمالية.', success: false };
   }
 
   try {
+    const barn = await prisma.barn.findUnique({ where: { id: barnId } });
+    const occupancyNeeded = quantity || 1;
+    if (!barn || barn.capacity - barn.currentOccupancy < occupancyNeeded) {
+        return { message: 'سعة العنبر المحددة غير كافية.', success: false };
+    }
+    
+    for (const payment of payments) {
+        const wallet = await prisma.wallet.findUnique({ where: { id: payment.walletId } });
+        if (!wallet || wallet.balance.toNumber() < payment.amount) {
+            return { message: `رصيد محفظة "${wallet?.name}" غير كافٍ لإتمام عملية الدفع.`, success: false };
+        }
+    }
+
+
     await prisma.$transaction(async (tx) => {
       // 1. Create Livestock
       const livestock = await tx.livestock.create({
@@ -94,6 +107,7 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
           age: validatedFields.data.age,
           barnId: validatedFields.data.barnId,
           status: 'Available',
+          cost: validatedFields.data.totalCost,
         }
       });
 
@@ -134,7 +148,7 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
       // 5. Update barn occupancy
       await tx.barn.update({
         where: { id: validatedFields.data.barnId },
-        data: { currentOccupancy: { increment: validatedFields.data.quantity || 1 } },
+        data: { currentOccupancy: { increment: occupancyNeeded } },
       });
 
       // 6. Create Log entry
@@ -158,6 +172,9 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
     console.error('Error creating purchase:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
         // Handle known errors, like unique constraint violations
+        if (error.code === 'P2002' && (error.meta?.target as string[])?.includes('tagId')) {
+            return { message: `فشل في تسجيل الشراء: الرقم التعريفي '${validatedFields.data.tagId}' مستخدم بالفعل.`, success: false };
+       }
         return { message: `فشل في تسجيل الشراء: ${error.message}`, success: false };
     }
     return { message: 'فشل في تسجيل عملية الشراء. حدث خطأ غير متوقع.', success: false };
