@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, MoreHorizontal, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -10,11 +10,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { createPurchase } from '@/lib/actions/purchase.actions';
+import { createPurchase, deletePurchase } from '@/lib/actions/purchase.actions';
 import type { Barn, LivestockType, Wallet, Purchase, Livestock } from '@prisma/client';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 type PurchaseWithDetails = Purchase & {
   livestock: Livestock & {
@@ -88,6 +91,22 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
     setPayments(newPayments);
   };
 
+  const handleDelete = async (id: string) => {
+    const result = await deletePurchase(id);
+    if (result.success) {
+      toast({
+        title: "نجاح",
+        description: result.message,
+      });
+    } else {
+      toast({
+        title: "خطأ",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
+  }
+
   return (
     <>
       <Tabs defaultValue="list" dir="rtl">
@@ -112,21 +131,64 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                     <TableHead>النوع</TableHead>
                     <TableHead>المورد</TableHead>
                     <TableHead>التكلفة</TableHead>
+                    <TableHead><span className="sr-only">الإجراءات</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {purchases.map(p => (
-                    <TableRow key={p.id}>
-                        <TableCell>{format(new Date(p.purchaseDate), 'yyyy-MM-dd')}</TableCell>
-                        <TableCell className="font-medium">{p.livestock.isBatch ? `${p.livestock.quantity} رأس` : p.livestock.tagId}</TableCell>
-                        <TableCell>{p.livestock.livestockType.name}</TableCell>
-                        <TableCell>{p.supplier || 'غير محدد'}</TableCell>
-                        <TableCell>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(p.totalCost.toNumber())}</TableCell>
-                    </TableRow>
+                    <AlertDialog key={p.id}>
+                      <TableRow>
+                          <TableCell>{format(new Date(p.purchaseDate), 'yyyy-MM-dd')}</TableCell>
+                          <TableCell className="font-medium">{p.livestock.isBatch ? `${p.livestock.quantity} رأس` : p.livestock.tagId}</TableCell>
+                          <TableCell>{p.livestock.livestockType.name}</TableCell>
+                          <TableCell>{p.supplier || 'غير محدد'}</TableCell>
+                          <TableCell>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(p.totalCost.toNumber())}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">فتح القائمة</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                                <DropdownMenuItem disabled>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  تعديل (قريبًا)
+                                </DropdownMenuItem>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    حذف
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                      </TableRow>
+                       <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              سيتم حذف عملية الشراء هذه والحيوان المرتبط بها نهائيًا. سيؤثر هذا على أرصدة المحافظ وإشغال العنبر. لا يمكن التراجع عن هذا الإجراء.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(p.id)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              نعم، قم بالحذف
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                   ))}
                    {purchases.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
                           لم يتم تسجيل أي عمليات شراء بعد.
                         </TableCell>
                       </TableRow>

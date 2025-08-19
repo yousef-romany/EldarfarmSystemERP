@@ -180,3 +180,75 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
     return { message: 'فشل في تسجيل عملية الشراء. حدث خطأ غير متوقع.', success: false };
   }
 }
+
+export async function deletePurchase(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.permissions?.purchases?.delete) {
+        return { message: 'ليس لديك الصلاحية لحذف المشتريات.', success: false };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const purchase = await tx.purchase.findUnique({
+                where: { id },
+                include: { payments: true, livestock: true }
+            });
+
+            if (!purchase) {
+                throw new Error('عملية الشراء غير موجودة.');
+            }
+
+            // 1. Reverse wallet transactions
+            for (const payment of purchase.payments) {
+                await tx.wallet.update({
+                    where: { id: payment.walletId },
+                    data: { balance: { increment: payment.amount } }
+                });
+            }
+
+            // 2. Decrement barn occupancy
+            const occupancyToDecrement = purchase.livestock.quantity || 1;
+            await tx.barn.update({
+                where: { id: purchase.livestock.barnId },
+                data: { currentOccupancy: { decrement: occupancyToDecrement } }
+            });
+
+            // 3. Delete associated payments
+            await tx.payment.deleteMany({
+                where: { purchaseId: id }
+            });
+
+            // 4. Delete the purchase record
+            await tx.purchase.delete({
+                where: { id }
+            });
+
+            // 5. Delete the livestock record
+            await tx.livestock.delete({
+                where: { id: purchase.livestockId }
+            });
+
+            // 6. Log the deletion
+            await tx.log.create({
+                data: {
+                    userId: session.userId!,
+                    action: 'DELETE',
+                    entityType: 'PURCHASE',
+                    entityId: id,
+                    details: `قام بحذف عملية الشراء للحيوان ${purchase.livestock.tagId || purchase.livestock.id}.`
+                }
+            });
+        });
+
+        revalidatePath('/purchases');
+        revalidatePath('/wallets');
+        revalidatePath('/daily-report');
+        revalidatePath('/dashboard');
+        revalidatePath('/barns');
+        return { message: 'تم حذف عملية الشراء بنجاح.', success: true };
+
+    } catch (error) {
+        console.error('Error deleting purchase:', error);
+        return { message: 'فشل في حذف عملية الشراء.', success: false };
+    }
+}

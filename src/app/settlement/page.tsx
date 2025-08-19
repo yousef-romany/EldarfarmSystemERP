@@ -9,53 +9,35 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarIcon, Printer, AlertTriangle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { sales, contributions, expenses, wallets } from '@/lib/data';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
+import type { Wallet } from '@prisma/client';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function SettlementPage() {
   const router = useRouter();
   const [date, setDate] = useState<Date>(new Date());
+  
+  // We'll use SWR to fetch the current wallet balances
+  const { data: wallets, error, isLoading } = useSWR<Wallet[]>('/api/wallets', fetcher);
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
-
-  const dailyTransactions = wallets.map(wallet => {
-    const inflows = [
-      ...sales.flatMap(s => s.payments || []).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')),
-      ...contributions.flatMap(c => c.payments.map(p => ({...p, date: c.date}))).filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')),
-    ];
-    const outflows = [
-      ...expenses.filter(e => e.payment?.walletId === wallet.id && format(new Date(e.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')),
-      // Assuming purchases have payment details
-    ];
-
-    const totalIn = inflows.reduce((acc, curr) => acc + curr.amount, 0);
-    const totalOut = outflows.reduce((acc, curr) => acc + curr.amount, 0);
-    
-    return {
-      wallet,
-      inflows,
-      outflows,
-      totalIn,
-      totalOut,
-      netChange: totalIn - totalOut,
-      closingBalance: wallet.balance, // This should be calculated based on opening balance + net change
-    };
-  });
-
-  const grandTotal = dailyTransactions.reduce((acc, curr) => acc + curr.closingBalance, 0);
+  
+  const grandTotal = wallets?.reduce((acc, curr) => acc + curr.balance.toNumber(), 0) || 0;
 
   const handlePrintAndSettle = () => {
+    // In a real app, we would call a server action here to perform the settlement.
+    // For now, it just opens the print report page.
     const url = `/settlement/report?date=${format(date, 'yyyy-MM-dd')}`;
-    const printWindow = window.open(url, '_blank');
-    
-    // After printing, we would zero out the wallets.
-    // This is a placeholder for the actual settlement logic.
-    console.log("Settling accounts and zeroing out balances...");
-    // For demo purposes, we can navigate back to the page to show balances are "zeroed"
-    // In a real app, this would trigger a state update/API call.
+    window.open(url, '_blank');
   };
+  
+  if (error) return <div>فشل في تحميل أرصدة المحافظ...</div>
+  if (isLoading) return <div>جاري تحميل الأرصدة...</div>
+
 
   return (
     <>
@@ -78,24 +60,31 @@ export default function SettlementPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>ملخص أرصدة المحافظ لليوم المحدد</CardTitle>
-          <CardDescription>عرض لجميع أرصدة المحافظ والخزائن في نهاية اليوم المحدد. هذه هي المبالغ التي سيتم تسويتها وتسليمها.</CardDescription>
+          <CardTitle>ملخص أرصدة المحافظ الحالية</CardTitle>
+          <CardDescription>عرض لجميع أرصدة المحافظ والخزائن الحالية. هذه هي المبالغ التي سيتم تسويتها وتسليمها.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>المحفظة / الخزينة</TableHead>
-                <TableHead className="text-left">الرصيد النهائي</TableHead>
+                <TableHead className="text-left">الرصيد الحالي</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {dailyTransactions.map(t => (
-                <TableRow key={t.wallet.id}>
-                  <TableCell className="font-medium">{t.wallet.name}</TableCell>
-                  <TableCell className="text-left font-bold">{formatCurrency(t.wallet.balance)}</TableCell>
+              {wallets?.map(wallet => (
+                <TableRow key={wallet.id}>
+                  <TableCell className="font-medium">{wallet.name}</TableCell>
+                  <TableCell className="text-left font-bold">{formatCurrency(wallet.balance.toNumber())}</TableCell>
                 </TableRow>
               ))}
+               {!wallets || wallets.length === 0 && (
+                 <TableRow>
+                    <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        لا توجد محافظ لعرضها.
+                    </TableCell>
+                  </TableRow>
+               )}
               <TableRow className="bg-muted font-bold text-lg">
                 <TableCell>الإجمالي الكلي</TableCell>
                 <TableCell className="text-left">{formatCurrency(grandTotal)}</TableCell>
@@ -109,14 +98,14 @@ export default function SettlementPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>إجراء نهائي</AlertTitle>
           <AlertDescription>
-            عملية التسوية تقوم بتصفير أرصدة جميع المحافظ. لا يمكن التراجع عن هذا الإجراء.
+            عملية التسوية تقوم بتصفير أرصدة جميع المحافظ. لا يمكن التراجع عن هذا الإجراء. (الوظيفة تحت الإنشاء)
           </AlertDescription>
       </Alert>
       
       <div className="mt-6 flex justify-end">
           <AlertDialog>
               <AlertDialogTrigger asChild>
-                 <Button size="lg">
+                 <Button size="lg" disabled>
                     <Printer className="mr-2 h-4 w-4" />
                     طباعة تقرير التسوية وتصفير الأرصدة
                 </Button>
