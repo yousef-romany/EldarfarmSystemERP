@@ -1,235 +1,226 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider = "prisma-client-js"
-}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// ---------------
-// ENUMS
-// ---------------
-
-enum Role {
-  ADMIN
-  MANAGER
-  STAFF
+generator client {
+  provider = "prisma-client-js"
 }
-
-enum LivestockType {
-  COW
-  SHEEP
-  GOAT
-  CHICKEN
-}
-
-enum LivestockStatus {
-  AVAILABLE
-  SOLD
-  QUARANTINED
-  VOWED
-  DECEASED // To track mortalities
-}
-
-enum ExpenseCategory {
-  FEED
-  VET
-  MAINTENANCE
-  UTILITIES
-  SALARIES
-  OTHER
-}
-
-enum SaleType {
-  IMMEDIATE
-  DEFERRED
-}
-
-enum SaleStatus {
-  PENDING // For deferred sales waiting for settlement
-  COMPLETED
-  CANCELLED
-}
-
-enum LogType {
-  LOGIN
-  LOGOUT
-  CREATE
-  UPDATE
-  DELETE
-  VIEW
-  SYSTEM // For automated system actions like settlement
-}
-
-// ---------------
-// MODELS
-// ---------------
 
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  password  String
-  role      Role     @default(STAFF)
-  avatar    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // JSON field for flexible permissions
+  id          String   @id @default(cuid())
+  username    String   @unique
+  password    String
+  role        Role     @default(Staff)
   permissions Json?
-
-  logs Log[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  logs        Log[]
 }
 
 model Barn {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  capacity  Int
+  id              String      @id @default(cuid())
+  name            String      @unique
+  capacity        Int
+  currentOccupancy Int        @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  livestock       Livestock[]
+}
+
+model LivestockType {
+  id      String   @id @default(cuid())
+  name    String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  breeds  LivestockBreed[]
   livestock Livestock[]
 }
 
+model LivestockBreed {
+  id        String    @id @default(cuid())
+  name      String
+  typeId    String
+  type      LivestockType @relation(fields: [typeId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  livestock Livestock[]
+
+  @@unique([name, typeId])
+}
+
 model Livestock {
-  id          String          @id @default(cuid())
-  tagId       String?         @unique // Can be null for batches
-  type        LivestockType
-  breed       String
-  weight      Decimal         // Current weight
-  age         Int             // in months
-  status      LivestockStatus @default(AVAILABLE)
-  isBatch     Boolean         @default(false)
+  id          String    @id @default(cuid())
+  tagId       String?   @unique
+  typeId      String
+  breedId     String
+  weight      Decimal   @db.Decimal(10, 2)
+  age         Int
+  barnId      String
+  status      LivestockStatus @default(Available)
+  isBatch     Boolean   @default(false)
   quantity    Int?
   notes       String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-
-  barnId String
-  barn   Barn   @relation(fields: [barnId], references: [id])
-
-  purchaseId String?
-  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
-
-  sale   Sale[]
-  vow    Vow[]
+  purchaseId  String?   @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  type        LivestockType @relation(fields: [typeId], references: [id])
+  breed       LivestockBreed @relation(fields: [breedId], references: [id])
+  barn        Barn      @relation(fields: [barnId], references: [id])
+  purchase    Purchase? @relation(fields: [purchaseId], references: [id])
+  sales       Sale[]
+  vow         Vow?
 }
 
 model Wallet {
-  id      String   @id @default(cuid())
-  name    String   @unique
-  balance Decimal  @default(0)
-  icon    String?
-  isCash  Boolean  @default(false) // To identify cash safe vs. e-wallets
-
-  payments Payment[]
-}
-
-model Payment {
-  id        String   @id @default(cuid())
-  amount    Decimal
-  date      DateTime @default(now())
-  notes     String?
-
-  walletId       String
-  wallet         Wallet         @relation(fields: [walletId], references: [id])
-  
-  purchaseId     String?
-  purchase       Purchase?      @relation(fields: [purchaseId], references: [id])
-
-  saleId         String?
-  sale           Sale?          @relation(fields: [saleId], references: [id])
-
-  expenseId      String?
-  expense        Expense?       @relation(fields: [expenseId], references: [id])
-
-  contributionId String?
-  contribution   Contribution?  @relation(fields: [contributionId], references: [id])
-}
-
-model Purchase {
-  id           String      @id @default(cuid())
-  date         DateTime
-  supplier     String?
-  totalCost    Decimal
-  isVow        Boolean     @default(false) // To distinguish between purchases and vows
-  notes        String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  livestock    Livestock[] // A purchase can include one or many animals/batches
-  payments     Payment[]
-}
-
-model Sale {
-  id               String     @id @default(cuid())
-  customerName     String
-  saleDate         DateTime
-  settlementDate   DateTime?
-  type             SaleType
-  status           SaleStatus
-  pricePerKg       Decimal
-  initialWeight    Decimal? // Weight at the time of deferred sale agreement
-  finalWeight      Decimal? // Weight at settlement
-  totalPrice       Decimal    // Final calculated price
-  notes            String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-
-  livestockId String
-  livestock   Livestock  @relation(fields: [livestockId], references: [id])
-
-  payments Payment[]
-}
-
-model Vow {
-  id          String   @id @default(cuid())
-  donorName   String
-  receiptId   String   @unique
-  date        DateTime
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  livestockId String
-  livestock   Livestock @relation(fields: [livestockId], references: [id])
-}
-
-model Contribution {
-  id          String   @id @default(cuid())
-  donorName   String
-  description String
-  date        DateTime
-  totalAmount Decimal
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  payments Payment[]
+  id        String     @id @default(cuid())
+  name      String     @unique
+  balance   Decimal    @default(0) @db.Decimal(10, 2)
+  icon      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  payments  Payment[]
 }
 
 model Expense {
-  id          String          @id @default(cuid())
+  id          String    @id @default(cuid())
   date        DateTime
   category    ExpenseCategory
-  amount      Decimal
+  amount      Decimal   @db.Decimal(10, 2)
   description String
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  payments    Payment[]
+}
 
-  payments Payment[]
+model Purchase {
+  id          String      @id @default(cuid())
+  date        DateTime
+  totalCost   Decimal     @db.Decimal(10, 2)
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  livestock   Livestock?
+  payments    Payment[]
+}
+
+model Sale {
+  id              String    @id @default(cuid())
+  livestockId     String
+  customerName    String
+  saleDate        DateTime
+  settlementDate  DateTime?
+  type            SaleType
+  pricePerKg      Decimal   @db.Decimal(10, 2)
+  initialWeight   Decimal   @db.Decimal(10, 2)
+  finalWeight     Decimal?  @db.Decimal(10, 2)
+  totalPrice      Decimal   @db.Decimal(10, 2)
+  deposit         Decimal?  @db.Decimal(10, 2)
+  notes           String?
+  status          SaleStatus @default(Pending)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  livestock Livestock @relation(fields: [livestockId], references: [id])
+  payments  Payment[]
+}
+
+model Vow {
+  id          String     @id @default(cuid())
+  donorName   String
+  receiptId   String     @unique
+  date        DateTime
+  livestockId String     @unique
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  livestock Livestock @relation(fields: [livestockId], references: [id])
+}
+
+model Contribution {
+  id          String    @id @default(cuid())
+  donorName   String
+  description String
+  date        DateTime
+  totalAmount Decimal   @db.Decimal(10, 2)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  payments    Payment[]
+}
+
+model Payment {
+  id              String      @id @default(cuid())
+  amount          Decimal     @db.Decimal(10, 2)
+  date            DateTime
+  walletId        String
+  expenseId       String?
+  purchaseId      String?
+  saleId          String?
+  contributionId  String?
+  createdAt       DateTime    @default(now())
+
+  wallet        Wallet        @relation(fields: [walletId], references: [id])
+  expense       Expense?      @relation(fields: [expenseId], references: [id])
+  purchase      Purchase?     @relation(fields: [purchaseId], references: [id])
+  sale          Sale?         @relation(fields: [saleId], references: [id])
+  contribution  Contribution? @relation(fields: [contributionId], references: [id])
 }
 
 model Log {
-  id         String   @id @default(cuid())
-  timestamp  DateTime @default(now())
-  logType    LogType
-  message    String
-  details    Json?    // For storing before/after states or other relevant data
-  isSettled  Boolean  @default(false) // To flag settlement logs
+  id          String    @id @default(cuid())
+  timestamp   DateTime  @default(now())
+  userId      String
+  action      LogAction
+  entityType  String
+  entityId    String
+  details     Json?
+  isSettlement Boolean  @default(false)
 
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  Admin
+  Manager
+  Staff
+}
+
+enum LivestockStatus {
+  Available
+  Sold
+  Quarantined
+  Vowed
+  Died
+}
+
+enum ExpenseCategory {
+  Feed
+  Vet
+  Maintenance
+  Utilities
+  Salaries
+  Other
+}
+
+enum SaleType {
+  Immediate
+  Deferred
+}
+
+enum SaleStatus {
+  Pending
+  Completed
+  Cancelled
+}
+
+enum LogAction {
+  Create
+  Update
+  Delete
+  Login
+  Logout
+  View
 }

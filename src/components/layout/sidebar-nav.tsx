@@ -32,6 +32,7 @@ import {
   BookCheck,
   ArchiveRestore,
   FileSpreadsheet,
+  Box,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -51,6 +52,7 @@ export function SidebarNav() {
     { href: '/dashboard', label: 'نظرة عامة', icon: LayoutGrid },
     { href: '/users', label: 'المستخدمون', icon: Users },
     { href: '/barns', label: 'العنابر', icon: Warehouse },
+    { href: '/livestock-types', label: 'أنواع وسلالات المواشي', icon: Box },
   ];
 
   const operationsItems = [
@@ -98,14 +100,14 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {managementItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                            <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                                <Link href={item.href}>
+                            <Link href={item.href} passHref legacyBehavior>
+                                <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
                                     <div>
                                         <item.icon />
                                         <span>{item.label}</span>
                                     </div>
-                                </Link>
-                            </SidebarMenuSubButton>
+                                </SidebarMenuSubButton>
+                            </Link>
                         </SidebarMenuSubItem>
                     ))}
                     </SidebarMenuSub>
@@ -125,14 +127,14 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {operationsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                             <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
-                                <Link href={item.href}>
+                            <Link href={item.href} passHref legacyBehavior>
+                                <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
                                      <div>
                                         <item.icon />
                                         <span>{item.label}</span>
                                     </div>
-                                </Link>
-                            </SidebarMenuSubButton>
+                                </SidebarMenuSubButton>
+                            </Link>
                         </SidebarMenuSubItem>
                     ))}
                     </SidebarMenuSub>
@@ -152,26 +154,26 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {financialReportsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                             <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
-                                <Link href={item.href}>
+                             <Link href={item.href} passHref legacyBehavior>
+                                <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
                                      <div>
                                         <item.icon />
                                         <span>{item.label}</span>
                                     </div>
-                                </Link>
-                            </SidebarMenuSubButton>
+                                </SidebarMenuSubButton>
+                            </Link>
                         </SidebarMenuSubItem>
                     ))}
                      {livestockReportsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                             <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
-                                <Link href={item.href}>
+                            <Link href={item.href} passHref legacyBehavior>
+                                <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
                                      <div>
                                         <item.icon />
                                         <span>{item.label}</span>
                                     </div>
-                                </Link>
-                            </SidebarMenuSubButton>
+                                </SidebarMenuSubButton>
+                            </Link>
                         </SidebarMenuSubItem>
                     ))}
                     </SidebarMenuSub>
