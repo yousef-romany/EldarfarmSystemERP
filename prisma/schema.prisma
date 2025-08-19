@@ -11,15 +11,27 @@ datasource db {
 }
 
 model User {
-  id          String    @id @default(cuid())
-  username    String    @unique
+  id          String   @id @default(cuid())
+  username    String   @unique
   password    String
   name        String
-  role        Role
+  role        Role     @default(STAFF)
   permissions Json
   logs        Log[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Log {
+  id         String     @id @default(cuid())
+  user       User       @relation(fields: [userId], references: [id])
+  userId     String
+  action     LogAction
+  entityType EntityType
+  entityId   String
+  details    String
+  isSettlement Boolean   @default(false)
+  createdAt  DateTime   @default(now())
 }
 
 model Barn {
@@ -41,30 +53,29 @@ model LivestockType {
 }
 
 model Livestock {
-  id              String         @id @default(cuid())
-  tagId           String?        @unique
-  isBatch         Boolean        @default(false)
+  id              String        @id @default(cuid())
+  tagId           String?       @unique
+  isBatch         Boolean       @default(false)
   quantity        Int?
+  livestockType   LivestockType @relation(fields: [livestockTypeId], references: [id])
   livestockTypeId String
-  livestockType   LivestockType  @relation(fields: [livestockTypeId], references: [id])
   breed           String
-  weight          Decimal // For batches, can be average weight
+  weight          Decimal // For batches, could be average
   age             Int // in months
-  status          LivestockStatus
+  status          LivestockStatus @default(Available)
+  barn            Barn          @relation(fields: [barnId], references: [id])
   barnId          String
-  barn            Barn           @relation(fields: [barnId], references: [id])
-  purchaseId      String?        @unique
-  purchase        Purchase?      @relation(fields: [purchaseId], references: [id])
-  sale            Sale[]
+  purchase        Purchase?
+  sale            Sale?
   vow             Vow?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Purchase {
   id              String    @id @default(cuid())
+  livestock       Livestock @relation(fields: [livestockId], references: [id])
   livestockId     String    @unique
-  livestock       Livestock?
   supplier        String?
   purchaseDate    DateTime
   totalCost       Decimal
@@ -78,19 +89,19 @@ model Purchase {
 
 model Sale {
   id              String     @id @default(cuid())
-  livestockId     String
   livestock       Livestock  @relation(fields: [livestockId], references: [id])
+  livestockId     String     @unique
   customerName    String
   saleDate        DateTime
   settlementDate  DateTime?
   type            SaleType
+  status          SaleStatus @default(Pending)
   pricePerKg      Decimal
-  totalPrice      Decimal
   initialWeight   Decimal?
   finalWeight     Decimal?
+  totalPrice      Decimal
   amountPaid      Decimal
   remainingAmount Decimal
-  status          SaleStatus
   notes           String?
   payments        Payment[]
   createdAt       DateTime   @default(now())
@@ -99,11 +110,11 @@ model Sale {
 
 model Vow {
   id          String    @id @default(cuid())
+  livestock   Livestock @relation(fields: [livestockId], references: [id])
+  livestockId String    @unique
   donorName   String
   receiptId   String    @unique
   date        DateTime
-  livestockId String    @unique
-  livestock   Livestock @relation(fields: [livestockId], references: [id])
   notes       String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -124,8 +135,9 @@ model Expense {
   id          String        @id @default(cuid())
   date        DateTime
   category    ExpenseCategory
-  amount      Decimal
   description String
+  amount      Decimal
+  notes       String?
   payments    Payment[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -134,8 +146,8 @@ model Expense {
 model Wallet {
   id        String    @id @default(cuid())
   name      String    @unique
-  balance   Decimal
   icon      String?
+  balance   Decimal
   payments  Payment[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -143,35 +155,23 @@ model Wallet {
 
 model Payment {
   id             String        @id @default(cuid())
-  walletId       String
   wallet         Wallet        @relation(fields: [walletId], references: [id])
+  walletId       String
   amount         Decimal
   date           DateTime
   type           PaymentType
   description    String?
+  purchase       Purchase?     @relation(fields: [purchaseId], references: [id])
   purchaseId     String?
-  purchase       Purchase?     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  sale           Sale?         @relation(fields: [saleId], references: [id])
   saleId         String?
-  sale           Sale?         @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  expense        Expense?      @relation(fields: [expenseId], references: [id])
   expenseId      String?
-  expense        Expense?      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  contribution   Contribution? @relation(fields: [contributionId], references: [id])
   contributionId String?
-  contribution   Contribution? @relation(fields: [contributionId], references: [id], onDelete: Cascade)
   createdAt      DateTime      @default(now())
 }
 
-
-model Log {
-  id         String     @id @default(cuid())
-  timestamp  DateTime   @default(now())
-  userId     String
-  user       User       @relation(fields: [userId], references: [id])
-  action     LogAction
-  entityType EntityType
-  entityId   String
-  details    String
-  isSettlement Boolean   @default(false)
-}
 
 enum Role {
   ADMIN
@@ -181,10 +181,10 @@ enum Role {
 
 enum LivestockStatus {
   Available
-  Sold
   Quarantined
   Vowed
-  PendingSale // For deferred sales
+  PendingSale
+  Sold
 }
 
 enum SaleType {
@@ -193,7 +193,7 @@ enum SaleType {
 }
 
 enum SaleStatus {
-  Pending // Deferred sale, not settled
+  Pending
   Completed
   Cancelled
 }
@@ -207,6 +207,8 @@ enum ExpenseCategory {
   Feed
   Vet
   Maintenance
+  Utilities
+  Salaries
   Other
 }
 
@@ -222,13 +224,13 @@ enum LogAction {
 enum EntityType {
   USER
   BARN
-  LIVESTOCK
   LIVESTOCK_TYPE
+  LIVESTOCK
   PURCHASE
   SALE
   VOW
   CONTRIBUTION
   EXPENSE
   WALLET
-  PAYMENT
+  SESSION
 }
