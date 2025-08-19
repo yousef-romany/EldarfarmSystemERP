@@ -15,9 +15,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function UsersPage() {
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [currentUserPermissions, setCurrentUserPermissions] = useState<UserPermissions | null>(null);
 
@@ -80,7 +83,7 @@ export default function UsersPage() {
       <PageHeader
         title="إدارة المستخدمين"
         action={
-          <Button>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4" />
             إضافة مستخدم
           </Button>
@@ -139,6 +142,51 @@ export default function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+      
+      {/* Add User Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                  <DialogTitle>إضافة مستخدم جديد</DialogTitle>
+                  <DialogDescription>
+                      املأ البيانات التالية لإنشاء حساب مستخدم جديد.
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                      <Label htmlFor="new-user-name">الاسم الكامل</Label>
+                      <Input id="new-user-name" placeholder="e.g., محمد علي" />
+                  </div>
+                   <div className="grid gap-2">
+                      <Label htmlFor="new-user-email">البريد الإلكتروني</Label>
+                      <Input id="new-user-email" type="email" placeholder="e.g., user@example.com" />
+                  </div>
+                   <div className="grid gap-2">
+                      <Label htmlFor="new-user-password">كلمة المرور</Label>
+                      <Input id="new-user-password" type="password" />
+                  </div>
+                  <div className="grid gap-2">
+                      <Label htmlFor="new-user-role">الدور</Label>
+                      <Select>
+                          <SelectTrigger id="new-user-role">
+                              <SelectValue placeholder="اختر دور المستخدم" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="Admin">مدير</SelectItem>
+                              <SelectItem value="Manager">مشرف</SelectItem>
+                              <SelectItem value="Staff">موظف</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+              </div>
+              <DialogFooter>
+                  <DialogClose asChild>
+                      <Button type="button" variant="secondary">إلغاء</Button>
+                  </DialogClose>
+                  <Button type="submit">حفظ وإنشاء</Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
       
       {/* Permissions Dialog */}
       <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>
