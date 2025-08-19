@@ -1,9 +1,24 @@
 
 
-import type { User, Barn, Livestock, Expense, Sale, Wallet, Vow, Contribution } from './types';
-import type { User as PrismaUser, Barn as PrismaBarn, Livestock as PrismaLivestock, Payment, Prisma } from '@prisma/client'
+import type { UserPermissions } from './types';
+import type { Prisma } from '@prisma/client'
 
-const adminPermissions: Prisma.JsonObject = {
+export const defaultPermissions: UserPermissions = {
+  overview: { view: true, add: false, edit: false, delete: false },
+  users: { view: false, add: false, edit: false, delete: false },
+  barns: { view: true, add: true, edit: true, delete: false },
+  livestockTypes: { view: true, add: true, edit: true, delete: false },
+  purchases: { view: true, add: true, edit: true, delete: false },
+  sales: { view: true, add: true, edit: true, delete: false },
+  vows: { view: true, add: true, edit: true, delete: false },
+  contributions: { view: true, add: true, edit: true, delete: false },
+  expenses: { view: true, add: true, edit: true, delete: false },
+  wallets: { view: true, add: false, edit: false, delete: false },
+  settings: { view: true, add: false, edit: false, delete: false },
+  reports: { view: true, add: false, edit: false, delete: false },
+};
+
+export const adminPermissions: UserPermissions = {
   overview: { view: true, add: true, edit: true, delete: true },
   users: { view: true, add: true, edit: true, delete: true },
   barns: { view: true, add: true, edit: true, delete: true },
