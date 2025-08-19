@@ -44,8 +44,8 @@ const staffPermissions = {
 export const users: User[] = [
   { id: '1', name: 'أحمد محمود', email: 'ahmad@example.com', role: 'Admin', avatar: 'https://placehold.co/40x40.png', permissions: adminPermissions },
   { id: '2', name: 'فاطمة علي', email: 'fatima@example.com', role: 'Manager', avatar: 'https://placehold.co/40x40.png', permissions: managerPermissions },
-  { id: '3', name: 'كريم يوسف', email: 'karim@example.com', role: 'Staff', avatar: 'https://placehold.co/40x40.png', permissions: staffPermissions },
-  { id: '4', name: 'سارة إبراهيم', email: 'sara@example.com', role: 'Staff', avatar: 'https://placehold.co/40x40.png', permissions: staffPermissions },
+  { id: '3', name: 'كريم يوسف', role: 'Staff', avatar: 'https://placehold.co/40x40.png', permissions: staffPermissions },
+  { id: '4', name: 'سارة إبراهيم', role: 'Staff', avatar: 'https://placehold.co/40x40.png', permissions: staffPermissions },
 ];
 
 export const barns: Barn[] = [
@@ -101,5 +101,3 @@ export const contributions: Contribution[] = [
     { walletId: 'w3', amount: 5000 }
   ]},
 ];
-
-    

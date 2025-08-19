@@ -110,7 +110,7 @@ export default function UsersPage() {
                       </Avatar>
                       <div className="font-medium">
                         <div>{user.name}</div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                        {user.email && <div className="text-sm text-muted-foreground">{user.email}</div>}
                       </div>
                     </div>
                   </TableCell>
@@ -154,12 +154,8 @@ export default function UsersPage() {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                      <Label htmlFor="new-user-name">الاسم الكامل</Label>
-                      <Input id="new-user-name" placeholder="e.g., محمد علي" />
-                  </div>
-                   <div className="grid gap-2">
-                      <Label htmlFor="new-user-email">البريد الإلكتروني</Label>
-                      <Input id="new-user-email" type="email" placeholder="e.g., user@example.com" />
+                      <Label htmlFor="new-user-name">اسم المستخدم (للدخول)</Label>
+                      <Input id="new-user-name" placeholder="e.g., mohamed.ali" />
                   </div>
                    <div className="grid gap-2">
                       <Label htmlFor="new-user-password">كلمة المرور</Label>
