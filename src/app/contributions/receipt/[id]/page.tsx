@@ -2,26 +2,36 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { contributions, wallets } from '@/lib/data';
-import type { Contribution } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { Printer, Coins } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { Contribution, Payment, Wallet } from '@prisma/client';
+import { getContributionById } from '@/lib/actions/contribution.actions';
+
+type ContributionWithDetails = Contribution & {
+    payments: (Payment & { wallet: Wallet })[];
+};
 
 const ContributionReceiptPage = () => {
   const params = useParams();
   const { id } = params;
-  const [contribution, setContribution] = useState<Contribution | null>(null);
+  const [contribution, setContribution] = useState<ContributionWithDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const contributionData = contributions.find((c) => c.id === id);
-    if (contributionData) {
-      setContribution(contributionData);
+    if (typeof id === 'string') {
+        setIsLoading(true);
+        getContributionById(id).then(data => {
+            if (data) {
+                setContribution(data as ContributionWithDetails);
+            }
+            setIsLoading(false);
+        });
     }
   }, [id]);
 
@@ -29,12 +39,16 @@ const ContributionReceiptPage = () => {
     window.print();
   };
 
-  const getWalletName = (walletId: string) => wallets.find(w => w.id === walletId)?.name || 'N/A';
+  const getWalletName = (walletId: string) => contribution?.payments.find(p => p.walletId === walletId)?.wallet.name || 'N/A';
 
-  const totalPaid = contribution?.payments.reduce((acc, p) => acc + (p?.amount || 0), 0) || 0;
+  const totalPaid = contribution?.payments.reduce((acc, p) => acc + p.amount.toNumber(), 0) || 0;
+  
+  if (isLoading) {
+    return <div>جاري تحميل الإيصال...</div>;
+  }
   
   if (!contribution) {
-    return <div>جاري تحميل الإيصال...</div>;
+    return <div>لم يتم العثور على الإيصال.</div>;
   }
   
   return (
@@ -58,7 +72,7 @@ const ContributionReceiptPage = () => {
                             </div>
                         </div>
                         <div className="text-left">
-                            <p><strong>إيصال رقم:</strong> {contribution.id}</p>
+                            <p><strong>إيصال رقم:</strong> {contribution.id.substring(0,8)}</p>
                             <p><strong>تاريخ الاستلام:</strong> {format(new Date(contribution.date), 'yyyy-MM-dd')}</p>
                         </div>
                     </div>
@@ -80,7 +94,7 @@ const ContributionReceiptPage = () => {
                         <TableBody>
                             <TableRow>
                                 <TableCell>{contribution.description}</TableCell>
-                                <TableCell className="text-right font-bold">{contribution.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                <TableCell className="text-right font-bold">{contribution.totalAmount.toNumber().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
@@ -96,8 +110,8 @@ const ContributionReceiptPage = () => {
                         <TableBody>
                             {contribution.payments.map((p, i) => (
                                 <TableRow key={i}>
-                                    <TableCell>{getWalletName(p.walletId)}</TableCell>
-                                    <TableCell className="text-right">{p.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                    <TableCell>{p.wallet.name}</TableCell>
+                                    <TableCell className="text-right">{p.amount.toNumber().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                                 </TableRow>
                              ))}
                         </TableBody>
@@ -137,4 +151,3 @@ const ContributionReceiptPage = () => {
 };
 
 export default ContributionReceiptPage;
-

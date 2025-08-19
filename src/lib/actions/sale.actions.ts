@@ -297,7 +297,11 @@ export async function getSaleById(id: string) {
         const sale = await prisma.sale.findUnique({
             where: { id },
             include: {
-                livestock: true,
+                livestock: {
+                  include: {
+                    livestockType: true,
+                  }
+                },
                 payments: {
                   include: {
                     wallet: true

@@ -2,29 +2,40 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { sales, livestock, wallets, users } from '@/lib/data';
-import type { Sale, Livestock as LivestockType, Wallet } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { Beef, Printer } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getSaleById } from '@/lib/actions/sale.actions';
+import type { Sale, Livestock, LivestockType, Wallet, Payment } from '@prisma/client';
+
+type SaleWithDetails = Sale & {
+    livestock: Livestock & {
+        livestockType: LivestockType;
+    };
+    payments: (Payment & { wallet: Wallet })[];
+};
+
 
 const InvoicePage = () => {
   const params = useParams();
   const { id } = params;
-  const [sale, setSale] = useState<Sale | null>(null);
-  const [animal, setAnimal] = useState<LivestockType | null>(null);
+  const [sale, setSale] = useState<SaleWithDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const saleData = sales.find((s) => s.id === id);
-    if (saleData) {
-      setSale(saleData);
-      const animalData = livestock.find((l) => l.id === saleData.animalId);
-      setAnimal(animalData || null);
+    if (typeof id === 'string') {
+        setIsLoading(true);
+        getSaleById(id).then(data => {
+            if (data) {
+                setSale(data as SaleWithDetails);
+            }
+            setIsLoading(false);
+        });
     }
   }, [id]);
 
@@ -32,31 +43,22 @@ const InvoicePage = () => {
     window.print();
   };
 
-  const getWalletName = (walletId: string) => wallets.find(w => w.id === walletId)?.name || 'N/A';
-  const getAnimalType = (type: LivestockType['type']) => {
-    switch (type) {
-        case 'Cow': return 'بقرة';
-        case 'Sheep': return 'خروف';
-        case 'Goat': 'ماعز';
-    }
-  }
+  const getWalletName = (walletId: string) => sale?.payments.find(p => p.walletId === walletId)?.wallet.name || 'N/A';
+  
+  const totalPaid = sale?.amountPaid.toNumber() || 0;
+  const finalPrice = sale?.totalPrice.toNumber() || 0;
+  const remainingBalance = finalPrice - totalPaid;
 
-  const allPayments = [
-      ...(sale?.deposit ? [{amount: sale.deposit, walletId: 'deposit', date: sale.saleDate}] : []),
-      ...(sale?.payments || [])
-  ];
-
-  const totalPaid = allPayments.reduce((acc, p) => acc + p.amount, 0);
-  const remainingBalance = sale ? sale.totalPrice - totalPaid : 0;
-
-
-  if (!sale || !animal) {
+  if (isLoading) {
     return <div>جاري تحميل الفاتورة...</div>;
   }
   
-  const isSettled = sale.status === 'Completed';
-  const finalPrice = isSettled && sale.finalWeight ? sale.finalWeight * sale.pricePerKg : sale.totalPrice;
+  if (!sale) {
+    return <div>لم يتم العثور على الفاتورة.</div>;
+  }
 
+  const animal = sale.livestock;
+  const isSettled = sale.status === 'Completed';
 
   return (
     <div className="bg-gray-100 dark:bg-gray-800 min-h-screen p-4 sm:p-8 flex flex-col items-center font-body">
@@ -79,7 +81,7 @@ const InvoicePage = () => {
                             </div>
                         </div>
                         <div className="text-left">
-                            <p><strong>فاتورة رقم:</strong> {sale.id}</p>
+                            <p><strong>فاتورة رقم:</strong> {sale.id.substring(0,8)}</p>
                             <p><strong>تاريخ الاتفاق:</strong> {format(new Date(sale.saleDate), 'yyyy-MM-dd')}</p>
                             {sale.settlementDate && <p><strong>تاريخ التسوية:</strong> {format(new Date(sale.settlementDate), 'yyyy-MM-dd')}</p>}
                         </div>
@@ -110,7 +112,7 @@ const InvoicePage = () => {
                         <TableBody>
                             <TableRow>
                             <TableCell>{animal.tagId}</TableCell>
-                            <TableCell>{getAnimalType(animal.type)}</TableCell>
+                            <TableCell>{animal.livestockType.name}</TableCell>
                             <TableCell>{animal.breed}</TableCell>
                             </TableRow>
                         </TableBody>
@@ -137,7 +139,7 @@ const InvoicePage = () => {
                                 </TableRow>
                                 <TableRow>
                                     <TableCell>فرق الوزن (كجم)</TableCell>
-                                    <TableCell className="text-center font-bold">{(sale.finalWeight - (sale.initialWeight || 0)).toFixed(2)}</TableCell>
+                                    <TableCell className="text-center font-bold">{(sale.finalWeight.toNumber() - (sale.initialWeight?.toNumber() || 0)).toFixed(2)}</TableCell>
                                 </TableRow>
                                 </>
                             )}
@@ -162,18 +164,11 @@ const InvoicePage = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                             {sale.deposit && (
-                                <TableRow>
-                                    <TableCell>{format(new Date(sale.saleDate), 'yyyy-MM-dd')}</TableCell>
-                                    <TableCell>عربون</TableCell>
-                                    <TableCell className="text-right">{sale.deposit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                </TableRow>
-                             )}
                              {sale.payments?.map((p, i) => (
                                 <TableRow key={i}>
                                      <TableCell>{p.date ? format(new Date(p.date), 'yyyy-MM-dd') : '-'}</TableCell>
-                                     <TableCell>دفعة من {getWalletName(p.walletId)}</TableCell>
-                                     <TableCell className="text-right">{p.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                     <TableCell>دفعة من {p.wallet.name}</TableCell>
+                                     <TableCell className="text-right">{p.amount.toNumber().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                                 </TableRow>
                              ))}
                         </TableBody>
