@@ -21,12 +21,11 @@ export default function SettlementPage() {
   const router = useRouter();
   const [date, setDate] = useState<Date>(new Date());
   
-  // We'll use SWR to fetch the current wallet balances
   const { data: wallets, error, isLoading } = useSWR<Wallet[]>('/api/wallets', fetcher);
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
   
-  const grandTotal = wallets?.reduce((acc, curr) => acc + curr.balance.toNumber(), 0) || 0;
+  const grandTotal = wallets?.reduce((acc, curr) => acc + curr.balance, 0) || 0;
 
   const handlePrintAndSettle = () => {
     // In a real app, we would call a server action here to perform the settlement.
@@ -75,7 +74,7 @@ export default function SettlementPage() {
               {wallets?.map(wallet => (
                 <TableRow key={wallet.id}>
                   <TableCell className="font-medium">{wallet.name}</TableCell>
-                  <TableCell className="text-left font-bold">{formatCurrency(wallet.balance.toNumber())}</TableCell>
+                  <TableCell className="text-left font-bold">{formatCurrency(wallet.balance)}</TableCell>
                 </TableRow>
               ))}
                {!wallets || wallets.length === 0 && (
@@ -98,28 +97,28 @@ export default function SettlementPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>إجراء نهائي</AlertTitle>
           <AlertDescription>
-            عملية التسوية تقوم بتصفير أرصدة جميع المحافظ. لا يمكن التراجع عن هذا الإجراء. (الوظيفة تحت الإنشاء)
+            عملية التسوية تقوم بتصفير أرصدة جميع المحافظ. لا يمكن التراجع عن هذا الإجراء. (وظيفة التصفير قيد الإنشاء)
           </AlertDescription>
       </Alert>
       
       <div className="mt-6 flex justify-end">
           <AlertDialog>
               <AlertDialogTrigger asChild>
-                 <Button size="lg" disabled>
+                 <Button size="lg">
                     <Printer className="mr-2 h-4 w-4" />
-                    طباعة تقرير التسوية وتصفير الأرصدة
+                    طباعة تقرير التسوية
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                   <AlertDialogHeader>
                       <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
                       <AlertDialogDescription>
-                          سيتم فتح تقرير التسوية في صفحة جديدة للطباعة. بعد ذلك، سيتم تصفير أرصدة جميع المحافظ والخزائن. هذا الإجراء لا يمكن التراجع عنه.
+                          سيتم فتح تقرير التسوية في صفحة جديدة للطباعة. بعد ذلك، يجب عليك تصفير الأرصدة يدويًا. هذا الإجراء لا يمكن التراجع عنه.
                       </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                       <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                      <AlertDialogAction onClick={handlePrintAndSettle}>نعم، قم بالتسوية والتصفير</AlertDialogAction>
+                      <AlertDialogAction onClick={handlePrintAndSettle}>نعم، اطبع التقرير</AlertDialogAction>
                   </AlertDialogFooter>
               </AlertDialogContent>
           </AlertDialog>

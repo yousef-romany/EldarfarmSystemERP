@@ -2,91 +2,61 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { sales, contributions, expenses, purchases, wallets } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { Printer, FileText } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+interface DailyReportData {
+  wallets: {
+    id: string;
+    name: string;
+    balance: number;
+    icon: string;
+  }[];
+  cashWalletId: string;
+  cashFlow: {
+    totalIn: number;
+    totalOut: number;
+    netChange: number;
+  };
+  transactions: {
+    inflows: { type: string, description: string, amount: number }[];
+    outflows: { type: string, description: string, amount: number }[];
+  }
+}
 
 const SettlementReportPage = () => {
   const searchParams = useSearchParams();
   const dateParam = searchParams.get('date');
   const reportDate = dateParam ? new Date(dateParam) : new Date();
+  const dateString = format(reportDate, 'yyyy-MM-dd');
+  
+  const { data, error, isLoading } = useSWR<DailyReportData>(`/api/reports/daily?date=${dateString}`, fetcher);
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
-
-  const dailyTransactions = wallets.map(wallet => {
-    
-    // Inflows
-    const salePayments = sales
-        .filter(s => s.payments && s.payments.length > 0)
-        .flatMap(s => s.payments?.map(p => ({ ...p, description: `دفعة من عملية بيع #${s.id}` })) || [])
-        .filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd'));
-
-    const contributionPayments = contributions
-        .flatMap(c => c.payments.map(p => ({ ...p, description: `مساهمة من ${c.donorName}`, date: c.date })))
-        .filter(p => p.walletId === wallet.id && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd'));
-        
-    const deferredSaleDeposits = sales
-      .filter(s => s.type === 'Deferred' && s.deposit && s.saleDate && format(new Date(s.saleDate), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd'))
-      .map(s => ({
-        amount: s.deposit || 0,
-        description: `عربون للعملية #${s.id}`,
-        // Find which wallet the deposit was paid to. This is a simplification.
-        // In a real app, the deposit should also be a `Payment` object.
-        walletId: s.payments?.[0]?.walletId || '' 
-      }))
-      .filter(d => d.walletId === wallet.id && d.amount > 0);
-
-    const inflows = [
-      ...salePayments,
-      ...contributionPayments,
-      ...deferredSaleDeposits,
-    ];
-
-    // Outflows
-    const expensePayments = expenses
-      .filter(e => e.payment?.walletId === wallet.id && e.date && format(new Date(e.date), 'yyyy-MM-dd') === format(reportDate, 'yyyy-MM-dd'))
-      .map(e => ({ amount: e.amount, description: e.description }));
-
-    // Placeholder for purchases, assuming they will have payment details
-    const purchasePayments: any[] = [];
-      
-    const outflows = [
-      ...expensePayments,
-      ...purchasePayments
-    ];
-
-    const totalIn = inflows.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-    const totalOut = outflows.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-    
-    // NOTE: This balance is the overall balance, not the balance at the end of the specified day.
-    // For a true daily settlement, we'd need opening balances.
-    const closingBalance = wallet.balance; 
-
-    return {
-      wallet,
-      inflows,
-      outflows,
-      totalIn,
-      totalOut,
-      netChange: totalIn - totalOut,
-      closingBalance,
-    };
-  });
-
-  const grandTotal = dailyTransactions.reduce((acc, curr) => acc + curr.closingBalance, 0);
 
   const handlePrint = () => {
     window.print();
   };
 
   useEffect(() => {
-    // Automatically trigger print dialog when component mounts
-    setTimeout(handlePrint, 1000);
-  }, []);
+    if (data && !isLoading) {
+      setTimeout(handlePrint, 1000);
+    }
+  }, [data, isLoading]);
+
+  if (isLoading) return <div>جاري تحميل التقرير...</div>;
+  if (error) return <div>فشل في تحميل التقرير.</div>;
+  if (!data) return <div>لا توجد بيانات لهذا اليوم.</div>;
+  
+  const cashWallet = data.wallets.find(w => w.id === data.cashWalletId);
+  const totalBalance = data.wallets.reduce((acc, w) => acc + w.balance, 0);
 
   return (
     <div className="bg-white min-h-screen p-8 font-body">
@@ -113,33 +83,33 @@ const SettlementReportPage = () => {
                     </div>
                 </CardHeader>
                 <CardContent className="p-0 mt-8">
-                  {dailyTransactions.map(t => (
-                    <div key={t.wallet.id} className='mb-8 break-inside-avoid'>
+                  {cashWallet && (
+                    <div className='mb-8 break-inside-avoid'>
                       <CardHeader className='p-0 mb-4'>
-                          <CardTitle className='text-xl border-b pb-2 mb-2'>تقرير محفظة: {t.wallet.name}</CardTitle>
+                          <CardTitle className='text-xl border-b pb-2 mb-2'>تقرير الخزينة: {cashWallet.name}</CardTitle>
                       </CardHeader>
                       <div className="grid grid-cols-2 gap-8">
                           <div>
-                              <h4 className="font-bold mb-2 text-green-600">المقبوضات</h4>
+                              <h4 className="font-bold mb-2 text-green-600">المقبوضات النقدية</h4>
                               <Table>
                                   <TableHeader><TableRow><TableHead>المصدر</TableHead><TableHead className='text-right'>المبلغ</TableHead></TableRow></TableHeader>
                                   <TableBody>
-                                      {t.inflows.map((inflow, i) => (
-                                          <TableRow key={`in-${i}`}><TableCell>{inflow.description || 'دفعة عملية'}</TableCell><TableCell className='text-right'>{formatCurrency(inflow.amount || 0)}</TableCell></TableRow>
+                                      {data.transactions.inflows.map((inflow, i) => (
+                                          <TableRow key={`in-${i}`}><TableCell>{inflow.description || inflow.type}</TableCell><TableCell className='text-right'>{formatCurrency(inflow.amount || 0)}</TableCell></TableRow>
                                       ))}
-                                      {t.inflows.length === 0 && <TableRow><TableCell colSpan={2} className='text-center text-muted-foreground'>لا توجد مقبوضات</TableCell></TableRow>}
+                                      {data.transactions.inflows.length === 0 && <TableRow><TableCell colSpan={2} className='text-center text-muted-foreground'>لا توجد مقبوضات</TableCell></TableRow>}
                                   </TableBody>
                               </Table>
                           </div>
                            <div>
-                              <h4 className="font-bold mb-2 text-red-600">المدفوعات</h4>
+                              <h4 className="font-bold mb-2 text-red-600">المدفوعات النقدية</h4>
                                <Table>
                                   <TableHeader><TableRow><TableHead>المصدر</TableHead><TableHead className='text-right'>المبلغ</TableHead></TableRow></TableHeader>
                                   <TableBody>
-                                       {t.outflows.map((outflow, i) => (
-                                          <TableRow key={`out-${i}`}><TableCell>{outflow.description}</TableCell><TableCell className='text-right'>{formatCurrency(outflow.amount)}</TableCell></TableRow>
+                                       {data.transactions.outflows.map((outflow, i) => (
+                                          <TableRow key={`out-${i}`}><TableCell>{outflow.description || outflow.type}</TableCell><TableCell className='text-right'>{formatCurrency(outflow.amount)}</TableCell></TableRow>
                                       ))}
-                                       {t.outflows.length === 0 && <TableRow><TableCell colSpan={2} className='text-center text-muted-foreground'>لا توجد مدفوعات</TableCell></TableRow>}
+                                       {data.transactions.outflows.length === 0 && <TableRow><TableCell colSpan={2} className='text-center text-muted-foreground'>لا توجد مدفوعات</TableCell></TableRow>}
                                   </TableBody>
                               </Table>
                           </div>
@@ -147,27 +117,41 @@ const SettlementReportPage = () => {
                       <CardFooter className='p-0 mt-4 flex flex-col items-end space-y-2'>
                           <Separator className="my-2" />
                           <div className="flex justify-between w-full font-semibold">
-                              <span>إجمالي المقبوضات:</span>
-                              <span className="text-green-600">{formatCurrency(t.totalIn)}</span>
+                              <span>إجمالي المقبوضات النقدية:</span>
+                              <span className="text-green-600">{formatCurrency(data.cashFlow.totalIn)}</span>
                           </div>
                           <div className="flex justify-between w-full font-semibold">
-                              <span>إجمالي المدفوعات:</span>
-                              <span className="text-red-600">{formatCurrency(t.totalOut)}</span>
+                              <span>إجمالي المدفوعات النقدية:</span>
+                              <span className="text-red-600">{formatCurrency(data.cashFlow.totalOut)}</span>
                           </div>
                            <Separator className="my-2" />
                            <div className="flex justify-between w-full font-bold text-lg">
-                              <span>الرصيد النهائي للمحفظة (المرحّل):</span>
-                              <span>{formatCurrency(t.closingBalance)}</span>
+                              <span>الرصيد النهائي للخزينة:</span>
+                              <span>{formatCurrency(cashWallet.balance)}</span>
                           </div>
                       </CardFooter>
                     </div>
-                  ))}
+                  )}
                   <div className='break-before-page'></div>
+                  <CardHeader className='p-0 mb-4 mt-8'>
+                      <CardTitle className='text-xl border-b pb-2 mb-2'>ملخص الأرصدة النهائية</CardTitle>
+                  </CardHeader>
+                  <Table>
+                      <TableHeader><TableRow><TableHead>المحفظة/الحساب</TableHead><TableHead className='text-right'>الرصيد النهائي</TableHead></TableRow></TableHeader>
+                      <TableBody>
+                        {data.wallets.map(wallet => (
+                          <TableRow key={wallet.id}>
+                            <TableCell>{wallet.name}</TableCell>
+                            <TableCell className='text-right'>{formatCurrency(wallet.balance)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                  </Table>
                   <CardFooter className='p-0 mt-8 flex flex-col items-end space-y-2 bg-muted p-4 rounded-lg'>
                      <Separator className="my-4" />
                      <div className="flex justify-between w-full font-bold text-2xl">
-                        <span>إجمالي المبلغ المسلّم:</span>
-                        <span>{formatCurrency(grandTotal)}</span>
+                        <span>إجمالي المبلغ المسلّم (جميع المحافظ):</span>
+                        <span>{formatCurrency(totalBalance)}</span>
                      </div>
                   </CardFooter>
                   <div className="mt-16 grid grid-cols-2 gap-16 text-center text-sm">
