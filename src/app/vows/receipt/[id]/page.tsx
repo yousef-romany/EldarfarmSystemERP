@@ -2,58 +2,55 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { vows, livestock } from '@/lib/data';
-import type { Vow, Livestock as LivestockType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
-import { Beef, Printer, Gift } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Gift, Printer } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Vow, Livestock, LivestockType } from '@prisma/client';
+import { getVowById } from '@/lib/actions/vow.actions'; // We will create this action
+
+type VowWithDetails = Vow & {
+    livestock: Livestock & {
+        livestockType: LivestockType;
+    };
+};
 
 const VowReceiptPage = () => {
   const params = useParams();
   const { id } = params;
-  const [vow, setVow] = useState<Vow | null>(null);
-  const [animal, setAnimal] = useState<LivestockType | null>(null);
+  const [vow, setVow] = useState<VowWithDetails | null>(null);
 
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const vowData = vows.find((s) => s.id === id);
-    if (vowData) {
-      setVow(vowData);
-      const animalData = livestock.find((l) => l.id === vowData.livestockId);
-      setAnimal(animalData || null);
+    if (typeof id === 'string') {
+        getVowById(id).then(data => {
+            if (data) {
+                setVow(data);
+            }
+        });
     }
   }, [id]);
 
   const handlePrint = () => {
     window.print();
   };
-
-  const getAnimalType = (animal: LivestockType) => {
+  
+  const getAnimalType = (animal: VowWithDetails['livestock']) => {
     if (animal.isBatch) {
-      switch (animal.type) {
-        case 'Chicken': return 'دفعة دجاج';
-        case 'Sheep': return 'دفعة غنم';
-        case 'Goat': return 'دفعة ماعز';
-        default: return `دفعة ${animal.type}`;
-      }
+      return `دفعة ${animal.livestockType.name}`;
     }
-    switch (animal.type) {
-      case 'Cow': return 'بقرة';
-      case 'Sheep': return 'خروف';
-      case 'Goat': return 'ماعز';
-      case 'Chicken': return 'دجاج';
-      default: return animal.type;
-    }
+    return animal.livestockType.name;
   }
 
-  if (!vow || !animal) {
+  if (!vow) {
     return <div>جاري تحميل الإيصال...</div>;
   }
   
+  const animal = vow.livestock;
+
   return (
     <div className="bg-gray-100 dark:bg-gray-800 min-h-screen p-4 sm:p-8 flex flex-col items-center font-body">
         <div className="w-full max-w-4xl space-y-4">
@@ -75,7 +72,7 @@ const VowReceiptPage = () => {
                             </div>
                         </div>
                         <div className="text-left">
-                            <p><strong>إيصال رقم:</strong> {vow.receiptId}</p>
+                            <p><strong>إيصال رقم:</strong> {vow.receiptId || vow.id}</p>
                             <p><strong>تاريخ الاستلام:</strong> {format(new Date(vow.date), 'yyyy-MM-dd')}</p>
                         </div>
                     </div>
@@ -100,7 +97,7 @@ const VowReceiptPage = () => {
                             <TableRow>
                             <TableCell>{animal.isBatch ? `${animal.quantity} رأس` : animal.tagId || 'بدون رقم'}</TableCell>
                             <TableCell>{getAnimalType(animal)}</TableCell>
-                            <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
+                            <TableCell>{animal.weight.toNumber()} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
                             <TableCell>{animal.age}</TableCell>
                             </TableRow>
                         </TableBody>
@@ -143,4 +140,3 @@ const VowReceiptPage = () => {
 };
 
 export default VowReceiptPage;
-

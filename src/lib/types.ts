@@ -1,5 +1,8 @@
 
 
+// These types are for client-side usage and mock data.
+// The source of truth is now prisma/schema.prisma
+
 export type Permission = {
   view: boolean;
   add: boolean;
@@ -11,6 +14,7 @@ export type UserPermissions = {
   overview: Permission;
   users: Permission;
   barns: Permission;
+  livestockTypes: Permission;
   purchases: Permission;
   sales: Permission;
   vows: Permission;
@@ -39,17 +43,18 @@ export type Barn = {
 export type Livestock = {
   id: string;
   tagId?: string; // Optional for batches
-  type: 'Cow' | 'Sheep' | 'Goat' | 'Chicken';
+  type: 'Cow' | 'Sheep' | 'Goat' | 'Chicken'; // This is now a simplified type, real type is linked
   breed: string;
   weight: number; // in kg - for batches, this can be average weight
   age: number; // in months
   barnId: string;
-  status: 'Available' | 'Sold' | 'Quarantined' | 'Vowed';
+  status: 'Available' | 'Sold' | 'Quarantined' | 'Vowed' | 'PendingSale';
   isBatch?: boolean;
   quantity?: number;
 };
 
 export type Payment = {
+  id?: string;
   walletId: string;
   amount: number;
   date?: string; // ISO date string

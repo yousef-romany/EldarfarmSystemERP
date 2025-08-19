@@ -7,41 +7,47 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { barns, vows, livestock } from '@/lib/data';
-import type { Vow, Livestock } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
+import type { Vow, Livestock, LivestockType, Barn } from '@prisma/client';
+import { format } from 'date-fns';
+
+type VowWithDetails = Vow & {
+    livestock: Livestock & {
+        livestockType: LivestockType;
+    };
+};
+
+// This page needs to fetch its own data or receive it from a server component parent.
+// For now, it's a placeholder for the edit functionality.
 
 export default function EditVowPage() {
   const router = useRouter();
   const params = useParams();
   const { id } = params;
 
-  const [vow, setVow] = useState<Vow | null>(null);
-  const [animal, setAnimal] = useState<Livestock | null>(null);
+  // In a real app, you would fetch this data from the server based on the ID.
+  const [vow, setVow] = useState<VowWithDetails | null>(null);
+  const [barns, setBarns] = useState<Barn[]>([]);
+  const [livestockTypes, setLivestockTypes] = useState<LivestockType[]>([]);
   const [registrationType, setRegistrationType] = useState('individual');
 
   useEffect(() => {
-    const vowData = vows.find(v => v.id === id);
-    if (vowData) {
-        setVow(vowData);
-        const animalData = livestock.find(a => a.id === vowData.livestockId);
-        if (animalData) {
-            setAnimal(animalData);
-            setRegistrationType(animalData.isBatch ? 'batch' : 'individual');
-        }
-    }
+    // Placeholder: In a real scenario, you'd fetch this data.
+    // e.g., getVowDetails(id).then(data => setVow(data));
+    // For now, we'll just show a loading state.
   }, [id]);
 
-  if (!vow || !animal) {
-    return <div>جاري تحميل بيانات النذر...</div>;
+  if (!vow) {
+    return <div>جاري تحميل بيانات النذر... (صفحة تعديل تحت الإنشاء)</div>;
   }
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Saving updated vow...");
+    // Here you would call an update server action.
     router.push('/vows');
   }
 
@@ -63,13 +69,13 @@ export default function EditVowPage() {
                 </div>
                  <div className="grid gap-2">
                   <Label htmlFor="receipt-id">رقم الإيصال</Label>
-                  <Input id="receipt-id" defaultValue={vow.receiptId} placeholder="e.g., 2024-00123" />
+                  <Input id="receipt-id" defaultValue={vow.receiptId || ''} placeholder="e.g., 2024-00123" />
                 </div>
             </div>
 
             <div className="grid gap-2">
                 <Label>نوع التسجيل</Label>
-                <RadioGroup value={registrationType} onValueChange={setRegistrationType} className="flex gap-4">
+                <RadioGroup value={vow.livestock.isBatch ? 'batch' : 'individual'} onValueChange={setRegistrationType} className="flex gap-4">
                     <div className="flex items-center space-x-2">
                         <RadioGroupItem value="individual" id="r-individual" />
                         <Label htmlFor="r-individual">حيوان فردي</Label>
@@ -82,47 +88,46 @@ export default function EditVowPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {registrationType === 'individual' && (
+              {!vow.livestock.isBatch && (
                 <div className="grid gap-2">
                   <Label htmlFor="tagId">الرقم التعريفي (إن وجد)</Label>
-                  <Input id="tagId" defaultValue={animal.tagId} placeholder="e.g., COW-004" />
+                  <Input id="tagId" defaultValue={vow.livestock.tagId || ''} placeholder="e.g., COW-004" />
                 </div>
               )}
                <div className="grid gap-2">
                 <Label htmlFor="type">النوع</Label>
-                <Select defaultValue={animal.type}>
+                <Select defaultValue={vow.livestock.livestockTypeId}>
                   <SelectTrigger id="type">
                     <SelectValue placeholder="اختر النوع" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Cow">بقرة</SelectItem>
-                    <SelectItem value="Sheep">خروف</SelectItem>
-                    <SelectItem value="Goat">ماعز</SelectItem>
-                    <SelectItem value="Chicken">دجاج</SelectItem>
+                     {livestockTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="breed">السلالة</Label>
-                <Input id="breed" defaultValue={animal.breed} placeholder="e.g., هولشتاين, ساسو" />
+                <Input id="breed" defaultValue={vow.livestock.breed} placeholder="e.g., هولشتاين, ساسو" />
               </div>
-              {registrationType === 'batch' && (
+              {vow.livestock.isBatch && (
                  <div className="grid gap-2">
                     <Label htmlFor="quantity">الكمية</Label>
-                    <Input id="quantity" type="number" defaultValue={animal.quantity} placeholder="e.g., 500" />
+                    <Input id="quantity" type="number" defaultValue={vow.livestock.quantity || ''} placeholder="e.g., 500" />
                 </div>
               )}
               <div className="grid gap-2">
                 <Label htmlFor="weight">الوزن عند الاستلام (كجم)</Label>
-                <Input id="weight" type="number" defaultValue={animal.weight} placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} />
+                <Input id="weight" type="number" defaultValue={vow.livestock.weight.toNumber()} placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="age">العمر عند الاستلام (أشهر)</Label>
-                <Input id="age" type="number" defaultValue={animal.age} placeholder="e.g., 18" />
+                <Input id="age" type="number" defaultValue={vow.livestock.age} placeholder="e.g., 18" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="barn">العنبر</Label>
-                <Select defaultValue={animal.barnId}>
+                <Select defaultValue={vow.livestock.barnId}>
                   <SelectTrigger id="barn">
                     <SelectValue placeholder="اختر العنبر للتسكين" />
                   </SelectTrigger>
@@ -137,12 +142,12 @@ export default function EditVowPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="vow-date">تاريخ الاستلام</Label>
-                <Input id="vow-date" type="date" defaultValue={vow.date} />
+                <Input id="vow-date" type="date" defaultValue={format(new Date(vow.date), 'yyyy-MM-dd')} />
               </div>
             </div>
              <div className="grid gap-2">
                 <Label htmlFor="notes">ملاحظات</Label>
-                <Textarea id="notes" defaultValue={vow.notes} placeholder="أي ملاحظات إضافية عن الحالة الصحية أو غيرها..."/>
+                <Textarea id="notes" defaultValue={vow.notes || ''} placeholder="أي ملاحظات إضافية عن الحالة الصحية أو غيرها..."/>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" asChild type="button">
