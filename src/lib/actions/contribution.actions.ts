@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 
 const paymentSchema = z.object({
+  id: z.string().optional(),
   walletId: z.string().min(1, "يجب تحديد المحفظة"),
   amount: z.coerce.number().positive("المبلغ يجب أن يكون أكبر من صفر"),
 });
@@ -122,6 +123,131 @@ export async function createContribution(prevState: ContributionState, formData:
     }
     return { message: 'فشل في تسجيل المساهمة. حدث خطأ غير متوقع.', success: false };
   }
+}
+
+export async function getContributionById(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn) {
+        redirect('/');
+    }
+
+    try {
+        const contribution = await prisma.contribution.findUnique({
+            where: { id },
+            include: {
+                payments: {
+                    include: {
+                        wallet: true
+                    }
+                }
+            }
+        });
+        return contribution;
+    } catch (error) {
+        console.error("Failed to get contribution by ID:", error);
+        return null;
+    }
+}
+
+
+export async function updateContribution(contributionId: string, prevState: ContributionState, formData: FormData): Promise<ContributionState> {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.permissions?.contributions?.edit) {
+        return { message: "ليس لديك الصلاحية لتعديل المساهمات.", success: false };
+    }
+    
+    const paymentsData = JSON.parse(formData.get('payments') as string || '[]');
+    const validatedFields = contributionSchema.safeParse({
+        donorName: formData.get('donorName'),
+        description: formData.get('description'),
+        date: formData.get('date'),
+        totalAmount: formData.get('totalAmount'),
+        payments: paymentsData,
+    });
+
+    if (!validatedFields.success) {
+        return { errors: validatedFields.error.flatten().fieldErrors, message: "بيانات غير صالحة.", success: false };
+    }
+
+    const { donorName, description, date, totalAmount, payments: newPayments } = validatedFields.data;
+    const totalPaid = newPayments.reduce((acc, p) => acc + p.amount, 0);
+
+    if (Math.abs(totalPaid - totalAmount) > 0.01) {
+        return { message: "مجموع الدفعات يجب أن يساوي المبلغ الإجمالي المحدث.", success: false };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const originalContribution = await tx.contribution.findUnique({
+                where: { id: contributionId },
+                include: { payments: true }
+            });
+
+            if (!originalContribution) throw new Error("Contribution not found");
+
+            // 1. Revert original payment amounts from wallets
+            for (const oldPayment of originalContribution.payments) {
+                await tx.wallet.update({
+                    where: { id: oldPayment.walletId },
+                    data: { balance: { decrement: oldPayment.amount } }
+                });
+            }
+
+            // 2. Delete old payments
+            await tx.payment.deleteMany({ where: { contributionId: contributionId } });
+
+            // 3. Create new payments
+            await tx.payment.createMany({
+                data: newPayments.map(p => ({
+                    amount: p.amount,
+                    walletId: p.walletId,
+                    contributionId: contributionId,
+                    date: new Date(date),
+                    type: 'Income',
+                    description: `(تعديل) مساهمة من ${donorName}: ${description}`
+                }))
+            });
+
+            // 4. Apply new payment amounts to wallets
+            for (const newPayment of newPayments) {
+                await tx.wallet.update({
+                    where: { id: newPayment.walletId },
+                    data: { balance: { increment: newPayment.amount } }
+                });
+            }
+
+            // 5. Update the contribution record itself
+            await tx.contribution.update({
+                where: { id: contributionId },
+                data: {
+                    donorName,
+                    description,
+                    date: new Date(date),
+                    totalAmount,
+                }
+            });
+
+            // 6. Log the update
+            await tx.log.create({
+                data: {
+                    userId: session.userId!,
+                    action: 'UPDATE',
+                    entityType: 'CONTRIBUTION',
+                    entityId: contributionId,
+                    details: `تعديل بيانات المساهمة من ${donorName}.`
+                }
+            });
+        });
+
+        revalidatePath('/contributions');
+        revalidatePath(`/contributions/edit/${contributionId}`);
+        revalidatePath('/wallets');
+        revalidatePath('/daily-report');
+        return { message: "تم تحديث المساهمة بنجاح!", success: true };
+    } catch (error) {
+        console.error("Error updating contribution:", error);
+        return { message: "فشل في تحديث المساهمة.", success: false };
+    }
 }
 
 
