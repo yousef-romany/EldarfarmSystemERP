@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { SidebarNav } from './sidebar-nav';
 import Link from 'next/link';
 import { SidebarTrigger } from '../ui/sidebar';
+import { logout } from '@/lib/actions/auth.actions';
 
 export function Header() {
   return (
@@ -43,12 +44,16 @@ export function Header() {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>حسابي</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>الإعدادات</DropdownMenuItem>
+           <DropdownMenuItem asChild>
+              <Link href="/settings">الإعدادات</Link>
+            </DropdownMenuItem>
           <DropdownMenuItem>الدعم</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-             <Link href="/">تسجيل الخروج</Link>
-          </DropdownMenuItem>
+           <form action={logout}>
+              <DropdownMenuItem asChild>
+                <button type="submit" className="w-full text-right">تسجيل الخروج</button>
+              </DropdownMenuItem>
+            </form>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

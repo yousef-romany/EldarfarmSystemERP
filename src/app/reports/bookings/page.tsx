@@ -1,34 +1,74 @@
 
-'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { livestock, barns, sales, vows } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { prisma } from '@/lib/prisma';
+import type { Livestock, LivestockType, Barn, Sale, Vow } from '@prisma/client';
 
-export default function BookedLivestockReportPage() {
-  
-  const pendingSaleAnimals = sales
-    .filter(s => s.status === 'Pending')
-    .map(s => {
-        const animal = livestock.find(l => l.id === s.animalId);
-        return animal ? { ...animal, bookingInfo: { type: 'بيع آجل', customer: s.customerName, date: s.saleDate } } : null;
-    })
-    .filter(Boolean);
-    
-  const vowedAnimals = livestock
-    .filter(animal => animal.status === 'Vowed')
-    .map(animal => {
-        const vow = vows.find(v => v.livestockId === animal.id);
-        return { ...animal, bookingInfo: { type: 'نذر', customer: vow?.donorName || 'غير محدد', date: vow?.date || '' } };
-    });
-
-  const bookedLivestock = [...pendingSaleAnimals, ...vowedAnimals];
-
-  const getBarnName = (barnId: string) => {
-    return barns.find((b) => b.id === barnId)?.name || 'غير محدد';
+type BookedAnimal = {
+  id: string;
+  tagId: string | null;
+  type: string;
+  barnName: string;
+  bookingInfo: {
+    type: 'بيع آجل' | 'نذر';
+    customer: string;
+    date: string;
   };
+};
+
+export default async function BookedLivestockReportPage() {
+  
+  const pendingSales = await prisma.sale.findMany({
+    where: { status: 'Pending' },
+    include: {
+      livestock: {
+        include: {
+          livestockType: true,
+          barn: true,
+        },
+      },
+    },
+  });
+
+  const vows = await prisma.vow.findMany({
+      include: {
+          livestock: {
+              include: {
+                  livestockType: true,
+                  barn: true
+              }
+          }
+      }
+  });
+
+  const bookedFromSales: BookedAnimal[] = pendingSales.map(s => ({
+    id: s.livestock.id,
+    tagId: s.livestock.tagId,
+    type: s.livestock.livestockType.name,
+    barnName: s.livestock.barn.name,
+    bookingInfo: {
+      type: 'بيع آجل',
+      customer: s.customerName,
+      date: format(new Date(s.saleDate), 'yyyy-MM-dd'),
+    },
+  }));
+  
+  const bookedFromVows: BookedAnimal[] = vows.map(v => ({
+      id: v.livestock.id,
+      tagId: v.livestock.tagId,
+      type: v.livestock.livestockType.name,
+      barnName: v.livestock.barn.name,
+      bookingInfo: {
+          type: 'نذر',
+          customer: v.donorName,
+          date: format(new Date(v.date), 'yyyy-MM-dd')
+      }
+  }));
+
+  const bookedLivestock = [...bookedFromSales, ...bookedFromVows];
 
   return (
     <>
@@ -55,17 +95,17 @@ export default function BookedLivestockReportPage() {
             <TableBody>
               {bookedLivestock.length > 0 ? (
                 bookedLivestock.map((animal) => (
-                  <TableRow key={animal!.id}>
-                    <TableCell className="font-medium">{animal!.tagId}</TableCell>
-                    <TableCell>{animal!.type}</TableCell>
-                    <TableCell>{getBarnName(animal!.barnId)}</TableCell>
+                  <TableRow key={animal.id}>
+                    <TableCell className="font-medium">{animal.tagId}</TableCell>
+                    <TableCell>{animal.type}</TableCell>
+                    <TableCell>{animal.barnName}</TableCell>
                     <TableCell>
-                        <Badge variant={animal!.bookingInfo.type === 'نذر' ? 'secondary' : 'outline'}>
-                            {animal!.bookingInfo.type}
+                        <Badge variant={animal.bookingInfo.type === 'نذر' ? 'secondary' : 'outline'}>
+                            {animal.bookingInfo.type}
                         </Badge>
                     </TableCell>
-                    <TableCell>{animal!.bookingInfo.customer}</TableCell>
-                    <TableCell>{animal!.bookingInfo.date ? format(new Date(animal!.bookingInfo.date), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                    <TableCell>{animal.bookingInfo.customer}</TableCell>
+                    <TableCell>{animal.bookingInfo.date}</TableCell>
                   </TableRow>
                 ))
               ) : (

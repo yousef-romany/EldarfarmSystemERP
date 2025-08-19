@@ -5,16 +5,31 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { livestock, barns } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
-import type { Livestock } from '@/lib/types';
+import { prisma } from '@/lib/prisma';
+import type { Livestock, LivestockType, Barn } from '@prisma/client';
 
-export default function LivestockPage() {
-  const getBarnName = (barnId: string) => {
-    return barns.find((b) => b.id === barnId)?.name || 'غير محدد';
-  };
+type LivestockWithDetails = Livestock & {
+  barn: Barn;
+  livestockType: LivestockType;
+}
 
-  const getStatusVariant = (status: 'Available' | 'Sold' | 'Quarantined') => {
+export default async function LivestockPage() {
+  const livestock = await prisma.livestock.findMany({
+    include: {
+      barn: true,
+      livestockType: true
+    },
+    orderBy: {
+      tagId: 'asc'
+    }
+  });
+  
+  const barns = await prisma.barn.findMany({
+    orderBy: { name: 'asc' }
+  });
+
+  const getStatusVariant = (status: Livestock['status']) => {
     switch (status) {
       case 'Available':
         return 'default';
@@ -22,12 +37,16 @@ export default function LivestockPage() {
         return 'destructive';
       case 'Quarantined':
         return 'secondary';
+      case 'Vowed':
+          return 'secondary';
+      case 'PendingSale':
+          return 'secondary';
       default:
         return 'outline';
     }
   };
 
-  const getStatusText = (status: 'Available' | 'Sold' | 'Quarantined') => {
+  const getStatusText = (status: Livestock['status']) => {
     switch (status) {
       case 'Available':
         return 'متاح';
@@ -35,27 +54,20 @@ export default function LivestockPage() {
         return 'مباع';
       case 'Quarantined':
         return 'في الحجر';
+      case 'Vowed':
+          return 'نذر';
+      case 'PendingSale':
+          return 'بيع آجل';
       default:
         return status;
     }
   }
   
-  const getTypeText = (animal: Livestock) => {
+  const getTypeText = (animal: LivestockWithDetails) => {
     if (animal.isBatch) {
-       switch (animal.type) {
-         case 'Chicken': return 'دفعة دجاج';
-         case 'Sheep': return 'دفعة غنم';
-         case 'Goat': return 'دفعة ماعز';
-         default: return `دفعة ${animal.type}`;
-       }
+        return `دفعة ${animal.livestockType.name}`;
     }
-    switch (animal.type) {
-      case 'Cow': return 'بقرة';
-      case 'Sheep': return 'خروف';
-      case 'Goat': return 'ماعز';
-      case 'Chicken': return 'دجاج';
-      default: return animal.type;
-    }
+    return animal.livestockType.name;
   }
 
 
@@ -127,9 +139,9 @@ export default function LivestockPage() {
                   </TableCell>
                   <TableCell>{getTypeText(animal)}</TableCell>
                   <TableCell>{animal.breed}</TableCell>
-                  <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
+                  <TableCell>{animal.weight.toNumber()} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
                   <TableCell>{animal.age}</TableCell>
-                  <TableCell>{getBarnName(animal.barnId)}</TableCell>
+                  <TableCell>{animal.barn.name}</TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(animal.status)}>{getStatusText(animal.status)}</Badge>
                   </TableCell>

@@ -6,66 +6,81 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, ArrowUpCircle, ArrowDownCircle, MinusCircle, Wallet } from 'lucide-react';
+import { Calendar as CalendarIcon, ArrowUpCircle, ArrowDownCircle, MinusCircle, Wallet, Download } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { sales, contributions, expenses, purchases, wallets } from '@/lib/data';
+import useSWR from 'swr';
 import Image from 'next/image';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+interface DailyReportData {
+  wallets: {
+    id: string;
+    name: string;
+    balance: number;
+    icon: string;
+  }[];
+  cashWalletId: string;
+  cashFlow: {
+    totalIn: number;
+    totalOut: number;
+    netChange: number;
+  };
+  transactions: {
+    inflows: { type: string, description: string, amount: number }[];
+    outflows: { type: string, description: string, amount: number }[];
+  }
+}
 
 export default function DailyReportPage() {
   const [date, setDate] = useState<Date>(new Date());
   
-  const cashWalletId = 'w5';
-  const cashWallet = wallets.find(w => w.id === cashWalletId);
+  const dateString = format(date, 'yyyy-MM-dd');
+  const { data, error, isLoading } = useSWR<DailyReportData>(`/api/reports/daily?date=${dateString}`, fetcher);
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
 
-  // Filter transactions for the selected date and cash wallet
-  const cashSales = sales
-    .flatMap(s => [...(s.payments || []), {amount: s.deposit || 0, date: s.saleDate, walletId: 'w5'}])
-    .filter(p => p.walletId === cashWalletId && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
-
-  const cashContributions = contributions
-    .flatMap(c => c.payments.map(p => ({...p, date: c.date})))
-    .filter(p => p.walletId === cashWalletId && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
-
-  const cashExpenses = expenses
-    .filter(e => e.payment?.walletId === cashWalletId && e.date && format(new Date(e.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
+  const cashWallet = data?.wallets.find(w => w.id === data.cashWalletId);
+  const otherWallets = data?.wallets.filter(w => w.id !== data.cashWalletId) || [];
   
-  // NOTE: Assuming purchases data will have payment details.
-  // const cashPurchases = purchases
-  //   .filter(p => p.payment?.walletId === cashWalletId && p.date && format(new Date(p.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'));
-  const cashPurchases:any[] = [];
+  if (error) return <div>فشل في تحميل البيانات...</div>
+  if (isLoading) return <div>جاري تحميل التقرير...</div>
+  if (!data) return <div>لا توجد بيانات لهذا اليوم.</div>
+  
+  const { cashFlow, transactions } = data;
 
-
-  const totalIn = cashSales.reduce((acc, s) => acc + (s?.amount || 0), 0) + cashContributions.reduce((acc, c) => acc + c.amount, 0);
-  const totalOut = cashExpenses.reduce((acc, e) => acc + e.amount, 0) + cashPurchases.reduce((acc, p) => acc + p.amount, 0);
-  const netChange = totalIn - totalOut;
 
   return (
     <>
       <PageHeader
         title="التقرير اليومي"
         action={
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className="w-[280px] justify-start text-left font-normal"
-              >
-                <CalendarIcon className="ml-2 h-4 w-4" />
-                {date ? format(date, "PPP") : <span>اختر تاريخًا</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={(d) => d && setDate(d)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+            <div className="flex gap-2">
+                <Popover>
+                    <PopoverTrigger asChild>
+                    <Button
+                        variant={"outline"}
+                        className="w-[280px] justify-start text-left font-normal"
+                    >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {date ? format(date, "PPP") : <span>اختر تاريخًا</span>}
+                    </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={(d) => d && setDate(d)}
+                        initialFocus
+                    />
+                    </PopoverContent>
+                </Popover>
+                 <Button variant="outline" size="icon">
+                    <Download className="h-4 w-4" />
+                    <span className="sr-only">تنزيل</span>
+                </Button>
+            </div>
         }
       />
 
@@ -83,7 +98,7 @@ export default function DailyReportPage() {
                   <ArrowDownCircle className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIn)}</div>
+                  <div className="text-2xl font-bold text-green-600">{formatCurrency(cashFlow.totalIn)}</div>
                 </CardContent>
               </Card>
               <Card>
@@ -92,7 +107,7 @@ export default function DailyReportPage() {
                   <ArrowUpCircle className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{formatCurrency(totalOut)}</div>
+                  <div className="text-2xl font-bold text-red-600">{formatCurrency(cashFlow.totalOut)}</div>
                 </CardContent>
               </Card>
               <Card>
@@ -101,7 +116,7 @@ export default function DailyReportPage() {
                   <MinusCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${netChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(netChange)}</div>
+                  <div className={`text-2xl font-bold ${cashFlow.netChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(cashFlow.netChange)}</div>
                 </CardContent>
               </Card>
                {cashWallet && (
@@ -119,11 +134,11 @@ export default function DailyReportPage() {
             </div>
              <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                {/* Other Wallet Balances */}
-                {wallets.filter(w => w.id !== cashWalletId).map(wallet => (
+                {otherWallets.map(wallet => (
                   <Card key={wallet.id}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">{wallet.name}</CardTitle>
-                       <Image src={wallet.icon} alt={wallet.name} width={20} height={20} className='rounded-md' data-ai-hint="logo" />
+                       <Image src={wallet.icon || 'https://placehold.co/40x40.png'} alt={wallet.name} width={20} height={20} className='rounded-md' data-ai-hint="logo" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{formatCurrency(wallet.balance)}</div>
@@ -151,21 +166,14 @@ export default function DailyReportPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cashSales.map((s, i) => (
-                  <TableRow key={`sale-${i}`}>
-                    <TableCell>بيع</TableCell>
-                    <TableCell>دفعة من عملية بيع</TableCell>
-                    <TableCell className="text-left font-medium">{formatCurrency(s.amount)}</TableCell>
+                {transactions.inflows.map((item, i) => (
+                  <TableRow key={`in-${i}`}>
+                    <TableCell>{item.type}</TableCell>
+                    <TableCell>{item.description}</TableCell>
+                    <TableCell className="text-left font-medium">{formatCurrency(item.amount)}</TableCell>
                   </TableRow>
                 ))}
-                {cashContributions.map((c, i) => (
-                  <TableRow key={`contrib-${i}`}>
-                    <TableCell>مساهمة</TableCell>
-                    <TableCell>دفعة من مساهمة</TableCell>
-                    <TableCell className="text-left font-medium">{formatCurrency(c.amount)}</TableCell>
-                  </TableRow>
-                ))}
-                {(cashSales.length === 0 && cashContributions.length === 0) && (
+                {transactions.inflows.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center text-muted-foreground">لا توجد مقبوضات نقدية لهذا اليوم.</TableCell>
                   </TableRow>
@@ -190,14 +198,14 @@ export default function DailyReportPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cashExpenses.map((e, i) => (
-                  <TableRow key={`exp-${i}`}>
-                    <TableCell>مصروف</TableCell>
-                    <TableCell>{e.description}</TableCell>
-                    <TableCell className="text-left font-medium">{formatCurrency(e.amount)}</TableCell>
+                {transactions.outflows.map((item, i) => (
+                  <TableRow key={`out-${i}`}>
+                    <TableCell>{item.type}</TableCell>
+                    <TableCell>{item.description}</TableCell>
+                    <TableCell className="text-left font-medium">{formatCurrency(item.amount)}</TableCell>
                   </TableRow>
                 ))}
-                {(cashExpenses.length === 0) && (
+                {transactions.outflows.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center text-muted-foreground">لا توجد مدفوعات نقدية لهذا اليوم.</TableCell>
                   </TableRow>

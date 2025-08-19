@@ -2,9 +2,9 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { getSession, sessionOptions } from '@/lib/session';
+import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 
 export async function login(prevState: string | undefined, formData: FormData) {
   const session = await getSession();
@@ -24,7 +24,8 @@ export async function login(prevState: string | undefined, formData: FormData) {
   session.isLoggedIn = true;
   session.username = user.username;
   session.userId = user.id;
-  session.permissions = user.permissions as any; // Cast because Prisma returns JsonValue
+  // Parse the permissions from string to JSON object before saving to session
+  session.permissions = JSON.parse(user.permissions as string); 
 
   await session.save();
 
@@ -35,5 +36,6 @@ export async function login(prevState: string | undefined, formData: FormData) {
 export async function logout() {
     const session = await getSession();
     session.destroy();
+    revalidatePath('/'); // Clears the cache for the login page
     redirect('/');
 }

@@ -1,36 +1,32 @@
 
-'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { livestock, barns } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
-import type { Livestock } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { prisma } from '@/lib/prisma';
+import type { Livestock, LivestockType, Barn } from '@prisma/client';
 
-export default function AvailableLivestockReportPage() {
-  
-  const availableLivestock = livestock.filter(animal => animal.status === 'Available');
+type LivestockWithDetails = Livestock & {
+  barn: Barn;
+  livestockType: LivestockType;
+};
 
-  const getBarnName = (barnId: string) => {
-    return barns.find((b) => b.id === barnId)?.name || 'غير محدد';
-  };
+export default async function AvailableLivestockReportPage() {
   
-  const getTypeText = (animal: Livestock) => {
+  const availableLivestock = await prisma.livestock.findMany({
+    where: { status: 'Available' },
+    include: {
+      barn: true,
+      livestockType: true,
+    },
+    orderBy: { tagId: 'asc' }
+  });
+
+  const getTypeText = (animal: LivestockWithDetails) => {
     if (animal.isBatch) {
-       switch (animal.type) {
-         case 'Chicken': return 'دفعة دجاج';
-         case 'Sheep': return 'دفعة غنم';
-         case 'Goat': return 'دفعة ماعز';
-         default: return `دفعة ${animal.type}`;
-       }
+      return `دفعة ${animal.livestockType.name}`;
     }
-    switch (animal.type) {
-      case 'Cow': return 'بقرة';
-      case 'Sheep': return 'خروف';
-      case 'Goat': return 'ماعز';
-      case 'Chicken': return 'دجاج';
-      default: return animal.type;
-    }
+    return animal.livestockType.name;
   }
 
   return (
@@ -65,9 +61,9 @@ export default function AvailableLivestockReportPage() {
                     </TableCell>
                     <TableCell>{getTypeText(animal)}</TableCell>
                     <TableCell>{animal.breed}</TableCell>
-                    <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
+                    <TableCell>{animal.weight.toNumber()} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
                     <TableCell>{animal.age}</TableCell>
-                    <TableCell>{getBarnName(animal.barnId)}</TableCell>
+                    <TableCell>{animal.barn.name}</TableCell>
                     <TableCell>
                       <Badge variant={'default'}>متاح</Badge>
                     </TableCell>
