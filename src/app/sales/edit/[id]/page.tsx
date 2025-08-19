@@ -14,7 +14,10 @@ import { useFormState, useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import type { Sale, Livestock, Wallet, Payment } from '@prisma/client';
-// import { updateSale } from '@/lib/actions/sale.actions';
+import { updateSale } from '@/lib/actions/sale.actions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
+
 
 type SaleWithDetails = Sale & {
     livestock: Livestock;
@@ -32,10 +35,10 @@ type PaymentState = {
   amount: number;
 }
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending || disabled}>
             {pending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
         </Button>
     )
@@ -44,7 +47,7 @@ function SubmitButton() {
 export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
     const router = useRouter();
     const { toast } = useToast();
-    // const [updateState, updateFormAction] = useFormState(updateSale.bind(null, sale.id), { message: null, errors: {}, success: false });
+    const [updateState, updateFormAction] = useFormState(updateSale.bind(null, sale.id), { message: null, errors: {}, success: false });
 
     const [customerName, setCustomerName] = useState(sale.customerName);
     const [saleDate, setSaleDate] = useState(format(new Date(sale.saleDate), 'yyyy-MM-dd'));
@@ -53,6 +56,13 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
     
     const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
     const remainingBalance = totalPrice - totalPaid;
+
+    useEffect(() => {
+        if (updateState.success) {
+            toast({ title: 'نجاح', description: updateState.message });
+            router.push('/sales');
+        }
+    }, [updateState, toast, router]);
 
     const handleAddPayment = () => {
         setPayments([...payments, {}]);
@@ -64,21 +74,13 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
         setPayments(newPayments);
     };
 
-    const handlePaymentChange = (index: number, field: keyof PaymentState, value: string | number) => {
+    const handlePaymentChange = (index: number, field: keyof Omit<PaymentState, 'id'>, value: string | number) => {
         const newPayments = [...payments.map(p => ({...p}))];
         const payment = newPayments[index] || {};
         (payment as any)[field] = value;
         newPayments[index] = payment;
         setPayments(newPayments);
     };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        toast({
-            title: 'تحت الإنشاء',
-            description: 'وظيفة تعديل المبيعات لم يتم تفعيلها بعد.'
-        });
-    }
 
 
   return (
@@ -94,11 +96,13 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
       <Card>
         <CardHeader>
           <CardDescription>
-            قم بتحديث بيانات عملية البيع أدناه. (ملاحظة: الحفظ غير مفعل بعد).
+            قم بتحديث بيانات عملية البيع أدناه.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-6" onSubmit={handleSubmit}>
+          <form className="grid gap-6" action={updateFormAction}>
+             <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p => p.walletId && p.amount))} />
+
 
              <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -106,12 +110,12 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                     <Input value={`${sale.livestock.tagId || 'دفعة'} - ${sale.livestock.breed}`} disabled />
                 </div>
                  <div className="grid gap-2">
-                    <Label htmlFor="customer-name">اسم العميل</Label>
-                    <Input id="customer-name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="اسم المشتري" />
+                    <Label htmlFor="customerName">اسم العميل</Label>
+                    <Input name="customerName" id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="اسم المشتري" />
                 </div>
                 <div className="grid gap-2">
-                    <Label htmlFor="sale-date">تاريخ البيع</Label>
-                    <Input id="sale-date" type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
+                    <Label htmlFor="saleDate">تاريخ البيع</Label>
+                    <Input name="saleDate" id="saleDate" type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
                 </div>
             </div>
 
@@ -121,8 +125,8 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                 </CardHeader>
                 <CardContent className="grid md:grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="total-price">السعر الإجمالي (ج.م)</Label>
-                        <Input id="total-price" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} />
+                        <Label htmlFor="totalPrice">السعر الإجمالي (ج.م)</Label>
+                        <Input name="totalPrice" id="totalPrice" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} />
                     </div>
                 </CardContent>
                  <CardContent className='space-y-4'>
@@ -181,11 +185,21 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                 </CardContent>
             </Card>
 
+            {updateState.message && !updateState.success && (
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>خطأ في التحديث</AlertTitle>
+                    <AlertDescription>
+                        {updateState.message}
+                    </AlertDescription>
+                </Alert>
+            )}
+
              <div className="flex justify-end gap-2">
                 <Button variant="outline" asChild type="button">
                     <Link href="/sales">إلغاء</Link>
                 </Button>
-                <SubmitButton />
+                <SubmitButton disabled={remainingBalance !== 0} />
             </div>
           </form>
         </CardContent>

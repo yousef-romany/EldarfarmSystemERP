@@ -26,7 +26,7 @@ const saleSchema = z.object({
 });
 
 type SaleState = {
-  errors?: z.ZodError<typeof saleSchema>['formErrors']['fieldErrors'];
+  errors?: z.ZodError<any>['formErrors']['fieldErrors'];
   message?: string | null;
   success?: boolean;
 }
@@ -311,6 +311,114 @@ export async function getSaleById(id: string) {
         return null;
     }
 }
+
+const updateSaleSchema = z.object({
+  customerName: z.string().min(1, "اسم العميل مطلوب"),
+  saleDate: z.string().min(1, "تاريخ البيع مطلوب"),
+  totalPrice: z.coerce.number().min(0, "السعر الإجمالي لا يمكن أن يكون سالبًا"),
+  payments: z.array(paymentSchema),
+});
+
+export async function updateSale(saleId: string, prevState: SaleState, formData: FormData): Promise<SaleState> {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.permissions?.sales?.edit) {
+        return { message: "ليس لديك الصلاحية لتعديل المبيعات.", success: false };
+    }
+    
+    const paymentsData = JSON.parse(formData.get('payments') as string || '[]');
+    const validatedFields = updateSaleSchema.safeParse({
+        customerName: formData.get('customerName'),
+        saleDate: formData.get('saleDate'),
+        totalPrice: formData.get('totalPrice'),
+        payments: paymentsData,
+    });
+
+    if (!validatedFields.success) {
+        return { errors: validatedFields.error.flatten().fieldErrors, message: "بيانات غير صالحة.", success: false };
+    }
+
+    const { customerName, saleDate, totalPrice, payments: newPayments } = validatedFields.data;
+    const totalPaid = newPayments.reduce((acc, p) => acc + p.amount, 0);
+
+    if (Math.abs(totalPaid - totalPrice) > 0.01) {
+        return { message: "مجموع الدفعات يجب أن يساوي السعر الإجمالي المحدث.", success: false };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const originalSale = await tx.sale.findUnique({
+                where: { id: saleId },
+                include: { payments: true }
+            });
+
+            if (!originalSale) throw new Error("Sale not found");
+
+            // 1. Revert original payment amounts from wallets
+            for (const oldPayment of originalSale.payments) {
+                await tx.wallet.update({
+                    where: { id: oldPayment.walletId },
+                    data: { balance: { decrement: oldPayment.amount } }
+                });
+            }
+
+            // 2. Delete old payments
+            await tx.payment.deleteMany({ where: { saleId: saleId } });
+
+            // 3. Create new payments
+            await tx.payment.createMany({
+                data: newPayments.map(p => ({
+                    amount: p.amount,
+                    walletId: p.walletId,
+                    saleId: saleId,
+                    date: new Date(saleDate),
+                    type: 'Income',
+                    description: `(تعديل) دفعة من بيع للعميل ${customerName}`
+                }))
+            });
+
+            // 4. Apply new payment amounts to wallets
+            for (const newPayment of newPayments) {
+                await tx.wallet.update({
+                    where: { id: newPayment.walletId },
+                    data: { balance: { increment: newPayment.amount } }
+                });
+            }
+
+            // 5. Update the sale record itself
+            const updatedSale = await tx.sale.update({
+                where: { id: saleId },
+                data: {
+                    customerName,
+                    saleDate: new Date(saleDate),
+                    totalPrice,
+                    amountPaid: totalPaid,
+                    remainingAmount: totalPrice - totalPaid,
+                }
+            });
+
+            // 6. Log the update
+            await tx.log.create({
+                data: {
+                    userId: session.userId!,
+                    action: 'UPDATE',
+                    entityType: 'SALE',
+                    entityId: saleId,
+                    details: `تعديل بيانات عملية البيع للعميل ${customerName}.`
+                }
+            });
+        });
+
+        revalidatePath('/sales');
+        revalidatePath(`/sales/edit/${saleId}`);
+        revalidatePath('/wallets');
+        revalidatePath('/daily-report');
+        return { message: "تم تحديث عملية البيع بنجاح!", success: true };
+    } catch (error) {
+        console.error("Error updating sale:", error);
+        return { message: "فشل في تحديث عملية البيع.", success: false };
+    }
+}
+
 
 export async function deleteSale(id: string) {
     const session = await getSession();
