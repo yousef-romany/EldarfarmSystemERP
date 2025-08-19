@@ -12,11 +12,11 @@ export const users: PrismaUser[] = [
       barns: adminPermissions,
       users: adminPermissions,
       // Add all other entities
-  } },
+  } as any, name: 'Admin User' },
   { id: 'clx2', username: 'manager', password: 'password', role: 'MANAGER', permissions: {
        barns: { view: true, add: true, edit: true, delete: false },
        users: { view: true, add: false, edit: false, delete: false },
-  } },
+  } as any, name: 'Manager User' },
 ];
 
 export const barns: PrismaBarn[] = [

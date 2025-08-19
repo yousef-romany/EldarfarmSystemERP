@@ -12,7 +12,16 @@ const barnSchema = z.object({
   capacity: z.coerce.number().int().positive('السعة يجب أن تكون رقمًا موجبًا'),
 });
 
-export async function createBarn(prevState: any, formData: FormData) {
+type BarnState = {
+  errors?: {
+    name?: string[];
+    capacity?: string[];
+  };
+  message?: string | null;
+  success?: boolean;
+}
+
+export async function createBarn(prevState: BarnState, formData: FormData) {
   const session = await getSession();
   if (!session.isLoggedIn) {
     redirect('/');
@@ -65,4 +74,111 @@ export async function createBarn(prevState: any, formData: FormData) {
     console.error('Error creating barn:', error);
     return { message: 'فشل في إضافة العنبر.', success: false };
   }
+}
+
+
+export async function updateBarn(id: string, prevState: BarnState, formData: FormData) {
+    const session = await getSession();
+    if (!session.isLoggedIn) {
+        redirect('/');
+    }
+
+    if (!session.permissions?.barns?.edit) {
+        return {
+            message: 'ليس لديك الصلاحية لتعديل العنابر.',
+            success: false,
+        };
+    }
+
+    const validatedFields = barnSchema.safeParse({
+        name: formData.get('name'),
+        capacity: formData.get('capacity'),
+    });
+
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'بيانات غير صالحة.',
+            success: false,
+        };
+    }
+    
+    const { name, capacity } = validatedFields.data;
+
+    try {
+        const barn = await prisma.barn.update({
+            where: { id },
+            data: {
+                name,
+                capacity,
+            },
+        });
+
+         await prisma.log.create({
+            data: {
+                userId: session.userId!,
+                action: 'UPDATE',
+                entityType: 'BARN',
+                entityId: barn.id,
+                details: `قام بتعديل بيانات العنبر: ${name}`
+            }
+        });
+
+
+        revalidatePath('/barns');
+        return { message: 'تم تعديل العنبر بنجاح!', success: true };
+    } catch (error) {
+        console.error('Error updating barn:', error);
+        return { message: 'فشل في تعديل العنبر.', success: false };
+    }
+}
+
+
+export async function deleteBarn(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn) {
+        redirect('/');
+    }
+    
+    if (!session.permissions?.barns?.delete) {
+        return {
+            message: 'ليس لديك الصلاحية لحذف العنابر.',
+            success: false,
+        };
+    }
+    
+    try {
+        // First, check if the barn has any livestock.
+        const barn = await prisma.barn.findUnique({
+            where: { id },
+            include: { livestock: true }
+        });
+
+        if (barn?.livestock && barn.livestock.length > 0) {
+            return {
+                message: 'لا يمكن حذف العنبر لأنه يحتوي على مواشٍ. يرجى نقل المواشي أولاً.',
+                success: false,
+            };
+        }
+
+        await prisma.barn.delete({
+            where: { id },
+        });
+
+        await prisma.log.create({
+            data: {
+                userId: session.userId!,
+                action: 'DELETE',
+                entityType: 'BARN',
+                entityId: id,
+                details: `قام بحذف العنبر: ${barn?.name}`
+            }
+        });
+
+        revalidatePath('/barns');
+        return { message: 'تم حذف العنبر بنجاح!', success: true };
+    } catch (error) {
+        console.error('Error deleting barn:', error);
+        return { message: 'فشل في حذف العنبر.', success: false };
+    }
 }
