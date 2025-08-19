@@ -131,3 +131,60 @@ export async function createExpense(prevState: ExpenseState, formData: FormData)
   }
 }
 
+export async function deleteExpense(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.permissions?.expenses?.delete) {
+        return { message: 'ليس لديك الصلاحية لحذف المصروفات.', success: false };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const expense = await tx.expense.findUnique({
+                where: { id },
+                include: { payments: true }
+            });
+
+            if (!expense) {
+                throw new Error('المصروف غير موجود.');
+            }
+
+            // Reverse wallet transactions
+            for (const payment of expense.payments) {
+                await tx.wallet.update({
+                    where: { id: payment.walletId },
+                    data: { balance: { increment: payment.amount } }
+                });
+            }
+
+            // Delete payments associated with the expense
+            await tx.payment.deleteMany({
+                where: { expenseId: id }
+            });
+
+            // Delete the expense itself
+            await tx.expense.delete({
+                where: { id }
+            });
+
+            // Log the deletion
+            await tx.log.create({
+                data: {
+                    userId: session.userId!,
+                    action: 'DELETE',
+                    entityType: 'EXPENSE',
+                    entityId: id,
+                    details: `قام بحذف المصروف: ${expense.description} بقيمة ${expense.amount}.`
+                }
+            });
+        });
+
+        revalidatePath('/expenses');
+        revalidatePath('/wallets');
+        revalidatePath('/daily-report');
+        return { message: 'تم حذف المصروف بنجاح.', success: true };
+
+    } catch (error) {
+        console.error('Error deleting expense:', error);
+        return { message: 'فشل في حذف المصروف. قد يكون مرتبطًا بسجلات أخرى.', success: false };
+    }
+}

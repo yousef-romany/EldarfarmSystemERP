@@ -1,7 +1,7 @@
 
 'use client'
 
-import { PlusCircle, FileText, MoreHorizontal, Trash2 } from 'lucide-react';
+import { PlusCircle, FileText, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,8 +19,11 @@ import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useFormState, useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createExpense, ExpenseState } from '@/lib/actions/expense.actions';
+import { createExpense, deleteExpense, ExpenseState } from '@/lib/actions/expense.actions';
 import type { Expense, Wallet, Payment } from '@prisma/client';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import Link from 'next/link';
 
 type ExpenseWithDetails = Expense & {
     payments: (Payment & { wallet: Wallet })[]
@@ -111,6 +114,22 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
       setIsAddDialogOpen(true);
       // Reset form state if needed, though useFormState should handle this.
   }
+  
+  const handleDelete = async (id: string) => {
+    const result = await deleteExpense(id);
+    if (result.success) {
+      toast({
+        title: "نجاح",
+        description: result.message,
+      });
+    } else {
+      toast({
+        title: "خطأ",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
+  }
 
 
   return (
@@ -186,7 +205,8 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
             </TableHeader>
             <TableBody>
               {expenses.map((expense) => (
-                <TableRow key={expense.id}>
+                <AlertDialog key={expense.id}>
+                <TableRow>
                   <TableCell>{format(new Date(expense.date), 'yyyy-MM-dd')}</TableCell>
                   <TableCell>
                     <Badge variant={getCategoryVariant(expense.category)}>{getCategoryText(expense.category)}</Badge>
@@ -206,14 +226,40 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <DropdownMenuItem>تعديل</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          حذف
+                        <DropdownMenuItem asChild disabled>
+                            <Link href={`/expenses/edit/${expense.id}`}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                تعديل (قريبًا)
+                            </Link>
                         </DropdownMenuItem>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            حذف
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        سيتم حذف هذا المصروف نهائيًا. سيؤثر هذا على أرصدة المحافظ. لا يمكن التراجع عن هذا الإجراء.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDelete(expense.id)}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      نعم، قم بالحذف
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+                </AlertDialog>
               ))}
             </TableBody>
           </Table>
@@ -340,4 +386,3 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
     </>
   );
 }
-

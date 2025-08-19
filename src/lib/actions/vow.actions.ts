@@ -135,7 +135,8 @@ export async function getVowById(id: string) {
             include: {
                 livestock: {
                     include: {
-                        livestockType: true
+                        livestockType: true,
+                        barn: true,
                     }
                 }
             }
@@ -144,5 +145,61 @@ export async function getVowById(id: string) {
     } catch (error) {
         console.error("Failed to get vow by ID:", error);
         return null;
+    }
+}
+
+
+export async function deleteVow(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.permissions?.vows?.delete) {
+        return { message: 'ليس لديك الصلاحية لحذف النذور.', success: false };
+    }
+
+    try {
+        const vow = await prisma.vow.findUnique({
+            where: { id },
+            include: { livestock: true }
+        });
+
+        if (!vow) {
+            return { message: 'النذر غير موجود.', success: false };
+        }
+
+        // A vowed animal cannot be part of a sale, so we don't need to check for that.
+        // We just need to delete the vow and the associated livestock record.
+
+        await prisma.$transaction(async (tx) => {
+            // 1. Delete the Vow record
+            await tx.vow.delete({ where: { id } });
+
+            // 2. Delete the associated Livestock record
+            await tx.livestock.delete({ where: { id: vow.livestockId } });
+
+            // 3. Update barn occupancy
+            await tx.barn.update({
+                where: { id: vow.livestock.barnId },
+                data: { currentOccupancy: { decrement: vow.livestock.quantity || 1 } }
+            });
+
+            // 4. Log the deletion
+            await tx.log.create({
+                data: {
+                    userId: session.userId!,
+                    action: 'DELETE',
+                    entityType: 'VOW',
+                    entityId: id,
+                    details: `قام بحذف النذر من ${vow.donorName} مع الحيوان المرتبط به.`
+                }
+            });
+        });
+
+        revalidatePath('/vows');
+        revalidatePath('/dashboard');
+        revalidatePath('/barns');
+        return { message: 'تم حذف النذر والحيوان المرتبط به بنجاح.', success: true };
+
+    } catch (error) {
+        console.error('Error deleting vow:', error);
+        return { message: 'فشل في حذف النذر.', success: false };
     }
 }

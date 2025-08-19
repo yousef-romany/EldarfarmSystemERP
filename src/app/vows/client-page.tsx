@@ -8,6 +8,11 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import type { Vow, Livestock, LivestockType } from '@prisma/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { deleteVow } from '@/lib/actions/vow.actions';
+import { useToast } from '@/hooks/use-toast';
+
 
 type VowWithDetails = Vow & {
     livestock: Livestock & {
@@ -16,6 +21,7 @@ type VowWithDetails = Vow & {
 };
 
 export default function VowsClientPage({ vows }: { vows: VowWithDetails[] }) {
+  const { toast } = useToast();
 
   const getLivestockDetails = (livestock: VowWithDetails['livestock']) => {
     if (!livestock) return 'غير معروف';
@@ -29,6 +35,23 @@ export default function VowsClientPage({ vows }: { vows: VowWithDetails[] }) {
     const url = `/vows/receipt/${vowId}`;
     window.open(url, '_blank');
   };
+  
+  const handleDelete = async (id: string) => {
+    const result = await deleteVow(id);
+    if (result.success) {
+      toast({
+        title: "نجاح",
+        description: result.message,
+      });
+    } else {
+      toast({
+        title: "خطأ",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
+  }
+
 
   return (
       <Card>
@@ -51,7 +74,8 @@ export default function VowsClientPage({ vows }: { vows: VowWithDetails[] }) {
             </TableHeader>
             <TableBody>
               {vows.map((vow) => (
-                <TableRow key={vow.id}>
+                <AlertDialog key={vow.id}>
+                <TableRow>
                   <TableCell className="font-medium">{vow.donorName}</TableCell>
                   <TableCell>{vow.receiptId || 'N/A'}</TableCell>
                   <TableCell>{format(new Date(vow.date), 'yyyy-MM-dd')}</TableCell>
@@ -76,14 +100,34 @@ export default function VowsClientPage({ vows }: { vows: VowWithDetails[] }) {
                             <Printer className="mr-2 h-4 w-4" />
                             طباعة الإيصال
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            حذف
-                        </DropdownMenuItem>
+                        <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                حذف
+                            </DropdownMenuItem>
+                        </AlertDialogTrigger>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      سيتم حذف هذا النذر والحيوان المرتبط به نهائيًا. لا يمكن التراجع عن هذا الإجراء.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDelete(vow.id)}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      نعم، قم بالحذف
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+                </AlertDialog>
               ))}
             </TableBody>
           </Table>
