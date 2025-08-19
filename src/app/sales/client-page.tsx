@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/page-header';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
-import type { Payment } from '@/lib/types';
 import Link from 'next/link';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -21,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useFormState, useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createSale } from '@/lib/actions/sale.actions';
+import { createSale, settleSale } from '@/lib/actions/sale.actions';
 import type { Livestock, Sale, Wallet } from '@prisma/client';
 
 type SaleWithLivestock = Sale & {
@@ -32,11 +31,17 @@ type SaleWithLivestock = Sale & {
     }
 };
 
-function SubmitButton({ pendingText, text, disabled }: { pendingText: string, text: string, disabled?: boolean}) {
+type PaymentDetails = {
+    walletId: string;
+    amount: number;
+}
+
+
+function SubmitButton({ text, disabled }: { text: string, disabled?: boolean}) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending || disabled}>
-      {pending ? pendingText : text}
+      {pending ? 'جاري الحفظ...' : text}
     </Button>
   );
 }
@@ -46,7 +51,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   const [createState, createFormAction] = useFormState(createSale, { message: null, errors: {}, success: false });
 
   // State for Immediate Sale
-  const [payments, setPayments] = useState<Partial<Omit<Payment, 'date'>>>([{}]);
+  const [payments, setPayments] = useState<Partial<PaymentDetails>>([{}]);
   const [selectedAnimal, setSelectedAnimal] = useState<Livestock | null>(null);
   const [pricePerKg, setPricePerKg] = useState<number>(0);
   const [currentWeight, setCurrentWeight] = useState<number>(0);
@@ -60,15 +65,18 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   const [finalWeight, setFinalWeight] = useState(0);
   const [settlementPricePerKg, setSettlementPricePerKg] = useState(0);
   const [finalTotalPrice, setFinalTotalPrice] = useState(0);
-  const [settlementPayments, setSettlementPayments] = useState<Partial<Payment[]>>([{}]);
+  const [settlementPayments, setSettlementPayments] = useState<Partial<PaymentDetails[]>>([{}]);
   
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
   const remainingBalance = totalPrice - totalPaid;
 
   const settlementTotalPaid = settlementPayments.reduce((acc, p) => acc + (p?.amount || 0), 0);
-  const settlementRemainingBalance = finalTotalPrice - (settlementSale?.amountPaid || 0) - settlementTotalPaid;
+  const settlementRemainingBalance = finalTotalPrice - (settlementSale?.amountPaid.toNumber() || 0) - settlementTotalPaid;
   const weightDifference = settlementSale ? finalWeight - (settlementSale.initialWeight?.toNumber() || 0) : 0;
 
+  // Form state for settlement action
+  const settleSaleWithId = settlementSale ? settleSale.bind(null, settlementSale.id) : async () => {};
+  const [settleState, settleFormAction] = useFormState(settleSaleWithId, { message: null, errors: {}, success: false });
 
   const getAnimalTag = (sale: SaleWithLivestock) => {
     const { livestock } = sale;
@@ -95,6 +103,15 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
       toast({ title: 'خطأ', description: createState.message, variant: 'destructive' });
     }
   }, [createState, toast]);
+
+  useEffect(() => {
+    if (settleState?.success) {
+        toast({ title: 'نجاح', description: settleState.message });
+        setIsSettlementDialogOpen(false);
+    } else if (settleState?.message && !settleState.success) {
+        toast({ title: 'خطأ', description: settleState.message, variant: 'destructive' });
+    }
+  }, [settleState, toast])
   
   // Handlers for Immediate Sale
   const handleAddPayment = () => {
@@ -107,8 +124,8 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
     setPayments(newPayments);
   };
   
-  const handlePaymentChange = (index: number, field: keyof Omit<Payment, 'date'>, value: string | number) => {
-    const newPayments = [...payments.map(p => ({...p}))];
+  const handlePaymentChange = (index: number, field: keyof PaymentDetails, value: string | number) => {
+    const newPayments = [...payments.map(p => ({...p}))] as PaymentDetails[];
     const payment = newPayments[index] || {};
     (payment as any)[field] = value;
     newPayments[index] = payment;
@@ -136,9 +153,8 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   
   // Handlers for Deferred Sale Settlement
   const openSettlementDialog = (sale: Sale) => {
-    const animal = availableLivestock.find(a => a.id === sale.livestockId);
     setSettlementSale(sale);
-    setFinalWeight(animal?.weight.toNumber() || sale.initialWeight?.toNumber() || 0);
+    setFinalWeight(sale.initialWeight?.toNumber() || 0);
     const calculatedPricePerKg = sale.pricePerKg.toNumber() || sale.totalPrice.toNumber() / (sale.initialWeight?.toNumber() || 1);
     setSettlementPricePerKg(calculatedPricePerKg);
     setSettlementPayments([{}]);
@@ -147,10 +163,9 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   
   useEffect(() => {
     if (settlementSale) {
-        const pricePerKg = settlementSale.pricePerKg.toNumber() || settlementSale.totalPrice.toNumber() / (settlementSale.initialWeight?.toNumber() || 1);
-        setFinalTotalPrice(finalWeight * pricePerKg);
+        setFinalTotalPrice(finalWeight * settlementPricePerKg);
     }
-  }, [settlementSale, finalWeight]);
+  }, [settlementSale, finalWeight, settlementPricePerKg]);
 
   const handleAddSettlementPayment = () => {
     setSettlementPayments([...settlementPayments, {}]);
@@ -162,8 +177,8 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
     setSettlementPayments(newPayments);
   };
 
-  const handleSettlementPaymentChange = (index: number, field: keyof Omit<Payment, 'date'>, value: string | number) => {
-    const newPayments = [...settlementPayments];
+  const handleSettlementPaymentChange = (index: number, field: keyof PaymentDetails, value: string | number) => {
+    const newPayments = [...settlementPayments.map(p => ({...p}))] as PaymentDetails[];
     const payment = newPayments[index] || {};
     (payment as any)[field] = value;
     newPayments[index] = payment;
@@ -286,6 +301,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                   <input type="hidden" name="payments" value={JSON.stringify(payments)} />
                   <input type="hidden" name="livestockId" value={selectedAnimal?.id || ''} />
                   <input type="hidden" name="initialWeight" value={currentWeight} />
+                  <input type="hidden" name="pricePerKg" value={pricePerKg} />
                   <input type="hidden" name="totalPrice" value={totalPrice} />
                   <input type="hidden" name="saleDate" value={format(new Date(), 'yyyy-MM-dd')} />
 
@@ -352,7 +368,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="price-per-kg">سعر الكيلو (ج.م)</Label>
-                          <Input name="pricePerKg" id="price-per-kg" type="number" placeholder="أدخل سعر الكيلو" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} />
+                          <Input id="price-per-kg" type="number" placeholder="أدخل سعر الكيلو" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} />
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="total-price-display">السعر الإجمالي</Label>
@@ -416,7 +432,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                       </div>
                        <div className='flex justify-between items-center p-3 bg-muted rounded-md'>
                           <span className='font-semibold'>المبلغ المتبقي:</span>
-                          <span className='font-bold text-lg text-destructive'>
+                           <span className={`font-bold text-lg ${remainingBalance === 0 ? 'text-green-600' : 'text-destructive'}`}>
                             {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(remainingBalance)}
                           </span>
                       </div>
@@ -424,7 +440,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                   </Card>
 
                   <div className="flex justify-end mt-4">
-                     <SubmitButton pendingText="جاري التسجيل..." text="تسجيل البيع" disabled={!selectedAnimal || !pricePerKg || remainingBalance !== 0} />
+                     <SubmitButton text="تسجيل البيع" disabled={!selectedAnimal || !pricePerKg || remainingBalance !== 0} />
                   </div>
               </form>
             </CardContent>
@@ -442,7 +458,10 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
             </DialogDescription>
           </DialogHeader>
           {settlementSale && (
-            <div className="space-y-4 py-4 overflow-y-auto flex-1 pr-6">
+           <form action={settleFormAction} className="space-y-4 py-4 overflow-y-auto flex-1 pr-6">
+                <input type="hidden" name="payments" value={JSON.stringify(settlementPayments.filter(p => p.walletId && p.amount))} />
+                <input type="hidden" name="finalWeight" value={finalWeight} />
+
               <Card>
                 <CardHeader>
                     <CardTitle className="text-lg">ملخص الاتفاق الأولي</CardTitle>
@@ -471,10 +490,11 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                     <div className="grid gap-2">
                       <Label htmlFor="final-weight">الوزن النهائي (كجم)</Label>
                       <Input id="final-weight" type="number" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} />
+                       {settleState.errors?.finalWeight && <p className="text-xs text-red-500">{settleState.errors.finalWeight[0]}</p>}
                     </div>
                      <div className="grid gap-2">
                         <Label>فرق الوزن</Label>
-                        <div className={cn("flex items-center justify-center h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm", weightDifference > 0 ? "text-green-600" : "text-red-600")}>
+                        <div className={cn("flex items-center justify-center h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm", weightDifference >= 0 ? "text-green-600" : "text-red-600")}>
                             <ArrowDownUp className="mr-2 h-4 w-4" />
                             <span className="font-bold">{weightDifference.toFixed(2)} كجم</span>
                         </div>
@@ -524,6 +544,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                         </Button>
                       </div>
                     ))}
+                     {settleState.errors?.payments && <p className="text-xs text-red-500">{settleState.errors.payments[0]}</p>}
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={handleAddSettlementPayment}>
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -538,7 +559,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                         </span>
                     </div>
                     <div className='flex justify-between items-center p-3 bg-muted rounded-md'>
-                        <span className='font-semibold'>المبلغ المتبقي:</span>
+                        <span className='font-semibold'>المبلغ المطلوب للتسوية:</span>
                         <span className='font-bold text-lg text-destructive'>
                         {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(settlementRemainingBalance)}
                         </span>
@@ -546,24 +567,23 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                 </CardContent>
               </Card>
 
-            </div>
-          )}
-          <DialogFooter className="gap-2 sm:justify-between">
-            <Button type="button" variant="outline" onClick={() => settlementSale && handlePrint(settlementSale!.id)}>
-                <Printer className="mr-2 h-4 w-4" />
-                طباعة الفاتورة
-            </Button>
-            <div className='flex gap-2'>
-                <DialogClose asChild>
-                <Button type="button" variant="secondary">إلغاء</Button>
-                </DialogClose>
-                <Button type="button" disabled={settlementRemainingBalance !== 0}>
-                    إتمام البيع والتسوية
+              <DialogFooter className="gap-2 sm:justify-between sticky bottom-0 bg-background pt-4">
+                <Button type="button" variant="outline" onClick={() => settlementSale && handlePrint(settlementSale!.id)}>
+                    <Printer className="mr-2 h-4 w-4" />
+                    طباعة الفاتورة
                 </Button>
-            </div>
-          </DialogFooter>
+                <div className='flex gap-2'>
+                    <DialogClose asChild>
+                    <Button type="button" variant="secondary">إلغاء</Button>
+                    </DialogClose>
+                    <SubmitButton text="إتمام البيع والتسوية" disabled={settlementRemainingBalance !== 0} />
+                </div>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </>
   );
 }
+

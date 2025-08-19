@@ -122,3 +122,27 @@ export async function createVow(prevState: VowState, formData: FormData): Promis
     return { message: 'فشل في تسجيل النذر. حدث خطأ غير متوقع.', success: false };
   }
 }
+
+export async function getVowById(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn) {
+        redirect('/');
+    }
+
+    try {
+        const vow = await prisma.vow.findUnique({
+            where: { id },
+            include: {
+                livestock: {
+                    include: {
+                        livestockType: true
+                    }
+                }
+            }
+        });
+        return vow;
+    } catch (error) {
+        console.error("Failed to get vow by ID:", error);
+        return null;
+    }
+}

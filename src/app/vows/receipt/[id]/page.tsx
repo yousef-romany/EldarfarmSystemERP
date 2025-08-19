@@ -9,7 +9,7 @@ import { Gift, Printer } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Vow, Livestock, LivestockType } from '@prisma/client';
-import { getVowById } from '@/lib/actions/vow.actions'; // We will create this action
+import { getVowById } from '@/lib/actions/vow.actions';
 
 type VowWithDetails = Vow & {
     livestock: Livestock & {
@@ -21,15 +21,18 @@ const VowReceiptPage = () => {
   const params = useParams();
   const { id } = params;
   const [vow, setVow] = useState<VowWithDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof id === 'string') {
+        setIsLoading(true);
         getVowById(id).then(data => {
             if (data) {
-                setVow(data);
+                setVow(data as VowWithDetails);
             }
+            setIsLoading(false);
         });
     }
   }, [id]);
@@ -45,8 +48,12 @@ const VowReceiptPage = () => {
     return animal.livestockType.name;
   }
 
-  if (!vow) {
+  if (isLoading) {
     return <div>جاري تحميل الإيصال...</div>;
+  }
+
+  if (!vow) {
+    return <div>لم يتم العثور على بيانات الإيصال.</div>
   }
   
   const animal = vow.livestock;
@@ -140,3 +147,4 @@ const VowReceiptPage = () => {
 };
 
 export default VowReceiptPage;
+

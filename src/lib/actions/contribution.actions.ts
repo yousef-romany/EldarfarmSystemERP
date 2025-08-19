@@ -123,3 +123,62 @@ export async function createContribution(prevState: ContributionState, formData:
     return { message: 'فشل في تسجيل المساهمة. حدث خطأ غير متوقع.', success: false };
   }
 }
+
+
+export async function deleteContribution(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.permissions?.contributions?.delete) {
+        return { message: 'ليس لديك الصلاحية لحذف المساهمات.', success: false };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const contribution = await tx.contribution.findUnique({
+                where: { id },
+                include: { payments: true }
+            });
+
+            if (!contribution) {
+                throw new Error('المساهمة غير موجودة.');
+            }
+
+            // Reverse wallet transactions
+            for (const payment of contribution.payments) {
+                await tx.wallet.update({
+                    where: { id: payment.walletId },
+                    data: { balance: { decrement: payment.amount } }
+                });
+            }
+
+            // Delete payments associated with the contribution
+            await tx.payment.deleteMany({
+                where: { contributionId: id }
+            });
+
+            // Delete the contribution itself
+            await tx.contribution.delete({
+                where: { id }
+            });
+
+            // Log the deletion
+            await tx.log.create({
+                data: {
+                    userId: session.userId!,
+                    action: 'DELETE',
+                    entityType: 'CONTRIBUTION',
+                    entityId: id,
+                    details: `قام بحذف المساهمة من ${contribution.donorName} بقيمة ${contribution.totalAmount}.`
+                }
+            });
+        });
+
+        revalidatePath('/contributions');
+        revalidatePath('/wallets');
+        revalidatePath('/daily-report');
+        return { message: 'تم حذف المساهمة بنجاح.', success: true };
+
+    } catch (error) {
+        console.error('Error deleting contribution:', error);
+        return { message: 'فشل في حذف المساهمة. قد تكون مرتبطة بسجلات أخرى.', success: false };
+    }
+}

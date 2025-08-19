@@ -65,7 +65,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
   const { livestockId, totalPrice, payments, initialWeight } = validatedFields.data;
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
-  if (!isDeferred && totalPaid < totalPrice) {
+  if (!isDeferred && Math.abs(totalPaid - totalPrice) > 0.01) {
      return { message: 'في البيع الفوري، يجب أن يكون المبلغ المدفوع مساوياً للسعر الإجمالي.', success: false };
   }
    if (isDeferred && totalPaid === 0) {
@@ -129,11 +129,14 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
         }
       });
       
-      // 5. Update barn occupancy
-      await tx.barn.update({
-        where: { id: livestock.barnId },
-        data: { currentOccupancy: { decrement: livestock.quantity || 1 } },
-      });
+      // 5. Update barn occupancy (only for non-batch animals for now)
+      if (!livestock.isBatch) {
+        await tx.barn.update({
+            where: { id: livestock.barnId },
+            data: { currentOccupancy: { decrement: 1 } },
+        });
+      }
+
 
       // 6. Create Log entry
       await tx.log.create({
@@ -157,5 +160,119 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
         return { message: `فشل في تسجيل البيع: ${error.message}`, success: false };
     }
     return { message: 'فشل في تسجيل عملية البيع. حدث خطأ غير متوقع.', success: false };
+  }
+}
+
+const settleSaleSchema = z.object({
+  finalWeight: z.coerce.number().positive("الوزن النهائي يجب أن يكون أكبر من صفر"),
+  payments: z.array(paymentSchema),
+});
+
+type SettleSaleState = {
+  errors?: z.ZodError<typeof settleSaleSchema>['formErrors']['fieldErrors'];
+  message?: string | null;
+  success?: boolean;
+}
+
+export async function settleSale(saleId: string, prevState: SettleSaleState, formData: FormData): Promise<SettleSaleState> {
+  const session = await getSession();
+  if (!session.isLoggedIn || !session.permissions?.sales?.edit) {
+    return { message: "ليس لديك الصلاحية لتسوية المبيعات.", success: false };
+  }
+
+  const paymentsData = JSON.parse(formData.get('payments') as string || '[]');
+
+  const validatedFields = settleSaleSchema.safeParse({
+    finalWeight: formData.get('finalWeight'),
+    payments: paymentsData,
+  });
+
+  if (!validatedFields.success) {
+    return { errors: validatedFields.error.flatten().fieldErrors, message: 'بيانات غير صالحة', success: false };
+  }
+
+  const { finalWeight, payments } = validatedFields.data;
+
+  try {
+    const sale = await prisma.sale.findUnique({
+      where: { id: saleId },
+      include: { livestock: true }
+    });
+    if (!sale || sale.status !== 'Pending') {
+      return { message: "لا يمكن تسوية هذه العملية.", success: false };
+    }
+
+    const finalTotalPrice = finalWeight * sale.pricePerKg.toNumber();
+    const newPaymentsTotal = payments.reduce((acc, p) => acc + p.amount, 0);
+    const totalPaid = sale.amountPaid.toNumber() + newPaymentsTotal;
+    const remainingBalance = finalTotalPrice - sale.amountPaid.toNumber();
+    
+    if (Math.abs(newPaymentsTotal - remainingBalance) > 0.01) {
+        return { message: `المبلغ المدفوع للتسوية (${newPaymentsTotal}) لا يطابق المبلغ المتبقي (${remainingBalance.toFixed(2)}).`, success: false };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Update Sale record
+      await tx.sale.update({
+        where: { id: saleId },
+        data: {
+          status: 'Completed',
+          finalWeight,
+          settlementDate: new Date(),
+          totalPrice: finalTotalPrice,
+          amountPaid: totalPaid,
+          remainingAmount: 0,
+        },
+      });
+      
+      // 2. Create new Payment records
+      if (payments.length > 0) {
+        await tx.payment.createMany({
+          data: payments.map(p => ({
+            amount: p.amount,
+            walletId: p.walletId,
+            saleId: sale.id,
+            date: new Date(),
+            type: 'Income',
+            description: `تسوية بيع الحيوان ${sale.livestock.tagId || sale.livestock.id}`
+          }))
+        });
+      }
+
+      // 3. Update wallet balances
+      for (const payment of payments) {
+        await tx.wallet.update({
+          where: { id: payment.walletId },
+          data: { balance: { increment: payment.amount } },
+        });
+      }
+      
+      // 4. Update livestock record with final weight
+      await tx.livestock.update({
+          where: { id: sale.livestockId },
+          data: { status: 'Sold', weight: finalWeight }
+      });
+
+      // 5. Log the settlement
+      await tx.log.create({
+        data: {
+          userId: session.userId!,
+          action: 'UPDATE',
+          entityType: 'SALE',
+          entityId: sale.id,
+          details: `تسوية بيع آجل للحيوان ${sale.livestock.tagId}. الوزن النهائي: ${finalWeight} كجم.`
+        }
+      });
+    });
+
+    revalidatePath('/sales');
+    revalidatePath('/dashboard');
+    revalidatePath('/reports/bookings');
+    revalidatePath('/daily-report');
+
+    return { message: "تمت تسوية عملية البيع بنجاح!", success: true };
+  } catch (error) {
+    console.error("Error settling sale:", error);
+    return { message: "فشل في تسوية العملية.", success: false };
   }
 }

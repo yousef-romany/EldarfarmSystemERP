@@ -10,8 +10,11 @@ import Link from 'next/link';
 import type { Contribution } from '@prisma/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { deleteContribution } from '@/lib/actions/contribution.actions';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ContributionsClientPage({ contributions }: { contributions: Contribution[] }) {
+  const { toast } = useToast();
   
   const handlePrint = (contributionId: string) => {
     const url = `/contributions/receipt/${contributionId}`;
@@ -19,8 +22,19 @@ export default function ContributionsClientPage({ contributions }: { contributio
   };
 
   const handleDelete = async (id: string) => {
-    // TODO: Implement delete contribution action
-    console.log("Deleting contribution:", id);
+    const result = await deleteContribution(id);
+    if (result.success) {
+      toast({
+        title: "نجاح",
+        description: result.message,
+      });
+    } else {
+      toast({
+        title: "خطأ",
+        description: result.message,
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -71,7 +85,7 @@ export default function ContributionsClientPage({ contributions }: { contributio
                             طباعة الإيصال
                           </DropdownMenuItem>
                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem className="text-destructive">
+                              <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 حذف
                               </DropdownMenuItem>
