@@ -2,9 +2,6 @@
 import { prisma } from '@/lib/prisma';
 import PurchasesPageClient from './client-page';
 import { PageHeader } from '@/components/page-header';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-
 
 export default async function PurchasesPage() {
   const barns = await prisma.barn.findMany({ orderBy: { name: 'asc' } });

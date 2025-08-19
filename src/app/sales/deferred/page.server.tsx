@@ -1,13 +1,2 @@
-
-import { prisma } from '@/lib/prisma';
-import NewDeferredSalePage from './page';
-
-export default async function DeferredSalePageContainer() {
-  const availableLivestock = await prisma.livestock.findMany({
-    where: { status: 'Available' },
-    orderBy: { tagId: 'asc' },
-  });
-  const wallets = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
-
-  return <NewDeferredSalePage availableLivestock={availableLivestock} wallets={wallets} />;
-}
+// This file is no longer needed as the deferred sale form is now in a dialog
+// on the main sales page. Deleting this will prevent broken routes.

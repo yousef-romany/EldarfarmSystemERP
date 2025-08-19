@@ -22,6 +22,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 type VowWithDetails = Vow & {
     livestock: Livestock & {
         livestockType: LivestockType;
+        barn: Barn;
     };
 };
 
@@ -63,7 +64,7 @@ export default function EditVowPage({ vow, barns, livestockTypes }: EditVowPageP
                 <ChevronRight className="h-4 w-4" />
             </Link>
           </Button>
-          <PageHeader title={`تعديل النذر - ${vow.receiptId || vow.id}`} className='mb-0' />
+          <PageHeader title={`تعديل النذر - ${vow.receiptId || vow.id.substring(0,8)}`} className='mb-0' />
       </div>
       <Card className="max-w-4xl mx-auto">
         <CardHeader>

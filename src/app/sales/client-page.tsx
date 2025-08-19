@@ -54,13 +54,17 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   const [createState, createFormAction] = useFormState(createSale, { message: null, errors: {}, success: false });
 
   // State for Immediate Sale
-  const [payments, setPayments] = useState<Partial<PaymentDetails>>([{}]);
+  const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);
   const [selectedAnimal, setSelectedAnimal] = useState<Livestock | null>(null);
   const [pricePerKg, setPricePerKg] = useState<number>(0);
   const [currentWeight, setCurrentWeight] = useState<number>(0);
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [customerName, setCustomerName] = useState('');
+
+  // State for Deferred Sale
+  const [isDeferredSaleDialogOpen, setIsDeferredSaleDialogOpen] = useState(false);
+
 
   // State for Deferred Sale Settlement
   const [isSettlementDialogOpen, setIsSettlementDialogOpen] = useState(false);
@@ -88,10 +92,8 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   };
   
   const handlePrint = (saleId: string) => {
-    // TODO: The invoice page needs to be converted to use real data
-    toast({ title: 'تحت الإنشاء', description: 'صفحة طباعة الفاتورة لا تزال تستخدم بيانات وهمية.' });
-    // const url = `/sales/invoice/${saleId}`;
-    // window.open(url, '_blank');
+    const url = `/sales/invoice/${saleId}`;
+    window.open(url, '_blank');
   };
   
   const handleDelete = async (id: string) => {
@@ -113,6 +115,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
       setTotalPrice(0);
       setPayments([{}]);
       setCustomerName('');
+      setIsDeferredSaleDialogOpen(false); // Close dialog on success
     } else if (createState?.message && !createState.success) {
       toast({ title: 'خطأ', description: createState.message, variant: 'destructive' });
     }
@@ -206,7 +209,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
       <Tabs defaultValue="list" dir="rtl">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="list">قائمة المبيعات</TabsTrigger>
-          <TabsTrigger value="deferred">إضافة بيع آجل</TabsTrigger>
+          <TabsTrigger value="deferred" onClick={() => setIsDeferredSaleDialogOpen(true)}>إضافة بيع آجل</TabsTrigger>
           <TabsTrigger value="immediate">إضافة بيع فوري</TabsTrigger>
         </TabsList>
          <TabsContent value="list">
@@ -307,22 +310,13 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
             </Card>
         </TabsContent>
         <TabsContent value="deferred">
-          <Card>
-            <CardHeader>
-                <CardTitle>بدء عملية بيع آجل جديدة</CardTitle>
-                <CardDescription>
-                    املأ النموذج أدناه لتسجيل عملية بيع آجل.
-                </CardDescription>
-            </CardHeader>
-             <CardContent>
-                 <Link href="/sales/deferred">
-                    <Button className='w-full'>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        الانتقال إلى صفحة البيع الآجل
-                    </Button>
-                </Link>
-            </CardContent>
-          </Card>
+            {/* This tab is now just a trigger for the dialog */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>إضافة بيع آجل</CardTitle>
+                    <CardDescription>اضغط على الزر أعلاه لفتح نافذة تسجيل عملية بيع آجل جديدة.</CardDescription>
+                </CardHeader>
+            </Card>
         </TabsContent>
         <TabsContent value="immediate">
           <Card>
@@ -335,7 +329,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
             <CardContent className="space-y-4">
               <form action={createFormAction}>
                   <input type="hidden" name="isDeferred" value="false" />
-                  <input type="hidden" name="payments" value={JSON.stringify(payments)} />
+                  <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p=>p.walletId && p.amount))} />
                   <input type="hidden" name="livestockId" value={selectedAnimal?.id || ''} />
                   <input type="hidden" name="initialWeight" value={currentWeight} />
                   <input type="hidden" name="pricePerKg" value={pricePerKg} />
@@ -441,7 +435,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                             </div>
                             <div className="grid gap-2">
                               <Label htmlFor={`amount-${index}`}>المبلغ</Label>
-                              <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
+                              <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
                             </div>
                             <Button
                               type="button"
@@ -484,6 +478,99 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Deferred Sale Dialog */}
+      <Dialog open={isDeferredSaleDialogOpen} onOpenChange={setIsDeferredSaleDialogOpen}>
+        <DialogContent className="sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>بدء عملية بيع آجل جديدة</DialogTitle>
+              <DialogDescription>
+                  املأ النموذج أدناه لتسجيل عملية بيع آجل.
+              </DialogDescription>
+            </DialogHeader>
+             <form action={createFormAction} className="grid gap-6 py-4">
+                <input type="hidden" name="isDeferred" value="true" />
+                <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p=>p.walletId && p.amount))} />
+                <input type="hidden" name="livestockId" value={selectedAnimal?.id || ''} />
+                <input type="hidden" name="initialWeight" value={initialWeight} />
+                <input type="hidden" name="pricePerKg" value={pricePerKg} />
+                <input type="hidden" name="totalPrice" value={totalPrice} />
+                <input type="hidden" name="saleDate" value={format(new Date(), 'yyyy-MM-dd')} />
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="deferred-animal-select">اختر الحيوان</Label>
+                        <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" role="combobox" aria-expanded={comboboxOpen} className="w-full justify-between">
+                              {selectedAnimal ? `${selectedAnimal.tagId} - ${selectedAnimal.breed}` : "اختر حيوانًا..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                              <CommandInput placeholder="ابحث بالرقم التعريفي..." />
+                              <CommandList><CommandEmpty>لم يتم العثور على حيوان.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableLivestock.map((animal) => (
+                                      <CommandItem key={animal.id} value={animal.id} onSelect={() => handleAnimalSelect(animal.id)}>
+                                        <Check className={cn("mr-2 h-4 w-4", selectedAnimal?.id === animal.id ? "opacity-100" : "opacity-0")}/>
+                                        {animal.tagId} - {animal.breed} - {animal.weight.toNumber()} كجم
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="deferred-customer-name">اسم العميل</Label>
+                        <Input name="customerName" id="deferred-customer-name" placeholder="اسم المشتري" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+                    </div>
+                </div>
+
+                {selectedAnimal && (
+                  <Card>
+                    <CardHeader><CardTitle className="text-lg">تفاصيل السعر</CardTitle></CardHeader>
+                    <CardContent className="grid md:grid-cols-3 gap-4">
+                      <div className="grid gap-2"><Label htmlFor="deferred-initial-weight">الوزن الأولي (كجم)</Label><Input id="deferred-initial-weight" type="number" value={initialWeight} readOnly /></div>
+                      <div className="grid gap-2"><Label htmlFor="deferred-price-per-kg">سعر الكيلو (ج.م)</Label><Input id="deferred-price-per-kg" type="number" placeholder="أدخل سعر الكيلو" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} /></div>
+                      <div className="grid gap-2"><Label htmlFor="deferred-total-price">السعر الإجمالي المبدئي</Label><Input id="deferred-total-price" type="number" value={totalPrice} readOnly /></div>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                <Card>
+                  <CardHeader><CardTitle className='text-lg'>تفاصيل دفع العربون</CardTitle></CardHeader>
+                  <CardContent className='space-y-4'>
+                    <div className="space-y-3">
+                      {payments.map((payment, index) => (
+                        <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
+                          <div className="grid gap-2 flex-1"><Label htmlFor={`wallet-${index}`}>المحفظة / الحساب</Label>
+                            <Select onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}><SelectTrigger id={`wallet-${index}`}><SelectValue placeholder="اختر محفظة..." /></SelectTrigger>
+                              <SelectContent>{wallets.map((wallet) => (<SelectItem key={wallet.id} value={wallet.id}>{wallet.name}</SelectItem>))}</SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2"><Label htmlFor={`amount-${index}`}>المبلغ</Label><Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} /></div>
+                          <Button type="button" variant="ghost" size="icon" onClick={() => handleRemovePayment(index)} disabled={payments.length === 1}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddPayment}><PlusCircle className="mr-2 h-4 w-4" />إضافة دفعة أخرى</Button>
+                  </CardContent>
+                   <CardContent>
+                    <div className='flex justify-between items-center p-3 bg-muted rounded-md mb-2'><span className='font-semibold'>إجمالي العربون المدفوع:</span><span className='font-bold text-lg'>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalPaid)}</span></div>
+                  </CardContent>
+                </Card>
+
+                 <DialogFooter>
+                    <DialogClose asChild><Button type="button" variant="secondary">إلغاء</Button></DialogClose>
+                    <SubmitButton text="حفظ العملية" disabled={!selectedAnimal || !pricePerKg || totalPaid === 0} />
+                </DialogFooter>
+            </form>
+        </DialogContent>
+      </Dialog>
       
       {/* Deferred Sale Settlement Dialog */}
       <Dialog open={isSettlementDialogOpen} onOpenChange={setIsSettlementDialogOpen}>
@@ -568,7 +655,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor={`settlement-amount-${index}`}>المبلغ</Label>
-                          <Input id={`settlement-amount-${index}`} type="number" placeholder="المبلغ" value={payment.amount || ''} onChange={(e) => handleSettlementPaymentChange(index, 'amount', Number(e.target.value))} />
+                          <Input id={`settlement-amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handleSettlementPaymentChange(index, 'amount', Number(e.target.value))} />
                         </div>
                         <Button
                           type="button"
