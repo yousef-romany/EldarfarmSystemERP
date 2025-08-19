@@ -1,11 +1,28 @@
+
+'use client';
 import Link from 'next/link';
+import { useFormState, useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Beef } from 'lucide-react';
+import { login } from '@/lib/actions/auth.actions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? 'جاري الدخول...' : 'دخول'}
+    </Button>
+  );
+}
 
 export default function LoginPage() {
+  const [errorMessage, dispatch] = useFormState(login, undefined);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="flex items-center gap-2 mb-6">
@@ -18,10 +35,10 @@ export default function LoginPage() {
           <CardDescription>أدخل اسم المستخدم وكلمة المرور للوصول إلى حسابك</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
+          <form action={dispatch} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="username">اسم المستخدم</Label>
-              <Input id="username" placeholder="e.g., ahmad.mahmoud" required />
+              <Input id="username" name="username" placeholder="e.g., ahmad.mahmoud" required />
             </div>
             <div className="grid gap-2">
               <div className="flex items-center">
@@ -30,12 +47,19 @@ export default function LoginPage() {
                   نسيت كلمة المرور؟
                 </Link>
               </div>
-              <Input id="password" type="password" required />
+              <Input id="password" name="password" type="password" required />
             </div>
-            <Button type="submit" className="w-full" asChild>
-              <Link href="/dashboard">دخول</Link>
-            </Button>
-          </div>
+            <SubmitButton />
+             {errorMessage && (
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>خطأ في تسجيل الدخول</AlertTitle>
+                    <AlertDescription>
+                        {errorMessage}
+                    </AlertDescription>
+                </Alert>
+             )}
+          </form>
         </CardContent>
       </Card>
     </div>
