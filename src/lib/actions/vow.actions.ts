@@ -123,6 +123,100 @@ export async function createVow(prevState: VowState, formData: FormData): Promis
   }
 }
 
+export async function updateVow(vowId: string, prevState: VowState, formData: FormData): Promise<VowState> {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.permissions?.vows?.edit) {
+        return { message: 'ليس لديك الصلاحية لتعديل النذور.', success: false };
+    }
+    
+    const isBatch = formData.get('registrationType') === 'batch';
+    const validatedFields = vowSchema.safeParse({
+        donorName: formData.get('donorName'),
+        receiptId: formData.get('receiptId'),
+        date: formData.get('date'),
+        notes: formData.get('notes'),
+        isBatch,
+        tagId: formData.get('tagId'),
+        quantity: formData.get('quantity'),
+        livestockTypeId: formData.get('livestockTypeId'),
+        breed: formData.get('breed'),
+        weight: formData.get('weight'),
+        age: formData.get('age'),
+        barnId: formData.get('barnId'),
+    });
+
+    if (!validatedFields.success) {
+        return { errors: validatedFields.error.flatten().fieldErrors, message: 'بيانات غير صالحة.', success: false };
+    }
+
+    const { donorName, receiptId, date, notes, barnId, ...livestockData } = validatedFields.data;
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const originalVow = await tx.vow.findUnique({
+                where: { id: vowId },
+                include: { livestock: true }
+            });
+
+            if (!originalVow) throw new Error("Vow not found");
+
+            const originalLivestock = originalVow.livestock;
+
+            // Revert barn occupancy change if barn is different
+            if (originalLivestock.barnId !== barnId) {
+                 await tx.barn.update({
+                    where: { id: originalLivestock.barnId },
+                    data: { currentOccupancy: { decrement: originalLivestock.quantity || 1 } }
+                });
+                 await tx.barn.update({
+                    where: { id: barnId },
+                    data: { currentOccupancy: { increment: livestockData.quantity || 1 } }
+                });
+            }
+
+            // Update livestock record
+            const updatedLivestock = await tx.livestock.update({
+                where: { id: originalLivestock.id },
+                data: {
+                    ...livestockData,
+                    status: 'Vowed' // Ensure status remains Vowed
+                }
+            });
+
+            // Update vow record
+            await tx.vow.update({
+                where: { id: vowId },
+                data: {
+                    donorName,
+                    receiptId,
+                    date: new Date(date),
+                    notes,
+                }
+            });
+
+            // Log the update
+            await tx.log.create({
+                data: {
+                    userId: session.userId!,
+                    action: 'UPDATE',
+                    entityType: 'VOW',
+                    entityId: vowId,
+                    details: `تعديل بيانات النذر من ${donorName}.`
+                }
+            });
+        });
+
+        revalidatePath('/vows');
+        revalidatePath(`/vows/edit/${vowId}`);
+        revalidatePath('/dashboard');
+        return { message: "تم تحديث النذر بنجاح!", success: true };
+    } catch (error) {
+        console.error("Error updating vow:", error);
+        return { message: "فشل في تحديث النذر.", success: false };
+    }
+}
+
+
 export async function getVowById(id: string) {
     const session = await getSession();
     if (!session.isLoggedIn) {

@@ -15,7 +15,9 @@ import type { Vow, Livestock, LivestockType, Barn } from '@prisma/client';
 import { format } from 'date-fns';
 import { useFormState, useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-// import { updateVow } from '@/lib/actions/vow.actions'; // Action to be created
+import { updateVow } from '@/lib/actions/vow.actions';
+import { AlertTriangle, ChevronRight } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type VowWithDetails = Vow & {
     livestock: Livestock & {
@@ -41,44 +43,42 @@ function SubmitButton() {
 export default function EditVowPage({ vow, barns, livestockTypes }: EditVowPageProps) {
   const router = useRouter();
   const { toast } = useToast();
-  // const [updateState, updateFormAction] = useFormState(updateVow.bind(null, vow.id), { message: null, errors: {}, success: false });
+  const [updateState, updateFormAction] = useFormState(updateVow.bind(null, vow.id), { message: null, errors: {}, success: false });
 
   const [registrationType, setRegistrationType] = useState(vow.livestock.isBatch ? 'batch' : 'individual');
 
-  // useEffect(() => {
-  //   if (updateState.success) {
-  //     toast({ title: 'نجاح', description: updateState.message });
-  //     router.push('/vows');
-  //   } else if (updateState.message && !updateState.success) {
-  //     toast({ title: 'خطأ', description: updateState.message, variant: 'destructive' });
-  //   }
-  // }, [updateState, toast, router]);
+  useEffect(() => {
+    if (updateState.success) {
+      toast({ title: 'نجاح', description: updateState.message });
+      router.push('/vows');
+    }
+  }, [updateState, toast, router]);
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Placeholder until updateVow action is fully implemented
-    toast({
-        title: 'تحت الإنشاء',
-        description: 'وظيفة تعديل النذور لم يتم تفعيلها بعد.'
-    });
-    // router.push('/vows');
-  }
 
   return (
     <>
-      <PageHeader title={`تعديل النذر - ${vow.receiptId || vow.id}`} />
+      <div className='flex items-center gap-4 mb-6'>
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/vows">
+                <ChevronRight className="h-4 w-4" />
+            </Link>
+          </Button>
+          <PageHeader title={`تعديل النذر - ${vow.receiptId || vow.id}`} className='mb-0' />
+      </div>
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle>تفاصيل النذر</CardTitle>
-          <CardDescription>قم بتحديث بيانات النذر أدناه. (ملاحظة: وظيفة الحفظ تحت الإنشاء)</CardDescription>
+          <CardDescription>قم بتحديث بيانات النذر أدناه.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-6" onSubmit={handleSubmit}>
+          <form className="grid gap-6" action={updateFormAction}>
+            <input type="hidden" name="registrationType" value={registrationType} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div className="grid gap-2">
                   <Label htmlFor="donor-name">اسم الناذر</Label>
                   <Input name="donorName" id="donor-name" defaultValue={vow.donorName} placeholder="e.g., يوسف نادر" required />
+                   {updateState?.errors?.donorName && <p className="text-xs text-red-500">{updateState.errors.donorName[0]}</p>}
                 </div>
                  <div className="grid gap-2">
                   <Label htmlFor="receipt-id">رقم الإيصال</Label>
@@ -105,6 +105,7 @@ export default function EditVowPage({ vow, barns, livestockTypes }: EditVowPageP
                 <div className="grid gap-2">
                   <Label htmlFor="tagId">الرقم التعريفي (إن وجد)</Label>
                   <Input name="tagId" id="tagId" defaultValue={vow.livestock.tagId || ''} placeholder="e.g., COW-004" />
+                   {updateState?.errors?.tagId && <p className="text-xs text-red-500">{updateState.errors.tagId[0]}</p>}
                 </div>
               )}
                <div className="grid gap-2">
@@ -119,24 +120,29 @@ export default function EditVowPage({ vow, barns, livestockTypes }: EditVowPageP
                     ))}
                   </SelectContent>
                 </Select>
+                 {updateState?.errors?.livestockTypeId && <p className="text-xs text-red-500">{updateState.errors.livestockTypeId[0]}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="breed">السلالة</Label>
                 <Input name="breed" id="breed" defaultValue={vow.livestock.breed} placeholder="e.g., هولشتاين, ساسو" required/>
+                 {updateState?.errors?.breed && <p className="text-xs text-red-500">{updateState.errors.breed[0]}</p>}
               </div>
               {registrationType === 'batch' && (
                  <div className="grid gap-2">
                     <Label htmlFor="quantity">الكمية</Label>
                     <Input name="quantity" id="quantity" type="number" defaultValue={vow.livestock.quantity || ''} placeholder="e.g., 500" required/>
+                     {updateState?.errors?.quantity && <p className="text-xs text-red-500">{updateState.errors.quantity[0]}</p>}
                 </div>
               )}
               <div className="grid gap-2">
                 <Label htmlFor="weight">الوزن عند الاستلام (كجم)</Label>
                 <Input name="weight" id="weight" type="number" defaultValue={vow.livestock.weight.toNumber()} placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required/>
+                 {updateState?.errors?.weight && <p className="text-xs text-red-500">{updateState.errors.weight[0]}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="age">العمر عند الاستلام (أشهر)</Label>
                 <Input name="age" id="age" type="number" defaultValue={vow.livestock.age} placeholder="e.g., 18" required />
+                 {updateState?.errors?.age && <p className="text-xs text-red-500">{updateState.errors.age[0]}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="barn">العنبر</Label>
@@ -152,16 +158,29 @@ export default function EditVowPage({ vow, barns, livestockTypes }: EditVowPageP
                     ))}
                   </SelectContent>
                 </Select>
+                 {updateState?.errors?.barnId && <p className="text-xs text-red-500">{updateState.errors.barnId[0]}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="vow-date">تاريخ الاستلام</Label>
                 <Input name="date" id="vow-date" type="date" defaultValue={format(new Date(vow.date), 'yyyy-MM-dd')} required/>
+                 {updateState?.errors?.date && <p className="text-xs text-red-500">{updateState.errors.date[0]}</p>}
               </div>
             </div>
              <div className="grid gap-2">
                 <Label htmlFor="notes">ملاحظات</Label>
                 <Textarea name="notes" id="notes" defaultValue={vow.notes || ''} placeholder="أي ملاحظات إضافية عن الحالة الصحية أو غيرها..."/>
             </div>
+
+            {updateState.message && !updateState.success && (
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>خطأ في التحديث</AlertTitle>
+                    <AlertDescription>
+                        {updateState.message}
+                    </AlertDescription>
+                </Alert>
+            )}
+
             <div className="flex justify-end gap-2">
               <Button variant="outline" asChild type="button">
                 <Link href="/vows">إلغاء</Link>
