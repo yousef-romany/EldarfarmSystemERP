@@ -454,6 +454,7 @@ export default function SalesPage() {
                           <Input id={`settlement-amount-${index}`} type="number" placeholder="المبلغ" onChange={(e) => handleSettlementPaymentAmountChange(index, e.target.value)} />
                         </div>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemoveSettlementPayment(index)}
