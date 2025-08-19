@@ -1,19 +1,62 @@
 
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { PlusCircle, Warehouse, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { barns } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { createBarn } from '@/lib/actions/barn.actions';
+import { useToast } from '@/hooks/use-toast';
+import { prisma } from '@/lib/prisma';
+import type { Barn } from '@prisma/client';
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? 'جاري الحفظ...' : 'حفظ'}
+    </Button>
+  );
+}
 
 export default function BarnsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const [barns, setBarns] = useState<Barn[]>([]);
+
+  const [state, formAction] = useFormState(createBarn, { message: null });
+  
+  useEffect(() => {
+    async function fetchBarns() {
+        // This is not ideal for production, data should be fetched in a server component
+        // but for the sake of simplicity in this prototyping phase, we fetch on the client.
+        const allBarns = await prisma.barn.findMany();
+        setBarns(allBarns);
+    }
+    fetchBarns();
+  }, []);
+
+  useEffect(() => {
+    if (state?.success) {
+      toast({
+        title: 'نجاح',
+        description: state.message,
+      });
+      setIsAddDialogOpen(false);
+    } else if (state?.message && !state.success) {
+      toast({
+        title: 'خطأ',
+        description: state.message,
+        variant: 'destructive',
+      });
+    }
+  }, [state, toast]);
 
   return (
     <>
@@ -76,34 +119,38 @@ export default function BarnsPage() {
        {/* Add Barn Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>إضافة عنبر جديد</DialogTitle>
-            <DialogDescription>
-              املأ البيانات التالية لإنشاء عنبر جديد في المزرعة.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="barn-name" className="text-right">
-                اسم العنبر
-              </Label>
-              <Input id="barn-name" placeholder="e.g., عنبر التسمين الغربي" className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="barn-capacity" className="text-right">
-                السعة (رأس)
-              </Label>
-              <Input id="barn-capacity" type="number" placeholder="e.g., 100" className="col-span-3" />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="secondary">
-                إلغاء
-              </Button>
-            </DialogClose>
-            <Button type="submit">حفظ</Button>
-          </DialogFooter>
+            <form action={formAction}>
+                <DialogHeader>
+                    <DialogTitle>إضافة عنبر جديد</DialogTitle>
+                    <DialogDescription>
+                    املأ البيانات التالية لإنشاء عنبر جديد في المزرعة.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="barn-name" className="text-right">
+                            اسم العنبر
+                        </Label>
+                        <Input id="barn-name" name="name" placeholder="e.g., عنبر التسمين الغربي" className="col-span-3" />
+                    </div>
+                    {state?.errors?.name && <p className="col-span-4 text-xs text-red-500">{state.errors.name[0]}</p>}
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="barn-capacity" className="text-right">
+                            السعة (رأس)
+                        </Label>
+                        <Input id="barn-capacity" name="capacity" type="number" placeholder="e.g., 100" className="col-span-3" />
+                    </div>
+                     {state?.errors?.capacity && <p className="col-span-4 text-xs text-red-500">{state.errors.capacity[0]}</p>}
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                    <Button type="button" variant="secondary">
+                        إلغاء
+                    </Button>
+                    </DialogClose>
+                    <SubmitButton />
+                </DialogFooter>
+            </form>
         </DialogContent>
       </Dialog>
     </>

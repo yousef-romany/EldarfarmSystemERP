@@ -3,10 +3,8 @@
 
 import { redirect } from 'next/navigation';
 import { getSession, sessionOptions } from '@/lib/session';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
-
-const prisma = new PrismaClient();
 
 export async function login(prevState: string | undefined, formData: FormData) {
   const session = await getSession();
@@ -26,7 +24,7 @@ export async function login(prevState: string | undefined, formData: FormData) {
   session.isLoggedIn = true;
   session.username = user.username;
   session.userId = user.id;
-  session.permissions = user.permissions; // Assuming permissions are stored in the user object
+  session.permissions = user.permissions as any; // Cast because Prisma returns JsonValue
 
   await session.save();
 
