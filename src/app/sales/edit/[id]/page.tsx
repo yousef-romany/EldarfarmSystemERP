@@ -4,83 +4,82 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { sales, livestock } from '@/lib/data';
 import { PageHeader } from '@/components/page-header';
 import { useState, useEffect } from 'react';
-import type { Livestock, Sale } from '@/lib/types';
 import Link from 'next/link';
-import { ChevronRight, ChevronsUpDown, Check } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
-import { useParams, useRouter } from 'next/navigation';
+import { ChevronRight, PlusCircle, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRouter } from 'next/navigation';
+import { useFormState, useFormStatus } from 'react-dom';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import type { Sale, Livestock, Wallet, Payment } from '@prisma/client';
+// import { updateSale } from '@/lib/actions/sale.actions';
 
+type SaleWithDetails = Sale & {
+    livestock: Livestock;
+    payments: (Payment & { wallet: Wallet })[];
+};
 
-export default function EditSalePage() {
+type EditSalePageProps = {
+    sale: SaleWithDetails;
+    wallets: Wallet[];
+}
+
+type PaymentState = {
+  id?: string;
+  walletId: string;
+  amount: number;
+}
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+        </Button>
+    )
+}
+
+export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
     const router = useRouter();
-    const params = useParams();
-    const { id } = params;
+    const { toast } = useToast();
+    // const [updateState, updateFormAction] = useFormState(updateSale.bind(null, sale.id), { message: null, errors: {}, success: false });
 
-    const [sale, setSale] = useState<Sale | null>(null);
-    const [selectedAnimal, setSelectedAnimal] = useState<Livestock | null>(null);
-    const [initialWeight, setInitialWeight] = useState<number>(0);
-    const [pricePerKg, setPricePerKg] = useState<number>(0);
-    const [totalPrice, setTotalPrice] = useState<number>(0);
-    const [deposit, setDeposit] = useState<number>(0);
-    const [customerName, setCustomerName] = useState('');
-    const [comboboxOpen, setComboboxOpen] = useState(false);
+    const [customerName, setCustomerName] = useState(sale.customerName);
+    const [saleDate, setSaleDate] = useState(format(new Date(sale.saleDate), 'yyyy-MM-dd'));
+    const [totalPrice, setTotalPrice] = useState(sale.totalPrice.toNumber());
+    const [payments, setPayments] = useState<Partial<PaymentState[]>>(sale.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount.toNumber() })));
+    
+    const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
+    const remainingBalance = totalPrice - totalPaid;
 
-    useEffect(() => {
-        const saleData = sales.find(s => s.id === id);
-        if (saleData) {
-            setSale(saleData);
-            const animalData = livestock.find(a => a.id === saleData.animalId);
-            setSelectedAnimal(animalData || null);
-            setInitialWeight(saleData.initialWeight || 0);
-            setPricePerKg(saleData.pricePerKg || 0);
-            setTotalPrice(saleData.totalPrice || 0);
-            setDeposit(saleData.deposit || 0);
-            setCustomerName(saleData.customerName || '');
-        }
-    }, [id]);
+    const handleAddPayment = () => {
+        setPayments([...payments, {}]);
+    };
 
-  useEffect(() => {
-    if (selectedAnimal) {
-        setTotalPrice(initialWeight * pricePerKg);
-    } else {
-        setTotalPrice(0);
+    const handleRemovePayment = (index: number) => {
+        const newPayments = [...payments];
+        newPayments.splice(index, 1);
+        setPayments(newPayments);
+    };
+
+    const handlePaymentChange = (index: number, field: keyof PaymentState, value: string | number) => {
+        const newPayments = [...payments.map(p => ({...p}))];
+        const payment = newPayments[index] || {};
+        (payment as any)[field] = value;
+        newPayments[index] = payment;
+        setPayments(newPayments);
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        toast({
+            title: 'تحت الإنشاء',
+            description: 'وظيفة تعديل المبيعات لم يتم تفعيلها بعد.'
+        });
     }
-  }, [selectedAnimal, initialWeight, pricePerKg]);
 
-  const handleAnimalSelect = (animalId: string) => {
-    const animal = livestock.find(a => a.id === animalId);
-    setSelectedAnimal(animal || null);
-    if (animal) {
-        setInitialWeight(animal.weight);
-    } else {
-        setInitialWeight(0);
-    }
-    setComboboxOpen(false);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      // Here you would typically handle the form submission, e.g., by calling an API.
-      console.log('Updated Sale:', {
-          ...sale,
-          animalId: selectedAnimal?.id,
-          customerName,
-          initialWeight,
-          pricePerKg,
-          totalPrice,
-          deposit,
-      });
-      router.push('/sales');
-  }
-
-  if (!sale) {
-    return <div>جاري تحميل البيانات...</div>;
-  }
 
   return (
     <>
@@ -90,100 +89,103 @@ export default function EditSalePage() {
                 <ChevronRight className="h-4 w-4" />
             </Link>
           </Button>
-          <PageHeader title={`تعديل عملية البيع #${sale.id}`} className='mb-0' />
+          <PageHeader title={`تعديل عملية البيع #${sale.id.substring(0,8)}`} className='mb-0' />
       </div>
       <Card>
         <CardHeader>
           <CardDescription>
-            قم بتحديث بيانات عملية البيع أدناه.
+            قم بتحديث بيانات عملية البيع أدناه. (ملاحظة: الحفظ غير مفعل بعد).
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="grid gap-6" onSubmit={handleSubmit}>
-            <div className="grid md:grid-cols-2 gap-4">
+
+             <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                    <Label htmlFor="animal-select">الحيوان</Label>
-                     <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={comboboxOpen}
-                          className="w-full justify-between"
-                        >
-                          {selectedAnimal
-                            ? `${selectedAnimal.tagId} - ${selectedAnimal.type === 'Cow' ? 'بقرة' : 'خروف'} - ${selectedAnimal.weight} كجم`
-                            : "اختر حيوانًا..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                          <CommandInput placeholder="ابحث بالرقم التعريفي..." />
-                          <CommandList>
-                            <CommandEmpty>لم يتم العثور على حيوان.</CommandEmpty>
-                            <CommandGroup>
-                              {livestock
-                                .filter((a) => a.status === 'Available' || a.id === selectedAnimal?.id)
-                                .map((animal) => (
-                                  <CommandItem
-                                    key={animal.id}
-                                    value={animal.id}
-                                    onSelect={() => handleAnimalSelect(animal.id)}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        selectedAnimal?.id === animal.id ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {animal.tagId} - {animal.type === 'Cow' ? 'بقرة' : 'خروف'} - {animal.weight} كجم
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <Label>الحيوان</Label>
+                    <Input value={`${sale.livestock.tagId || 'دفعة'} - ${sale.livestock.breed}`} disabled />
                 </div>
-                <div className="grid gap-2">
+                 <div className="grid gap-2">
                     <Label htmlFor="customer-name">اسم العميل</Label>
                     <Input id="customer-name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="اسم المشتري" />
                 </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="sale-date">تاريخ البيع</Label>
+                    <Input id="sale-date" type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
+                </div>
             </div>
 
-            {selectedAnimal && (
-              <Card>
+            <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">تفاصيل السعر</CardTitle>
+                  <CardTitle className="text-lg">تفاصيل السعر والدفع</CardTitle>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-3 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="initial-weight">الوزن الأولي (كجم)</Label>
-                    <Input id="initial-weight" type="number" value={initialWeight} onChange={(e) => setInitialWeight(parseFloat(e.target.value) || 0)} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="price-per-kg">سعر الكيلو (ج.م)</Label>
-                    <Input id="price-per-kg" type="number" value={pricePerKg} placeholder="أدخل سعر الكيلو" onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="total-price">السعر الإجمالي</Label>
-                    <Input id="total-price" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} />
-                  </div>
+                <CardContent className="grid md:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="total-price">السعر الإجمالي (ج.م)</Label>
+                        <Input id="total-price" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} />
+                    </div>
                 </CardContent>
-              </Card>
-            )}
-            
-            <div className="grid gap-2">
-                <Label htmlFor="deposit">العربون (ج.م)</Label>
-                <Input id="deposit" type="number" value={deposit} placeholder="المبلغ المدفوع مقدماً" onChange={(e) => setDeposit(parseFloat(e.target.value) || 0)} />
-            </div>
+                 <CardContent className='space-y-4'>
+                    <Label>الدفعات المسجلة</Label>
+                    <div className="space-y-3">
+                    {payments.map((payment, index) => (
+                        <div key={payment?.id || index} className="flex items-end gap-2 p-2 border rounded-md">
+                        <div className="grid gap-2 flex-1">
+                            <Label htmlFor={`wallet-${index}`}>المحفظة / الحساب</Label>
+                            <Select value={payment?.walletId} onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}>
+                            <SelectTrigger id={`wallet-${index}`}>
+                                <SelectValue placeholder="اختر محفظة..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {wallets.map((wallet) => (
+                                <SelectItem key={wallet.id} value={wallet.id}>
+                                    {wallet.name}
+                                </SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor={`amount-${index}`}>المبلغ</Label>
+                            <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
+                        </div>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemovePayment(index)}
+                        >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                        </div>
+                    ))}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddPayment}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    إضافة دفعة أخرى
+                    </Button>
+                </CardContent>
+                 <CardContent>
+                    <div className='flex justify-between items-center p-3 bg-muted rounded-md mb-2'>
+                        <span className='font-semibold'>الإجمالي المدفوع:</span>
+                        <span className='font-bold text-lg'>
+                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalPaid)}
+                        </span>
+                    </div>
+                    <div className='flex justify-between items-center p-3 bg-muted rounded-md'>
+                        <span className='font-semibold'>المبلغ المتبقي:</span>
+                        <span className={`font-bold text-lg ${remainingBalance === 0 ? 'text-green-600' : 'text-destructive'}`}>
+                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(remainingBalance)}
+                        </span>
+                    </div>
+                </CardContent>
+            </Card>
 
              <div className="flex justify-end gap-2">
                 <Button variant="outline" asChild type="button">
                     <Link href="/sales">إلغاء</Link>
                 </Button>
-                <Button type="submit">حفظ التعديلات</Button>
+                <SubmitButton />
             </div>
           </form>
         </CardContent>

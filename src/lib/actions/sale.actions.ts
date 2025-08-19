@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 
 const paymentSchema = z.object({
+  id: z.string().optional(),
   walletId: z.string().min(1, "يجب تحديد المحفظة"),
   amount: z.coerce.number().positive("المبلغ يجب أن يكون أكبر من صفر"),
 });
@@ -121,24 +122,26 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
         });
       }
 
-      // 4. Update Livestock status
-      await tx.livestock.update({
-        where: { id: livestockId },
-        data: {
-          status: isDeferred ? 'PendingSale' : 'Sold',
-        }
-      });
-      
-      // 5. Update barn occupancy (only for non-batch animals for now)
+      // 4. Update Livestock status and barn occupancy
       if (!livestock.isBatch) {
-        await tx.barn.update({
-            where: { id: livestock.barnId },
-            data: { currentOccupancy: { decrement: 1 } },
+        await tx.livestock.update({
+          where: { id: livestockId },
+          data: {
+            status: isDeferred ? 'PendingSale' : 'Sold',
+          }
         });
+        if (!isDeferred) {
+           await tx.barn.update({
+              where: { id: livestock.barnId },
+              data: { currentOccupancy: { decrement: 1 } },
+          });
+        }
+      } else {
+        // TODO: Handle batch sale logic (e.g., decrementing quantity)
       }
 
 
-      // 6. Create Log entry
+      // 5. Create Log entry
       await tx.log.create({
         data: {
           userId: session.userId!,
@@ -247,11 +250,18 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
         });
       }
       
-      // 4. Update livestock record with final weight
-      await tx.livestock.update({
-          where: { id: sale.livestockId },
-          data: { status: 'Sold', weight: finalWeight }
-      });
+      // 4. Update livestock record with final weight and barn occupancy
+      if (!sale.livestock.isBatch) {
+        await tx.livestock.update({
+            where: { id: sale.livestockId },
+            data: { status: 'Sold', weight: finalWeight }
+        });
+         await tx.barn.update({
+            where: { id: sale.livestock.barnId },
+            data: { currentOccupancy: { decrement: 1 } },
+        });
+      }
+
 
       // 5. Log the settlement
       await tx.log.create({
@@ -275,4 +285,104 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
     console.error("Error settling sale:", error);
     return { message: "فشل في تسوية العملية.", success: false };
   }
+}
+
+export async function getSaleById(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn) {
+        redirect('/');
+    }
+
+    try {
+        const sale = await prisma.sale.findUnique({
+            where: { id },
+            include: {
+                livestock: true,
+                payments: {
+                  include: {
+                    wallet: true
+                  }
+                }
+            }
+        });
+        return sale;
+    } catch (error) {
+        console.error("Failed to get sale by ID:", error);
+        return null;
+    }
+}
+
+export async function deleteSale(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.permissions?.sales?.delete) {
+        return { message: 'ليس لديك الصلاحية لحذف المبيعات.', success: false };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const sale = await tx.sale.findUnique({
+                where: { id },
+                include: { payments: true, livestock: true }
+            });
+
+            if (!sale) {
+                throw new Error('عملية البيع غير موجودة.');
+            }
+
+            // Reverse wallet transactions
+            for (const payment of sale.payments) {
+                await tx.wallet.update({
+                    where: { id: payment.walletId },
+                    data: { balance: { decrement: payment.amount } }
+                });
+            }
+            
+            // Revert livestock status and update barn occupancy if not batch
+            if (!sale.livestock.isBatch) {
+               await tx.livestock.update({
+                 where: { id: sale.livestockId },
+                 data: { status: 'Available' }
+               });
+               // Only increment occupancy if the sale was completed
+               if (sale.status === 'Completed') {
+                  await tx.barn.update({
+                    where: { id: sale.livestock.barnId },
+                    data: { currentOccupancy: { increment: 1 } }
+                  });
+               }
+            }
+
+
+            // Delete payments associated with the sale
+            await tx.payment.deleteMany({
+                where: { saleId: id }
+            });
+
+            // Delete the sale itself
+            await tx.sale.delete({
+                where: { id }
+            });
+
+            // Log the deletion
+            await tx.log.create({
+                data: {
+                    userId: session.userId!,
+                    action: 'DELETE',
+                    entityType: 'SALE',
+                    entityId: id,
+                    details: `قام بحذف عملية البيع للعميل ${sale.customerName}.`
+                }
+            });
+        });
+
+        revalidatePath('/sales');
+        revalidatePath('/wallets');
+        revalidatePath('/daily-report');
+        revalidatePath('/dashboard');
+        return { message: 'تم حذف عملية البيع بنجاح.', success: true };
+
+    } catch (error) {
+        console.error('Error deleting sale:', error);
+        return { message: 'فشل في حذف عملية البيع.', success: false };
+    }
 }

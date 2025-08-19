@@ -20,8 +20,11 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useFormState, useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createSale, settleSale } from '@/lib/actions/sale.actions';
+import { createSale, settleSale, deleteSale } from '@/lib/actions/sale.actions';
 import type { Livestock, Sale, Wallet } from '@prisma/client';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
 
 type SaleWithLivestock = Sale & {
     livestock: {
@@ -85,9 +88,20 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   };
   
   const handlePrint = (saleId: string) => {
-    const url = `/sales/invoice/${saleId}`;
-    window.open(url, '_blank');
+    // TODO: The invoice page needs to be converted to use real data
+    toast({ title: 'تحت الإنشاء', description: 'صفحة طباعة الفاتورة لا تزال تستخدم بيانات وهمية.' });
+    // const url = `/sales/invoice/${saleId}`;
+    // window.open(url, '_blank');
   };
+  
+  const handleDelete = async (id: string) => {
+    const result = await deleteSale(id);
+    if (result.success) {
+      toast({ title: 'نجاح', description: result.message });
+    } else {
+      toast({ title: 'خطأ', description: result.message, variant: 'destructive' });
+    }
+  }
   
   useEffect(() => {
     if (createState?.success) {
@@ -217,7 +231,8 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                         </TableHeader>
                         <TableBody>
                         {sales.map((sale) => (
-                            <TableRow key={sale.id}>
+                           <AlertDialog key={sale.id}>
+                            <TableRow>
                                 <TableCell className="font-medium">{sale.customerName}</TableCell>
                                 <TableCell>{getAnimalTag(sale)}</TableCell>
                                 <TableCell>{format(new Date(sale.saleDate), 'yyyy-MM-dd')}</TableCell>
@@ -243,6 +258,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                                     <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
                                         {sale.status === 'Pending' && (
                                             <DropdownMenuItem onClick={() => openSettlementDialog(sale)}>
+                                                <ArrowDownUp className="mr-2 h-4 w-4" />
                                                 تحديث الوزن و إتمام البيع
                                             </DropdownMenuItem>
                                         )}
@@ -256,13 +272,34 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                                         <Printer className="mr-2 h-4 w-4" />
                                         طباعة الفاتورة
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem className="text-destructive">
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
                                         إلغاء العملية
-                                    </DropdownMenuItem>
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                                 </TableCell>
                             </TableRow>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                    سيتم إلغاء هذه العملية نهائيًا. سيؤثر هذا على أرصدة المحافظ وحالة الحيوان. لا يمكن التراجع عن هذا الإجراء.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                    <AlertDialogAction
+                                    onClick={() => handleDelete(sale.id)}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                    نعم، قم بالحذف
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                             ))}
                         </TableBody>
                     </Table>
@@ -489,7 +526,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                 <CardContent className='grid md:grid-cols-3 gap-4'>
                     <div className="grid gap-2">
                       <Label htmlFor="final-weight">الوزن النهائي (كجم)</Label>
-                      <Input id="final-weight" type="number" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} />
+                      <Input id="final-weight" name="finalWeight" type="number" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} />
                        {settleState.errors?.finalWeight && <p className="text-xs text-red-500">{settleState.errors.finalWeight[0]}</p>}
                     </div>
                      <div className="grid gap-2">
@@ -586,4 +623,3 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
     </>
   );
 }
-
