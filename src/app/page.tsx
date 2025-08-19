@@ -1,144 +1,43 @@
-import { PlusCircle, Search } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { livestock, barns } from '@/lib/data';
-import { PageHeader } from '@/components/page-header';
-import type { Livestock } from '@/lib/types';
+import { Label } from '@/components/ui/label';
+import { Beef } from 'lucide-react';
 
-export default function LivestockPage() {
-  const getBarnName = (barnId: string) => {
-    return barns.find((b) => b.id === barnId)?.name || 'غير محدد';
-  };
-
-  const getStatusVariant = (status: 'Available' | 'Sold' | 'Quarantined') => {
-    switch (status) {
-      case 'Available':
-        return 'default';
-      case 'Sold':
-        return 'destructive';
-      case 'Quarantined':
-        return 'secondary';
-      default:
-        return 'outline';
-    }
-  };
-
-  const getStatusText = (status: 'Available' | 'Sold' | 'Quarantined') => {
-    switch (status) {
-      case 'Available':
-        return 'متاح';
-      case 'Sold':
-        return 'مباع';
-      case 'Quarantined':
-        return 'في الحجر';
-      default:
-        return status;
-    }
-  }
-  
-  const getTypeText = (animal: Livestock) => {
-    if (animal.isBatch) {
-       switch (animal.type) {
-         case 'Chicken': return 'دفعة دجاج';
-         case 'Sheep': return 'دفعة غنم';
-         case 'Goat': return 'دفعة ماعز';
-         default: return `دفعة ${animal.type}`;
-       }
-    }
-    switch (animal.type) {
-      case 'Cow': return 'بقرة';
-      case 'Sheep': return 'خروف';
-      case 'Goat': return 'ماعز';
-      case 'Chicken': return 'دجاج';
-      default: return animal.type;
-    }
-  }
-
-
+export default function LoginPage() {
   return (
-    <>
-      <PageHeader
-        title="نظرة عامة على المواشي"
-        action={
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            إضافة حيوان
-          </Button>
-        }
-      />
-      <Card>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <div className="flex items-center gap-2 mb-6">
+        <Beef className="h-10 w-10 text-primary" />
+        <h1 className="text-3xl font-bold">مدير المواشي</h1>
+      </div>
+      <Card className="w-full max-w-sm">
         <CardHeader>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="بحث بالرقم التعريفي..." className="pl-8" />
-            </div>
-            <div className="flex gap-4">
-              <Select>
-                <SelectTrigger className="w-full md:w-[180px]">
-                  <SelectValue placeholder="فلترة بالنوع" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">الكل</SelectItem>
-                  <SelectItem value="cow">أبقار</SelectItem>
-                  <SelectItem value="sheep">أغنام</SelectItem>
-                  <SelectItem value="goat">ماعز</SelectItem>
-                  <SelectItem value="chicken">دواجن</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select>
-                <SelectTrigger className="w-full md:w-[180px]">
-                  <SelectValue placeholder="فلترة بالعنبر" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">الكل</SelectItem>
-                  {barns.map((barn) => (
-                    <SelectItem key={barn.id} value={barn.id}>
-                      {barn.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>
+          <CardDescription>أدخل اسم المستخدم وكلمة المرور للوصول إلى حسابك</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>الرقم التعريفي / الكمية</TableHead>
-                <TableHead>النوع</TableHead>
-                <TableHead>السلالة</TableHead>
-                <TableHead>الوزن (كجم)</TableHead>
-                <TableHead>العمر (أشهر)</TableHead>
-                <TableHead>العنبر</TableHead>
-                <TableHead>الحالة</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {livestock.map((animal) => (
-                <TableRow key={animal.id}>
-                  <TableCell className="font-medium">
-                    {animal.isBatch ? `${animal.quantity} رأس` : animal.tagId}
-                  </TableCell>
-                  <TableCell>{getTypeText(animal)}</TableCell>
-                  <TableCell>{animal.breed}</TableCell>
-                  <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
-                  <TableCell>{animal.age}</TableCell>
-                  <TableCell>{getBarnName(animal.barnId)}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusVariant(animal.status)}>{getStatusText(animal.status)}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="username">اسم المستخدم</Label>
+              <Input id="username" placeholder="e.g., ahmad.mahmoud" required />
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center">
+                <Label htmlFor="password">كلمة المرور</Label>
+                <Link href="#" className="ml-auto inline-block text-sm underline">
+                  نسيت كلمة المرور؟
+                </Link>
+              </div>
+              <Input id="password" type="password" required />
+            </div>
+            <Button type="submit" className="w-full" asChild>
+              <Link href="/dashboard">دخول</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

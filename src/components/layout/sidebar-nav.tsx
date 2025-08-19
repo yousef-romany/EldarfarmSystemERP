@@ -48,7 +48,7 @@ export function SidebarNav() {
 
 
   const managementItems = [
-    { href: '/', label: 'نظرة عامة', icon: LayoutGrid },
+    { href: '/dashboard', label: 'نظرة عامة', icon: LayoutGrid },
     { href: '/users', label: 'المستخدمون', icon: Users },
     { href: '/barns', label: 'العنابر', icon: Warehouse },
   ];
@@ -98,14 +98,14 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {managementItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href}>
-                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
+                            <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                                <Link href={item.href}>
                                     <div>
                                         <item.icon />
                                         <span>{item.label}</span>
                                     </div>
-                                </SidebarMenuSubButton>
-                            </Link>
+                                </Link>
+                            </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                     ))}
                     </SidebarMenuSub>
@@ -125,14 +125,14 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {operationsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                             <Link href={item.href}>
-                                <SidebarMenuSubButton isActive={pathname === item.href} tooltip={item.label}>
+                             <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                                <Link href={item.href}>
                                      <div>
                                         <item.icon />
                                         <span>{item.label}</span>
                                     </div>
-                                </SidebarMenuSubButton>
-                            </Link>
+                                </Link>
+                            </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                     ))}
                     </SidebarMenuSub>
@@ -152,26 +152,26 @@ export function SidebarNav() {
                     <SidebarMenuSub>
                     {financialReportsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                             <Link href={item.href}>
-                                <SidebarMenuSubButton isActive={pathname.startsWith(item.href)} tooltip={item.label}>
+                             <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
+                                <Link href={item.href}>
                                      <div>
                                         <item.icon />
                                         <span>{item.label}</span>
                                     </div>
-                                </SidebarMenuSubButton>
-                            </Link>
+                                </Link>
+                            </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                     ))}
                      {livestockReportsItems.map((item) => (
                         <SidebarMenuSubItem key={item.href}>
-                             <Link href={item.href}>
-                                <SidebarMenuSubButton isActive={pathname.startsWith(item.href)} tooltip={item.label}>
+                             <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
+                                <Link href={item.href}>
                                      <div>
                                         <item.icon />
                                         <span>{item.label}</span>
                                     </div>
-                                </SidebarMenuSubButton>
-                            </Link>
+                                </Link>
+                            </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                     ))}
                     </SidebarMenuSub>
@@ -191,7 +191,7 @@ export function SidebarNav() {
             </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <Link href="/login" className="w-full">
+            <Link href="/" className="w-full">
               <SidebarMenuButton tooltip="تسجيل الخروج">
                 <LogOut />
                 <span>تسجيل الخروج</span>

@@ -47,7 +47,7 @@ export function Header() {
           <DropdownMenuItem>الدعم</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-             <Link href="/login">تسجيل الخروج</Link>
+             <Link href="/">تسجيل الخروج</Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
