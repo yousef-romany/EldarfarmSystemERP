@@ -27,7 +27,7 @@ export async function createLivestockType(prevState: LivestockTypeState, formDat
 
   // NOTE: Assuming permission for this is under 'barns' for now. 
   // In a real scenario, this should have its own permission key.
-  if (!session.permissions?.barns?.add) {
+  if (!session.permissions?.livestockTypes?.add) {
     return {
       message: 'ليس لديك الصلاحية لإضافة نوع جديد.',
       success: false,
@@ -80,7 +80,7 @@ export async function updateLivestockType(id: string, prevState: LivestockTypeSt
         redirect('/');
     }
 
-    if (!session.permissions?.barns?.edit) {
+    if (!session.permissions?.livestockTypes?.edit) {
         return {
             message: 'ليس لديك الصلاحية لتعديل الأنواع.',
             success: false,
@@ -134,7 +134,7 @@ export async function deleteLivestockType(id: string) {
         redirect('/');
     }
     
-    if (!session.permissions?.barns?.delete) {
+    if (!session.permissions?.livestockTypes?.delete) {
         return {
             message: 'ليس لديك الصلاحية لحذف الأنواع.',
             success: false,
