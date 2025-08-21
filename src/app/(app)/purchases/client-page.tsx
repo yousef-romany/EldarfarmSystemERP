@@ -143,7 +143,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                           <TableCell className="font-medium">{p.livestock.isBatch ? `${p.livestock.quantity} رأس` : p.livestock.tagId}</TableCell>
                           <TableCell>{p.livestock.livestockType.name}</TableCell>
                           <TableCell>{p.supplier || 'غير محدد'}</TableCell>
-                          <TableCell>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(p.totalCost.toNumber())}</TableCell>
+                          <TableCell>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(p.totalCost as number)}</TableCell>
                           <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -291,7 +291,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                                     <SelectTrigger id={`wallet-${index}`}><SelectValue placeholder="اختر محفظة..." /></SelectTrigger>
                                     <SelectContent>
                                     {wallets.map((wallet) => (
-                                        <SelectItem key={wallet.id} value={wallet.id}>{wallet.name} (الرصيد: {wallet.balance.toNumber().toLocaleString()})</SelectItem>
+                                        <SelectItem key={wallet.id} value={wallet.id}>{wallet.name} (الرصيد: {(wallet.balance as number).toLocaleString()})</SelectItem>
                                     ))}
                                     </SelectContent>
                                 </Select>

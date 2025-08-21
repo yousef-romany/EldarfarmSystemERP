@@ -141,7 +141,7 @@ export default function WalletsClientPage({ wallets }: { wallets: Wallet[] }) {
                   </CardHeader>
                   <CardContent>
                       <p className='text-2xl font-bold tracking-tight'>
-                          {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(wallet.balance.toNumber())}
+                          {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(wallet.balance as number)}
                       </p>
                       <p className='text-sm text-muted-foreground'>الرصيد الحالي</p>
                   </CardContent>
