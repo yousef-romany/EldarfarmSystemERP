@@ -17,6 +17,7 @@ import { createBarn, updateBarn, deleteBarn } from '@/lib/actions/barn.actions';
 import type { Barn } from '@prisma/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import Link from 'next/link';
 
 
 function SubmitButton({ pendingText = 'جاري الحفظ...', text = 'حفظ' }) {
@@ -134,7 +135,9 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
                           <DropdownMenuContent align="end">
                           <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => handleEditClick(barn)}>تعديل</DropdownMenuItem>
-                          <DropdownMenuItem>عرض الحيوانات</DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/barns/${barn.id}/livestock`}>عرض الحيوانات</Link>
+                          </DropdownMenuItem>
                           <AlertDialogTrigger asChild>
                               <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
                                   حذف
@@ -251,3 +254,5 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
     </>
   );
 }
+
+    

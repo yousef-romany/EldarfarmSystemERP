@@ -16,6 +16,7 @@ import { createWallet, updateWallet, deleteWallet } from '@/lib/actions/wallet.a
 import type { Wallet } from '@prisma/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import Link from 'next/link';
 
 
 function SubmitButton({ pendingText = 'جاري الحفظ...', text = 'حفظ' }) {
@@ -128,7 +129,9 @@ export default function WalletsClientPage({ wallets }: { wallets: Wallet[] }) {
                                   <Pencil className="mr-2 h-4 w-4" />
                                   تعديل
                               </DropdownMenuItem>
-                              <DropdownMenuItem>عرض الحركات</DropdownMenuItem>
+                               <DropdownMenuItem asChild>
+                                  <Link href={`/wallets/${wallet.id}/transactions`}>عرض الحركات</Link>
+                                </DropdownMenuItem>
                               <AlertDialogTrigger asChild>
                                   <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
                                       <Trash2 className="mr-2 h-4 w-4" />
