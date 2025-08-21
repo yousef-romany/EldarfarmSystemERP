@@ -7,7 +7,6 @@ import { PlusCircle, Wallet as WalletIcon, MoreHorizontal, Trash2, Pencil, Bankn
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/page-header';
-import Image from 'next/image';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -108,63 +107,63 @@ export default function WalletsClientPage({ wallets }: { wallets: Wallet[] }) {
       />
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {wallets.map((wallet) => (
-          <Card key={wallet.id}>
-             <AlertDialog>
-                <CardHeader>
-                    <div className='flex items-center justify-between'>
-                        <div className='flex items-center gap-3'>
-                            { wallet.icon === 'cash' ? <Banknote className="h-10 w-10 text-muted-foreground" /> : <WalletIcon className="h-10 w-10 text-muted-foreground" /> }
-                            <CardTitle>{wallet.name}</CardTitle>
-                        </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">فتح القائمة</span>
-                            </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleEditClick(wallet)}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                تعديل
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>عرض الحركات</DropdownMenuItem>
-                            <AlertDialogTrigger asChild>
-                                <DropdownMenuItem className="text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    حذف
-                                </DropdownMenuItem>
-                             </AlertDialogTrigger>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <p className='text-2xl font-bold tracking-tight'>
-                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(wallet.balance.toNumber())}
-                    </p>
-                    <p className='text-sm text-muted-foreground'>الرصيد الحالي</p>
-                </CardContent>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                    <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        سيتم حذف المحفظة "{wallet.name}" نهائيًا. لا يمكن حذف المحافظ التي تحتوي على معاملات.
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={() => handleDeleteClick(wallet.id)}
-                        className="bg-destructive hover:bg-destructive/90"
-                    >
-                        نعم، قم بالحذف
-                    </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-          </Card>
+           <AlertDialog key={wallet.id}>
+              <Card>
+                  <CardHeader>
+                      <div className='flex items-center justify-between'>
+                          <div className='flex items-center gap-3'>
+                              { wallet.icon === 'cash' ? <Banknote className="h-10 w-10 text-muted-foreground" /> : <WalletIcon className="h-10 w-10 text-muted-foreground" /> }
+                              <CardTitle>{wallet.name}</CardTitle>
+                          </div>
+                          <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                              <Button aria-haspopup="true" size="icon" variant="ghost">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">فتح القائمة</span>
+                              </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => handleEditClick(wallet)}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  تعديل
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>عرض الحركات</DropdownMenuItem>
+                              <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      حذف
+                                  </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              </DropdownMenuContent>
+                          </DropdownMenu>
+                      </div>
+                  </CardHeader>
+                  <CardContent>
+                      <p className='text-2xl font-bold tracking-tight'>
+                          {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(wallet.balance.toNumber())}
+                      </p>
+                      <p className='text-sm text-muted-foreground'>الرصيد الحالي</p>
+                  </CardContent>
+                  <AlertDialogContent>
+                      <AlertDialogHeader>
+                      <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
+                      <AlertDialogDescription>
+                          سيتم حذف المحفظة "{wallet.name}" نهائيًا. لا يمكن حذف المحافظ التي تحتوي على معاملات.
+                      </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                      <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                      <AlertDialogAction
+                          onClick={() => handleDeleteClick(wallet.id)}
+                          className="bg-destructive hover:bg-destructive/90"
+                      >
+                          نعم، قم بالحذف
+                      </AlertDialogAction>
+                      </AlertDialogFooter>
+                  </AlertDialogContent>
+              </Card>
+           </AlertDialog>
         ))}
       </div>
 
@@ -245,3 +244,5 @@ export default function WalletsClientPage({ wallets }: { wallets: Wallet[] }) {
     </>
   );
 }
+
+    
