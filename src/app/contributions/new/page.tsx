@@ -37,7 +37,7 @@ export default function NewContributionPage({ wallets }: { wallets: Wallet[] }) 
   const { toast } = useToast();
   const [createState, createFormAction] = useFormState(createContribution, { message: null, errors: {}, success: false });
 
-  const [payments, setPayments] = useState<Partial<Payment[]>>([{}]);
+  const [payments, setPayments] = useState<Partial<Payment>[]>([{}]);
   const [totalAmount, setTotalAmount] = useState<number>(0);
 
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);

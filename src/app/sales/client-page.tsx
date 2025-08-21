@@ -72,7 +72,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   const [finalWeight, setFinalWeight] = useState(0);
   const [settlementPricePerKg, setSettlementPricePerKg] = useState(0);
   const [finalTotalPrice, setFinalTotalPrice] = useState(0);
-  const [settlementPayments, setSettlementPayments] = useState<Partial<PaymentDetails[]>>([{}]);
+  const [settlementPayments, setSettlementPayments] = useState<Partial<PaymentDetails>[]>([{}]);
   
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
   const remainingBalance = totalPrice - totalPaid;
@@ -116,7 +116,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
       setPayments([{}]);
       setCustomerName('');
       setIsDeferredSaleDialogOpen(false); // Close dialog on success
-    } else if (createState?.message && !createState.success) {
+    } else if (createState?.message && !createState?.success) {
       toast({ title: 'خطأ', description: createState.message, variant: 'destructive' });
     }
   }, [createState, toast]);
@@ -142,7 +142,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   };
   
   const handlePaymentChange = (index: number, field: keyof PaymentDetails, value: string | number) => {
-    const newPayments = [...payments.map(p => ({...p}))] as PaymentDetails[];
+    const newPayments = [...payments.map(p => ({...p}))] as Partial<PaymentDetails>[];
     const payment = newPayments[index] || {};
     (payment as any)[field] = value;
     newPayments[index] = payment;
@@ -195,7 +195,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   };
 
   const handleSettlementPaymentChange = (index: number, field: keyof PaymentDetails, value: string | number) => {
-    const newPayments = [...settlementPayments.map(p => ({...p}))] as PaymentDetails[];
+    const newPayments = [...settlementPayments.map(p => ({...p}))] as Partial<PaymentDetails>[];
     const payment = newPayments[index] || {};
     (payment as any)[field] = value;
     newPayments[index] = payment;
@@ -420,7 +420,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                           <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
                             <div className="grid gap-2 flex-1">
                               <Label htmlFor={`wallet-${index}`}>المحفظة / الحساب</Label>
-                              <Select onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}>
+                              <Select value={payment.walletId} onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}>
                                 <SelectTrigger id={`wallet-${index}`}>
                                   <SelectValue placeholder="اختر محفظة..." />
                                 </SelectTrigger>
@@ -548,7 +548,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                       {payments.map((payment, index) => (
                         <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
                           <div className="grid gap-2 flex-1"><Label htmlFor={`wallet-${index}`}>المحفظة / الحساب</Label>
-                            <Select onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}><SelectTrigger id={`wallet-${index}`}><SelectValue placeholder="اختر محفظة..." /></SelectTrigger>
+                            <Select value={payment.walletId} onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}><SelectTrigger id={`wallet-${index}`}><SelectValue placeholder="اختر محفظة..." /></SelectTrigger>
                               <SelectContent>{wallets.map((wallet) => (<SelectItem key={wallet.id} value={wallet.id}>{wallet.name}</SelectItem>))}</SelectContent>
                             </Select>
                           </div>
@@ -640,7 +640,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                       <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
                         <div className="grid gap-2 flex-1">
                           <Label htmlFor={`settlement-wallet-${index}`}>المحفظة / الحساب</Label>
-                          <Select onValueChange={(value) => handleSettlementPaymentChange(index, 'walletId', value)}>
+                          <Select value={payment.walletId} onValueChange={(value) => handleSettlementPaymentChange(index, 'walletId', value)}>
                             <SelectTrigger id={`settlement-wallet-${index}`}>
                               <SelectValue placeholder="اختر محفظة..." />
                             </SelectTrigger>
@@ -710,5 +710,3 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
     </>
   );
 }
-
-    

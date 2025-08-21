@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
@@ -46,7 +47,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
   const [createState, createFormAction] = useFormState(createPurchase, { message: null, errors: {}, success: false });
 
   const [registrationType, setRegistrationType] = useState('individual');
-  const [payments, setPayments] = useState<Partial<PaymentDetails[]>>([{}]);
+  const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);
   const [totalCost, setTotalCost] = useState<number>(0);
 
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
@@ -84,7 +85,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
   };
   
   const handlePaymentChange = (index: number, field: keyof PaymentDetails, value: string | number) => {
-    const newPayments = [...payments.map(p => ({...p}))] as PaymentDetails[];
+    const newPayments = [...payments.map(p => ({...p}))] as Partial<PaymentDetails>[];
     const payment = newPayments[index] || {};
     (payment as any)[field] = value;
     newPayments[index] = payment;
@@ -286,7 +287,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                             <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
                                 <div className="grid gap-2 flex-1">
                                 <Label htmlFor={`wallet-${index}`}>المحفظة / الحساب</Label>
-                                <Select onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}>
+                                <Select value={payment.walletId} onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}>
                                     <SelectTrigger id={`wallet-${index}`}><SelectValue placeholder="اختر محفظة..." /></SelectTrigger>
                                     <SelectContent>
                                     {wallets.map((wallet) => (

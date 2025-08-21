@@ -51,7 +51,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
   const initialState: ExpenseState = { message: null, errors: {}, success: false };
   const [createState, createFormAction] = useFormState(createExpense, initialState);
   
-  const [payments, setPayments] = useState<Partial<PaymentDetails[]>>([{}]);
+  const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);
   const [totalCost, setTotalCost] = useState<number>(0);
 
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
