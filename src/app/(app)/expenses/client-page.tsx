@@ -328,7 +328,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                             <SelectContent>
                               {wallets.map((wallet) => (
                                 <SelectItem key={wallet.id} value={wallet.id}>
-                                  {wallet.name} (الرصيد: {wallet.balance.toNumber().toLocaleString()})
+                                  {wallet.name} (الرصيد: {wallet.balance.toLocaleString()})
                                 </SelectItem>
                               ))}
                             </SelectContent>
