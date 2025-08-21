@@ -1,5 +1,6 @@
 
 import type { Metadata } from 'next';
+import React, { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'تقرير تسوية اليومية',
@@ -11,5 +12,5 @@ export default function ReportLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <>{children}</>;
+  return <Suspense fallback={<div>جاري تحميل التقرير...</div>}>{children}</Suspense>;
 }
