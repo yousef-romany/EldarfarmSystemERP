@@ -15,7 +15,7 @@ async function main() {
         password: 'admin123', // In a real app, this should be hashed!
         role: 'ADMIN',
         permissions: JSON.stringify(adminPermissions),
-        avatar: `https://i.pravatar.cc/150?u=admin`
+        // avatar: `https://i.pravatar.cc/150?u=admin`
     }
   });
   console.log(`Created admin user: ${adminUser.username}`);

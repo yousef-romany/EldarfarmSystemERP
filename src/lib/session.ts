@@ -8,8 +8,8 @@ export const sessionOptions: SessionOptions = {
   cookieName: 'mawashi-manager-session',
   cookieOptions: {
     // secure: true should be used in production (HTTPS)
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
+    // secure: process.env.NODE_ENV === 'production',
+    // httpOnly: true,
   },
 };
 
@@ -21,6 +21,6 @@ export interface SessionData {
   permissions?: any; 
 }
 
-export function getSession() {
-  return getIronSession<SessionData>(cookies(), sessionOptions);
+export async function getSession() {
+  return getIronSession<SessionData>(await cookies(), sessionOptions);
 }
