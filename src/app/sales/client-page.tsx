@@ -210,7 +210,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="list">قائمة المبيعات</TabsTrigger>
           <TabsTrigger value="deferred" onClick={() => setIsDeferredSaleDialogOpen(true)}>إضافة بيع آجل</TabsTrigger>
-          <TabsTrigger value="immediate">إضافة بيع فوري</TabsTrigger>
+          <TabsTrigger value="immediate">نقطة بيع (POS)</TabsTrigger>
         </TabsList>
          <TabsContent value="list">
             <Card>
@@ -321,9 +321,9 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
         <TabsContent value="immediate">
           <Card>
             <CardHeader>
-              <CardTitle>تسجيل عملية بيع فوري</CardTitle>
+              <CardTitle>نقطة بيع (POS)</CardTitle>
               <CardDescription>
-                لتسجيل عملية بيع تمت بشكل فوري ومباشر.
+                لتسجيل عملية بيع فورية ومباشرة.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -492,7 +492,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                 <input type="hidden" name="isDeferred" value="true" />
                 <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p=>p.walletId && p.amount))} />
                 <input type="hidden" name="livestockId" value={selectedAnimal?.id || ''} />
-                <input type="hidden" name="initialWeight" value={initialWeight} />
+                <input type="hidden" name="initialWeight" value={currentWeight} />
                 <input type="hidden" name="pricePerKg" value={pricePerKg} />
                 <input type="hidden" name="totalPrice" value={totalPrice} />
                 <input type="hidden" name="saleDate" value={format(new Date(), 'yyyy-MM-dd')} />
@@ -534,7 +534,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                   <Card>
                     <CardHeader><CardTitle className="text-lg">تفاصيل السعر</CardTitle></CardHeader>
                     <CardContent className="grid md:grid-cols-3 gap-4">
-                      <div className="grid gap-2"><Label htmlFor="deferred-initial-weight">الوزن الأولي (كجم)</Label><Input id="deferred-initial-weight" type="number" value={initialWeight} readOnly /></div>
+                      <div className="grid gap-2"><Label htmlFor="deferred-initial-weight">الوزن الأولي (كجم)</Label><Input id="deferred-initial-weight" type="number" value={currentWeight} readOnly /></div>
                       <div className="grid gap-2"><Label htmlFor="deferred-price-per-kg">سعر الكيلو (ج.م)</Label><Input id="deferred-price-per-kg" type="number" placeholder="أدخل سعر الكيلو" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} /></div>
                       <div className="grid gap-2"><Label htmlFor="deferred-total-price">السعر الإجمالي المبدئي</Label><Input id="deferred-total-price" type="number" value={totalPrice} readOnly /></div>
                     </CardContent>
@@ -710,3 +710,5 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
     </>
   );
 }
+
+    

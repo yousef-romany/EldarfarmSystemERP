@@ -42,8 +42,6 @@ const InvoicePage = () => {
   const handlePrint = () => {
     window.print();
   };
-
-  const getWalletName = (walletId: string) => sale?.payments.find(p => p.walletId === walletId)?.wallet.name || 'N/A';
   
   const totalPaid = sale?.amountPaid.toNumber() || 0;
   const finalPrice = sale?.totalPrice.toNumber() || 0;
@@ -58,7 +56,8 @@ const InvoicePage = () => {
   }
 
   const animal = sale.livestock;
-  const isSettled = sale.status === 'Completed';
+  const isImmediateSale = sale.type === 'Immediate';
+
 
   return (
     <div className="bg-gray-100 dark:bg-gray-800 min-h-screen p-4 sm:p-8 flex flex-col items-center font-body">
@@ -77,12 +76,12 @@ const InvoicePage = () => {
                             <Beef className="h-12 w-12 text-primary" />
                             <div>
                                 <h1 className="text-2xl font-bold">مدير المواشي</h1>
-                                <p className="text-muted-foreground">فاتورة بيع</p>
+                                <p className="text-muted-foreground">{isImmediateSale ? 'فاتورة بيع فوري (POS)' : 'فاتورة بيع آجل'}</p>
                             </div>
                         </div>
                         <div className="text-left">
                             <p><strong>فاتورة رقم:</strong> {sale.id.substring(0,8)}</p>
-                            <p><strong>تاريخ الاتفاق:</strong> {format(new Date(sale.saleDate), 'yyyy-MM-dd')}</p>
+                            <p><strong>تاريخ البيع:</strong> {format(new Date(sale.saleDate), 'yyyy-MM-dd')}</p>
                             {sale.settlementDate && <p><strong>تاريخ التسوية:</strong> {format(new Date(sale.settlementDate), 'yyyy-MM-dd')}</p>}
                         </div>
                     </div>
@@ -119,40 +118,51 @@ const InvoicePage = () => {
                     </Table>
                     
                     <h3 className="font-semibold text-lg mb-2 mt-6">تفاصيل الوزن والسعر</h3>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>الوصف</TableHead>
-                                <TableHead className="text-center">القيمة</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell>الوزن المبدئي (كجم)</TableCell>
-                                <TableCell className="text-center">{sale.initialWeight?.toFixed(2)}</TableCell>
-                            </TableRow>
-                             {isSettled && sale.finalWeight && (
-                                <>
+                    {isImmediateSale ? (
+                         <Table>
+                            <TableBody>
                                 <TableRow>
-                                    <TableCell>الوزن النهائي (كجم)</TableCell>
-                                    <TableCell className="text-center">{sale.finalWeight?.toFixed(2)}</TableCell>
+                                    <TableCell>الوزن عند البيع (كجم)</TableCell>
+                                    <TableCell className="text-left font-bold">{sale.initialWeight?.toFixed(2)}</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell>فرق الوزن (كجم)</TableCell>
-                                    <TableCell className="text-center font-bold">{(sale.finalWeight.toNumber() - (sale.initialWeight?.toNumber() || 0)).toFixed(2)}</TableCell>
+                                    <TableCell>سعر الكيلو (ج.م)</TableCell>
+                                    <TableCell className="text-left font-bold">{sale.pricePerKg.toFixed(2)}</TableCell>
                                 </TableRow>
-                                </>
-                            )}
-                            <TableRow>
-                                <TableCell>سعر الكيلو (ج.م)</TableCell>
-                                <TableCell className="text-center">{sale.pricePerKg.toFixed(2)}</TableCell>
-                            </TableRow>
-                             <TableRow className="bg-muted font-bold">
-                                <TableCell>السعر الإجمالي (ج.م)</TableCell>
-                                <TableCell className="text-center text-lg">{finalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
+                            </TableBody>
+                         </Table>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>الوصف</TableHead>
+                                    <TableHead className="text-center">القيمة</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell>الوزن المبدئي (كجم)</TableCell>
+                                    <TableCell className="text-center">{sale.initialWeight?.toFixed(2)}</TableCell>
+                                </TableRow>
+                                {sale.finalWeight && (
+                                    <>
+                                    <TableRow>
+                                        <TableCell>الوزن النهائي (كجم)</TableCell>
+                                        <TableCell className="text-center">{sale.finalWeight?.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell>فرق الوزن (كجم)</TableCell>
+                                        <TableCell className="text-center font-bold">{(sale.finalWeight.toNumber() - (sale.initialWeight?.toNumber() || 0)).toFixed(2)}</TableCell>
+                                    </TableRow>
+                                    </>
+                                )}
+                                <TableRow>
+                                    <TableCell>سعر الكيلو (ج.م)</TableCell>
+                                    <TableCell className="text-center">{sale.pricePerKg.toFixed(2)}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    )}
 
                      <h3 className="font-semibold text-lg mb-2 mt-6">تفاصيل الدفعات</h3>
                      <Table>
@@ -176,6 +186,10 @@ const InvoicePage = () => {
                 </CardContent>
                 <CardFooter className="p-0 mt-6 flex flex-col items-end space-y-2">
                      <Separator className="my-4" />
+                      <div className="flex justify-between w-full font-semibold text-lg">
+                        <span>السعر الإجمالي:</span>
+                        <span>{finalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م</span>
+                     </div>
                      <div className="flex justify-between w-full font-semibold">
                         <span>الإجمالي المدفوع:</span>
                         <span>{totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ج.م</span>
@@ -211,3 +225,5 @@ const InvoicePage = () => {
 };
 
 export default InvoicePage;
+
+    
