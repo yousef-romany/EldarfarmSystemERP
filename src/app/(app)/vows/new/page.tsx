@@ -94,7 +94,7 @@ export default function NewVowPage({ barns, livestockTypes }: { barns: Barn[], l
                     <SelectValue placeholder="اختر النوع" />
                   </SelectTrigger>
                   <SelectContent>
-                    {livestockTypes.map((type) => (
+                    {livestockTypes && livestockTypes.map((type) => (
                       <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -130,7 +130,7 @@ export default function NewVowPage({ barns, livestockTypes }: { barns: Barn[], l
                     <SelectValue placeholder="اختر العنبر للتسكين" />
                   </SelectTrigger>
                   <SelectContent>
-                    {barns.map((barn) => (
+                    {barns && barns.map((barn) => (
                       <SelectItem key={barn.id} value={barn.id}>
                         {barn.name} (السعة المتاحة: {barn.capacity - barn.currentOccupancy})
                       </SelectItem>
@@ -161,4 +161,3 @@ export default function NewVowPage({ barns, livestockTypes }: { barns: Barn[], l
     </>
   );
 }
-
