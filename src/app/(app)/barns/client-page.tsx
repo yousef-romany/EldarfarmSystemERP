@@ -111,51 +111,51 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
       />
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {barns.map((barn) => (
-          <Card key={barn.id}>
-            <CardHeader>
-                <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                        <Warehouse className="h-8 w-8 text-muted-foreground" />
-                        <div>
-                            <CardTitle>{barn.name}</CardTitle>
-                            <CardDescription>
-                                السعة: {barn.capacity} رأس
-                            </CardDescription>
-                        </div>
-                    </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">فتح القائمة</span>
-                        </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleEditClick(barn)}>تعديل</DropdownMenuItem>
-                        <DropdownMenuItem>عرض الحيوانات</DropdownMenuItem>
-                        <AlertDialogTrigger asChild>
-                            <DropdownMenuItem className="text-destructive">
-                                حذف
-                            </DropdownMenuItem>
-                         </AlertDialogTrigger>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="text-sm text-muted-foreground mb-2">
-                    الإشغال: {barn.currentOccupancy} / {barn.capacity}
-                </div>
-              <Progress value={(barn.currentOccupancy / barn.capacity) * 100} className="h-3" />
-            </CardContent>
-            <CardFooter>
-              <p className="text-sm text-muted-foreground">
-                مساحة فارغة لـ {barn.capacity - barn.currentOccupancy} رأس
-              </p>
-            </CardFooter>
-             <AlertDialog>
-                <AlertDialogContent>
+          <AlertDialog key={barn.id}>
+            <Card>
+              <CardHeader>
+                  <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                          <Warehouse className="h-8 w-8 text-muted-foreground" />
+                          <div>
+                              <CardTitle>{barn.name}</CardTitle>
+                              <CardDescription>
+                                  السعة: {barn.capacity} رأس
+                              </CardDescription>
+                          </div>
+                      </div>
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">فتح القائمة</span>
+                          </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleEditClick(barn)}>تعديل</DropdownMenuItem>
+                          <DropdownMenuItem>عرض الحيوانات</DropdownMenuItem>
+                          <AlertDialogTrigger asChild>
+                              <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                  حذف
+                              </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                  </div>
+              </CardHeader>
+              <CardContent>
+                  <div className="text-sm text-muted-foreground mb-2">
+                      الإشغال: {barn.currentOccupancy} / {barn.capacity}
+                  </div>
+                <Progress value={(barn.currentOccupancy / barn.capacity) * 100} className="h-3" />
+              </CardContent>
+              <CardFooter>
+                <p className="text-sm text-muted-foreground">
+                  مساحة فارغة لـ {barn.capacity - barn.currentOccupancy} رأس
+                </p>
+              </CardFooter>
+              <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -172,8 +172,8 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
-            </AlertDialog>
-          </Card>
+            </Card>
+          </AlertDialog>
         ))}
       </div>
 
@@ -251,4 +251,3 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
     </>
   );
 }
-
