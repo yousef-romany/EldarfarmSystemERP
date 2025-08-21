@@ -1,5 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
   provider = "sqlite"
@@ -8,22 +6,38 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native"]
 }
 
+// User Authentication and Permissions
 model User {
   id          String @id @default(cuid())
   username    String @unique
   password    String
-  role        String // ADMIN, MANAGER, STAFF
-  permissions String // Stored as a JSON string
+  role        String // e.g., ADMIN, MANAGER, STAFF
+  permissions Json   // JSON object storing user-specific permissions
+  avatar      String?
   logs        Log[]
 }
 
+// Logging for user actions
+model Log {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  timestamp   DateTime @default(now())
+  action      String   // e.g., CREATE, UPDATE, DELETE
+  entityType  String   // e.g., LIVESTOCK, SALE, BARN
+  entityId    String
+  details     String
+}
+
+// Core Livestock and Farm Management
 model Barn {
   id               String      @id @default(cuid())
   name             String      @unique
   capacity         Int
-  currentOccupancy Int         @default(0)
+  currentOccupancy Int
   livestock        Livestock[]
 }
 
@@ -34,27 +48,57 @@ model LivestockType {
 }
 
 model Livestock {
-  id              String         @id @default(cuid())
-  tagId           String?        @unique
-  isBatch         Boolean        @default(false)
+  id              String      @id @default(cuid())
+  tagId           String?     @unique
+  isBatch         Boolean     @default(false)
   quantity        Int?
+  livestockType   LivestockType @relation(fields: [livestockTypeId], references: [id])
   livestockTypeId String
-  livestockType   LivestockType  @relation(fields: [livestockTypeId], references: [id])
   breed           String
-  weight          Decimal
-  age             Int
+  weight          Decimal // in kg
+  age             Int // in months
+  barn            Barn        @relation(fields: [barnId], references: [id])
   barnId          String
-  barn            Barn           @relation(fields: [barnId], references: [id])
   status          String // Available, Sold, Quarantined, Vowed, PendingSale
+  cost            Decimal? // Purchase cost or estimated value
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
   purchase        Purchase?
   sale            Sale?
   vow             Vow?
 }
 
+// Financial Models
+model Wallet {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  balance  Decimal   @default(0)
+  icon     String?   // For UI, e.g., 'cash', 'bank', 'vodafone_cash'
+  payments Payment[]
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  amount          Decimal
+  wallet          Wallet        @relation(fields: [walletId], references: [id])
+  walletId        String
+  date            DateTime
+  type            String        // Income or Expense
+  description     String?
+  expense         Expense?      @relation(fields: [expenseId], references: [id])
+  expenseId       String?       @unique
+  sale            Sale?         @relation(fields: [saleId], references: [id])
+  saleId          String?       
+  purchase        Purchase?     @relation(fields: [purchaseId], references: [id])
+  purchaseId      String?
+  contribution    Contribution? @relation(fields: [contributionId], references: [id])
+  contributionId  String?
+}
+
 model Purchase {
   id              String    @id @default(cuid())
-  livestockId     String    @unique
   livestock       Livestock @relation(fields: [livestockId], references: [id])
+  livestockId     String    @unique
   supplier        String?
   purchaseDate    DateTime
   totalCost       Decimal
@@ -65,8 +109,8 @@ model Purchase {
 
 model Sale {
   id              String    @id @default(cuid())
-  livestockId     String    @unique
   livestock       Livestock @relation(fields: [livestockId], references: [id])
+  livestockId     String    @unique
   customerName    String
   saleDate        DateTime
   settlementDate  DateTime?
@@ -81,25 +125,6 @@ model Sale {
   payments        Payment[]
 }
 
-model Vow {
-  id          String   @id @default(cuid())
-  donorName   String
-  receiptId   String?  @unique
-  date        DateTime
-  livestockId String   @unique
-  livestock   Livestock @relation(fields: [livestockId], references: [id])
-  notes       String?
-}
-
-model Contribution {
-  id          String    @id @default(cuid())
-  donorName   String
-  description String
-  date        DateTime
-  totalAmount Decimal
-  payments    Payment[]
-}
-
 model Expense {
   id          String    @id @default(cuid())
   date        DateTime
@@ -109,40 +134,22 @@ model Expense {
   payments    Payment[]
 }
 
-model Wallet {
-  id       String    @id @default(cuid())
-  name     String    @unique
-  balance  Decimal
-  icon     String // e.g., 'cash', 'bank', 'vodafone_cash'
-  payments Payment[]
+// Vows and Contributions
+model Vow {
+  id          String    @id @default(cuid())
+  donorName   String
+  receiptId   String?
+  date        DateTime
+  livestock   Livestock @relation(fields: [livestockId], references: [id])
+  livestockId String    @unique
+  notes       String?
 }
 
-model Payment {
-  id             String        @id @default(cuid())
-  amount         Decimal
-  date           DateTime
-  type           String // Income, Expense
-  description    String?
-  walletId       String
-  wallet         Wallet        @relation(fields: [walletId], references: [id])
-  purchaseId     String?
-  purchase       Purchase?     @relation(fields: [purchaseId], references: [id])
-  saleId         String?
-  sale           Sale?         @relation(fields: [saleId], references: [id])
-  contributionId String?
-  contribution   Contribution? @relation(fields: [contributionId], references: [id])
-  expenseId      String?
-  expense        Expense?      @relation(fields: [expenseId], references: [id])
-}
-
-
-model Log {
-  id         String   @id @default(cuid())
-  timestamp  DateTime @default(now())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  action     String // CREATE, UPDATE, DELETE, LOGIN, LOGOUT
-  entityType String // BARN, LIVESTOCK, SALE, etc.
-  entityId   String
-  details    String
+model Contribution {
+  id           String    @id @default(cuid())
+  donorName    String
+  description  String
+  date         DateTime
+  totalAmount  Decimal
+  payments     Payment[]
 }
