@@ -120,7 +120,7 @@ export default function NewContributionPage({ wallets }: { wallets: Wallet[] }) 
                             <SelectValue placeholder="اختر محفظة..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {wallets.map((wallet) => (
+                            {wallets && wallets.map((wallet) => (
                               <SelectItem key={wallet.id} value={wallet.id}>
                                 {wallet.name}
                               </SelectItem>

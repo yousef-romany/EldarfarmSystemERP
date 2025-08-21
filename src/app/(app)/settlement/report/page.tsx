@@ -37,7 +37,10 @@ const SettlementReportPage = () => {
   const reportDate = dateParam ? new Date(dateParam) : new Date();
   const dateString = format(reportDate, 'yyyy-MM-dd');
   
-  const { data, error, isLoading } = useSWR<DailyReportData>(`/api/reports/daily?date=${dateString}`, fetcher);
+  const { data, error, isLoading } = useSWR<DailyReportData>(`/api/reports/daily?date=${dateString}`, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
 
@@ -46,14 +49,15 @@ const SettlementReportPage = () => {
   };
 
   useEffect(() => {
-    if (data && !isLoading) {
-      setTimeout(handlePrint, 1000);
+    // Automatically trigger print when data is loaded
+    if (data && !isLoading && !error) {
+      setTimeout(handlePrint, 500); // Small delay to ensure content is rendered
     }
-  }, [data, isLoading]);
+  }, [data, isLoading, error]);
 
   if (isLoading) return <div>جاري تحميل التقرير...</div>;
-  if (error) return <div>فشل في تحميل التقرير.</div>;
-  if (!data) return <div>لا توجد بيانات لهذا اليوم.</div>;
+  if (error) return <div>فشل في تحميل التقرير. يرجى التأكد من أنك متصل بالإنترنت وحاول مرة أخرى.</div>;
+  if (!data || !data.wallets) return <div>لا توجد بيانات لهذا اليوم.</div>;
   
   const cashWallet = data.wallets.find(w => w.id === data.cashWalletId);
   const totalBalance = data.wallets.reduce((acc, w) => acc + w.balance, 0);
