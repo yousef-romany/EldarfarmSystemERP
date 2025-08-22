@@ -4,7 +4,7 @@ import ExpensesClientPage from './client-page';
 
 
 export default async function ExpensesPage() {
-    const expenses = await prisma.expense.findMany({
+    const expensesData = await prisma.expense.findMany({
         orderBy: { date: 'desc' },
         include: {
             payments: {
@@ -14,7 +14,28 @@ export default async function ExpensesPage() {
             }
         }
     });
-    const wallets = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
+
+    // Serialize Decimal fields to numbers
+    const expenses = expensesData.map(expense => ({
+        ...expense,
+        amount: expense.amount.toNumber(),
+        payments: expense.payments.map(payment => ({
+            ...payment,
+            amount: payment.amount.toNumber(),
+            wallet: {
+                ...payment.wallet,
+                balance: payment.wallet.balance.toNumber()
+            }
+        }))
+    }));
+
+    const walletsData = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
+    // Serialize Decimal fields for wallets
+    const wallets = walletsData.map(wallet => ({
+        ...wallet,
+        balance: wallet.balance.toNumber()
+    }));
+
     const totalExpenses = await prisma.expense.aggregate({
         _sum: {
             amount: true
@@ -29,4 +50,5 @@ export default async function ExpensesPage() {
         />
     );
 }
+
 
