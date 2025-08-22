@@ -13,6 +13,7 @@ import { SidebarNav } from './sidebar-nav';
 import Link from 'next/link';
 import { SidebarTrigger } from '../ui/sidebar';
 import { logout } from '@/lib/actions/auth.actions';
+import { ThemeToggle } from '../theme-toggle';
 
 export function Header() {
   return (
@@ -34,6 +35,7 @@ export function Header() {
       <div className="w-full flex-1">
         {/* Can add search bar here if needed */}
       </div>
+      <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" size="icon" className="rounded-full">
