@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, ArrowUpCircle, ArrowDownCircle, MinusCircle, Wallet, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, ArrowUpCircle, ArrowDownCircle, MinusCircle, Wallet as WalletIcon, Banknote, Download } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import useSWR from 'swr';
@@ -123,7 +123,7 @@ export default function DailyReportPage() {
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">الرصيد الحالي للخزينة</CardTitle>
-                      <Wallet className="h-4 w-4 text-muted-foreground" />
+                      <WalletIcon className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{formatCurrency(cashWallet.balance)}</div>
@@ -138,7 +138,7 @@ export default function DailyReportPage() {
                   <Card key={wallet.id}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">{wallet.name}</CardTitle>
-                       <Image src={wallet.icon || 'https://placehold.co/40x40.png'} alt={wallet.name} width={20} height={20} className='rounded-md' data-ai-hint="logo" />
+                       { wallet.icon === 'cash' ? <Banknote className="h-4 w-4 text-muted-foreground" /> : <WalletIcon className="h-4 w-4 text-muted-foreground" /> }
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{formatCurrency(wallet.balance)}</div>

@@ -111,7 +111,7 @@ export default function WalletsClientPage({ wallets }: { wallets: Wallet[] }) {
            <AlertDialog key={wallet.id}>
               <Card>
                   <CardHeader>
-                      <div className='flex items-center justify-between'>
+                      <div className='flex items-start justify-between'>
                           <div className='flex items-center gap-3'>
                               { wallet.icon === 'cash' ? <Banknote className="h-10 w-10 text-muted-foreground" /> : <WalletIcon className="h-10 w-10 text-muted-foreground" /> }
                               <CardTitle>{wallet.name}</CardTitle>
@@ -144,7 +144,7 @@ export default function WalletsClientPage({ wallets }: { wallets: Wallet[] }) {
                   </CardHeader>
                   <CardContent>
                       <p className='text-2xl font-bold tracking-tight'>
-                          {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(wallet.balance as number)}
+                          {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(wallet.balance)}
                       </p>
                       <p className='text-sm text-muted-foreground'>الرصيد الحالي</p>
                   </CardContent>
@@ -247,5 +247,3 @@ export default function WalletsClientPage({ wallets }: { wallets: Wallet[] }) {
     </>
   );
 }
-
-    
