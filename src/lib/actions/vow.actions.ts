@@ -19,7 +19,7 @@ const vowSchema = z.object({
   tagId: z.string().optional(),
   quantity: z.coerce.number().optional(),
   livestockTypeId: z.string().min(1, "يجب تحديد نوع الحيوان"),
-  breed: z.string().min(1, "السلالة مطلوبة"),
+  breed: z.string().optional(),
   weight: z.coerce.number().positive("الوزن يجب أن يكون رقمًا موجبًا"),
   age: z.coerce.number().positive("العمر يجب أن يكون رقمًا موجبًا"),
   barnId: z.string().min(1, "يجب تحديد العنبر"),

@@ -94,7 +94,7 @@ export default function NewVowPage({ barns, livestockTypes }: { barns: Barn[], l
                     <SelectValue placeholder="اختر النوع" />
                   </SelectTrigger>
                   <SelectContent>
-                    {livestockTypes && livestockTypes.map((type) => (
+                    {livestockTypes.map((type) => (
                       <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -103,7 +103,7 @@ export default function NewVowPage({ barns, livestockTypes }: { barns: Barn[], l
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="breed">السلالة</Label>
-                <Input id="breed" name="breed" placeholder="e.g., هولشتاين, ساسو" required />
+                <Input id="breed" name="breed" placeholder="e.g., هولشتاين, ساسو" />
                  {createState?.errors?.breed && <p className="text-xs text-red-500">{createState.errors.breed[0]}</p>}
               </div>
               {registrationType === 'batch' && (
