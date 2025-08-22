@@ -141,7 +141,7 @@ export default function NewVowPage({ barns, livestockTypes }: { barns: Barn[], l
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="vow-date">تاريخ الاستلام</Label>
-                <Input id="vow-date" name="vowDate" type="date" required defaultValue={format(new Date(), 'yyyy-MM-dd')} />
+                <Input id="vow-date" name="date" type="date" required defaultValue={format(new Date(), 'yyyy-MM-dd')} />
                 {createState?.errors?.date && <p className="text-xs text-red-500">{createState.errors.date[0]}</p>}
               </div>
             </div>

@@ -46,7 +46,7 @@ export async function createVow(prevState: VowState, formData: FormData): Promis
   const validatedFields = vowSchema.safeParse({
     donorName: formData.get('donorName'),
     receiptId: formData.get('receiptId'),
-    date: formData.get('vowDate'),
+    date: formData.get('date'),
     notes: formData.get('notes'),
     isBatch,
     tagId: formData.get('tagId'),
