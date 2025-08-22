@@ -1,7 +1,7 @@
 
 'use client';
-import { useState, useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { PlusCircle, Trash2, MoreHorizontal, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +44,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 export default function PurchasesPageClient({ barns, livestockTypes, wallets, purchases }: { barns: Barn[], livestockTypes: LivestockType[], wallets: Wallet[], purchases: PurchaseWithDetails[] }) {
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [createState, createFormAction] = useFormState(createPurchase, { message: null, errors: {}, success: false });
+  const [createState, createFormAction] = useActionState(createPurchase, { message: null, errors: {}, success: false });
 
   const [registrationType, setRegistrationType] = useState('individual');
   const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);

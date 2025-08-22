@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useActionState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import type { Wallet, Contribution, Payment } from '@prisma/client';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { updateContribution } from '@/lib/actions/contribution.actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -45,7 +45,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 export default function EditContributionPage({ contribution, wallets }: EditContributionPageProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [updateState, updateFormAction] = useFormState(updateContribution.bind(null, contribution.id), { message: null, errors: {}, success: false });
+  const [updateState, updateFormAction] = useActionState(updateContribution.bind(null, contribution.id), { message: null, errors: {}, success: false });
 
   const [donorName, setDonorName] = useState(contribution.donorName);
   const [description, setDescription] = useState(contribution.description);

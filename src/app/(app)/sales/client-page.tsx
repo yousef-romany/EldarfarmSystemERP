@@ -12,13 +12,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/page-header';
 import { format } from 'date-fns';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useActionState } from 'react';
 import Link from 'next/link';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { createSale, settleSale, deleteSale } from '@/lib/actions/sale.actions';
 import type { Livestock, Sale, Wallet } from '@prisma/client';
@@ -51,7 +51,7 @@ function SubmitButton({ text, disabled }: { text: string, disabled?: boolean}) {
 
 export default function SalesPageClient({ sales, availableLivestock, wallets }: { sales: SaleWithLivestock[], availableLivestock: Livestock[], wallets: Wallet[]}) {
   const { toast } = useToast();
-  const [createState, createFormAction] = useFormState(createSale, { message: null, errors: {}, success: false });
+  const [createState, createFormAction] = useActionState(createSale, { message: null, errors: {}, success: false });
 
   // State for Immediate Sale
   const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);
@@ -83,7 +83,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
 
   // Form state for settlement action
   const settleSaleWithId = settlementSale ? settleSale.bind(null, settlementSale.id) : async () => {};
-  const [settleState, settleFormAction] = useFormState(settleSaleWithId, { message: null, errors: {}, success: false });
+  const [settleState, settleFormAction] = useActionState(settleSaleWithId, { message: null, errors: {}, success: false });
 
   const getAnimalTag = (sale: SaleWithLivestock) => {
     const { livestock } = sale;

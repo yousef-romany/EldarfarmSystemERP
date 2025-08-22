@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,10 +33,10 @@ export function LivestockTypesClient({ types }: { types: LivestockType[] }) {
   const [selectedType, setSelectedType] = useState<LivestockType | null>(null);
   const { toast } = useToast();
 
-  const [createState, createFormAction] = useFormState(createLivestockType, { message: null, errors: {}, success: false });
+  const [createState, createFormAction] = useActionState(createLivestockType, { message: null, errors: {}, success: false });
 
   const updateTypeWithId = selectedType ? updateLivestockType.bind(null, selectedType.id) : async () => {};
-  const [updateState, updateFormAction] = useFormState(updateTypeWithId, { message: null, errors: {}, success: false });
+  const [updateState, updateFormAction] = useActionState(updateTypeWithId, { message: null, errors: {}, success: false });
   
 
   useEffect(() => {

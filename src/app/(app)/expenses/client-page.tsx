@@ -13,11 +13,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useActionState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { createExpense, deleteExpense, ExpenseState } from '@/lib/actions/expense.actions';
 import type { Expense, Wallet, Payment } from '@prisma/client';
@@ -49,7 +49,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
   
   // Form state
   const initialState: ExpenseState = { message: null, errors: {}, success: false };
-  const [createState, createFormAction] = useFormState(createExpense, initialState);
+  const [createState, createFormAction] = useActionState(createExpense, initialState);
   
   const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);
   const [totalCost, setTotalCost] = useState<number>(0);

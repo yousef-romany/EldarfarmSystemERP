@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { PlusCircle, Warehouse, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,12 +37,12 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
   const { toast } = useToast();
 
   // Form state for creating a barn
-  const [createState, createFormAction] = useFormState(createBarn, { message: null, errors: {}, success: false });
+  const [createState, createFormAction] = useActionState(createBarn, { message: null, errors: {}, success: false });
 
   // Form state for updating a barn
   // We need to bind the barn ID to the update action
   const updateBarnWithId = selectedBarn ? updateBarn.bind(null, selectedBarn.id) : async () => {};
-  const [updateState, updateFormAction] = useFormState(updateBarnWithId, { message: null, errors: {}, success: false });
+  const [updateState, updateFormAction] = useActionState(updateBarnWithId, { message: null, errors: {}, success: false });
   
 
   useEffect(() => {
@@ -254,5 +255,3 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
     </>
   );
 }
-
-    

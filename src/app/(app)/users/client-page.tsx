@@ -1,3 +1,4 @@
+
 'use client';
 import { MoreHorizontal, PlusCircle, ShieldCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,13 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useActionState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { createUser, updateUserPermissions } from '@/lib/actions/user.actions';
 import type { User as PrismaUser } from '@prisma/client';
@@ -64,7 +65,7 @@ export default function UsersClientPage({ users }: { users: UserWithPermissions[
   const [selectedUser, setSelectedUser] = useState<UserWithPermissions | null>(null);
   const [currentUserPermissions, setCurrentUserPermissions] = useState<UserPermissions | null>(null);
   
-  const [createState, createFormAction] = useFormState(createUser, { message: null, errors: {}, success: false });
+  const [createState, createFormAction] = useActionState(createUser, { message: null, errors: {}, success: false });
 
   useEffect(() => {
     if (createState.success) {

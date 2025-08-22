@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/page-header';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useActionState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, PlusCircle, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import type { Sale, Livestock, Wallet, Payment } from '@prisma/client';
@@ -47,7 +47,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
     const router = useRouter();
     const { toast } = useToast();
-    const [updateState, updateFormAction] = useFormState(updateSale.bind(null, sale.id), { message: null, errors: {}, success: false });
+    const [updateState, updateFormAction] = useActionState(updateSale.bind(null, sale.id), { message: null, errors: {}, success: false });
 
     const [customerName, setCustomerName] = useState(sale.customerName);
     const [saleDate, setSaleDate] = useState(format(new Date(sale.saleDate), 'yyyy-MM-dd'));

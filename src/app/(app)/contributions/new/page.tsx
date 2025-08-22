@@ -6,13 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PageHeader } from '@/components/page-header';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useActionState } from 'react';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { createContribution } from '@/lib/actions/contribution.actions';
 import type { Wallet } from '@prisma/client';
@@ -35,7 +35,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 export default function NewContributionPage({ wallets }: { wallets: Wallet[] }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [createState, createFormAction] = useFormState(createContribution, { message: null, errors: {}, success: false });
+  const [createState, createFormAction] = useActionState(createContribution, { message: null, errors: {}, success: false });
 
   const [payments, setPayments] = useState<Partial<Payment>[]>([{}]);
   const [totalAmount, setTotalAmount] = useState<number>(0);

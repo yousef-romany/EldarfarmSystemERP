@@ -7,10 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PageHeader } from '@/components/page-header';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useActionState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { createVow } from '@/lib/actions/vow.actions';
@@ -29,7 +29,7 @@ function SubmitButton() {
 export default function NewVowPage({ barns, livestockTypes }: { barns: Barn[], livestockTypes: LivestockType[] }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [createState, createFormAction] = useFormState(createVow, { message: null, errors: {}, success: false });
+  const [createState, createFormAction] = useActionState(createVow, { message: null, errors: {}, success: false });
 
   const [registrationType, setRegistrationType] = useState('individual');
 
@@ -94,7 +94,7 @@ export default function NewVowPage({ barns, livestockTypes }: { barns: Barn[], l
                     <SelectValue placeholder="اختر النوع" />
                   </SelectTrigger>
                   <SelectContent>
-                    {livestockTypes.map((type) => (
+                    {livestockTypes && livestockTypes.map((type) => (
                       <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
                     ))}
                   </SelectContent>
