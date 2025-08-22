@@ -214,7 +214,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                   <TableCell>{expense.description}</TableCell>
                    <TableCell>{expense.payments.map(p => p.wallet.name).join(', ')}</TableCell>
                   <TableCell className="text-left font-medium">
-                    {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(expense.amount.toNumber())}
+                    {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(expense.amount as number)}
                   </TableCell>
                    <TableCell>
                     <DropdownMenu>
@@ -328,7 +328,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                             <SelectContent>
                               {wallets.map((wallet) => (
                                 <SelectItem key={wallet.id} value={wallet.id}>
-                                  {wallet.name} (الرصيد: {wallet.balance.toLocaleString()})
+                                  {wallet.name} (الرصيد: {Number(wallet.balance).toLocaleString()})
                                 </SelectItem>
                               ))}
                             </SelectContent>

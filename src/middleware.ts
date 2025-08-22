@@ -3,44 +3,35 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getSession } from './lib/session';
 
-// Define which paths are public (don't require authentication)
-const publicPaths = ['/login'];
-
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  const session = await getSession();
 
-  // Check if the current path is a public path
-  const isPublicPath = publicPaths.some(publicPath => path.startsWith(publicPath));
-  
-  // Check if it's an API route, internal Next.js route, or a static file
-  // These should not be redirected.
+  const isPublicPath = path === '/';
+
+  // Allow API routes, Next.js internal routes, and static files to pass through
   if (
     path.startsWith('/api') ||
     path.startsWith('/_next') ||
     path.startsWith('/static') ||
-    /\.(.*)$/.test(path) // This regex matches for file extensions, e.g., .png, .ico
+    /\.(.*)$/.test(path)
   ) {
     return NextResponse.next();
   }
 
-  const session = await getSession();
-
-  // If the user is not logged in and the path is not public, redirect to login
+  // If user is not logged in and not on the public login page, redirect to login
   if (!session.isLoggedIn && !isPublicPath) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // If the user is logged in and tries to access a public path (like /login),
-  // redirect them to the dashboard.
+  // If user is logged in and trying to access the login page, redirect to dashboard
   if (session.isLoggedIn && isPublicPath) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Allow the request to continue
   return NextResponse.next();
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
   matcher: [
     /*
@@ -52,4 +43,4 @@ export const config = {
      */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
-}
+};
