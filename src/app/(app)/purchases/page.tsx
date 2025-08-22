@@ -4,13 +4,28 @@ import PurchasesPageClient from './client-page';
 import { PageHeader } from '@/components/page-header';
 
 export default async function PurchasesPage() {
-  const barns = await prisma.barn.findMany({ orderBy: { name: 'asc' } });
-  const livestockTypes = await prisma.livestockType.findMany({ orderBy: { name: 'asc' } });
-  const wallets = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
-  const purchases = await prisma.purchase.findMany({ 
+  const barnsData = await prisma.barn.findMany({ orderBy: { name: 'asc' } });
+  const livestockTypesData = await prisma.livestockType.findMany({ orderBy: { name: 'asc' } });
+  const walletsData = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
+  const purchasesData = await prisma.purchase.findMany({ 
     orderBy: { purchaseDate: 'desc' },
     include: { livestock: { include: { livestockType: true, barn: true } } }
   });
+
+  // Serialize Decimal fields
+  const wallets = walletsData.map(w => ({ ...w, balance: w.balance.toNumber() }));
+  const purchases = purchasesData.map(p => ({
+    ...p,
+    totalCost: p.totalCost.toNumber(),
+    amountPaid: p.amountPaid.toNumber(),
+    remainingAmount: p.remainingAmount.toNumber(),
+    livestock: {
+      ...p.livestock,
+      weight: p.livestock.weight.toNumber(),
+      cost: p.livestock.cost.toNumber(),
+    }
+  }));
+
 
   return (
     <>
@@ -18,8 +33,8 @@ export default async function PurchasesPage() {
             title="إدارة المشتريات" 
         />
         <PurchasesPageClient 
-            barns={barns} 
-            livestockTypes={livestockTypes} 
+            barns={barnsData} 
+            livestockTypes={livestockTypesData} 
             wallets={wallets} 
             purchases={purchases}
         />

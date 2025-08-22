@@ -5,7 +5,7 @@ import SalesPageClient from './client-page';
 
 
 export default async function SalesPage() {
-  const sales = await prisma.sale.findMany({
+  const salesData = await prisma.sale.findMany({
     orderBy: { saleDate: 'desc' },
     include: {
       livestock: {
@@ -13,11 +13,34 @@ export default async function SalesPage() {
       }
     }
   });
-  const livestock = await prisma.livestock.findMany({
+  const livestockData = await prisma.livestock.findMany({
     where: { status: 'Available' },
     orderBy: { tagId: 'asc' },
   });
-  const wallets = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
+  const walletsData = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
+
+  // Serialize decimal fields
+  const sales = salesData.map(s => ({
+    ...s,
+    pricePerKg: s.pricePerKg.toNumber(),
+    totalPrice: s.totalPrice.toNumber(),
+    amountPaid: s.amountPaid.toNumber(),
+    remainingAmount: s.remainingAmount.toNumber(),
+    initialWeight: s.initialWeight?.toNumber() ?? null,
+    finalWeight: s.finalWeight?.toNumber() ?? null,
+  }));
+
+  const livestock = livestockData.map(l => ({
+    ...l,
+    weight: l.weight.toNumber(),
+    cost: l.cost.toNumber(),
+  }));
+  
+  const wallets = walletsData.map(w => ({
+    ...w,
+    balance: w.balance.toNumber()
+  }));
+
 
   return <SalesPageClient sales={sales} availableLivestock={livestock} wallets={wallets} />;
 }
