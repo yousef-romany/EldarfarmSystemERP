@@ -33,7 +33,7 @@ type SaleState = {
 
 export async function createSale(prevState: SaleState, formData: FormData): Promise<SaleState> {
   const session = await getSession();
-  if (!session.isLoggedIn) {
+  if (!session.isLoggedIn || !session.userId) {
     redirect('/');
   }
 
@@ -179,7 +179,7 @@ type SettleSaleState = {
 
 export async function settleSale(saleId: string, prevState: SettleSaleState, formData: FormData): Promise<SettleSaleState> {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.permissions?.sales?.edit) {
+  if (!session.isLoggedIn || !session.userId || !session.permissions?.sales?.edit) {
     return { message: "ليس لديك الصلاحية لتسوية المبيعات.", success: false };
   }
 
@@ -325,7 +325,7 @@ const updateSaleSchema = z.object({
 
 export async function updateSale(saleId: string, prevState: SaleState, formData: FormData): Promise<SaleState> {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.permissions?.sales?.edit) {
+    if (!session.isLoggedIn || !session.userId || !session.permissions?.sales?.edit) {
         return { message: "ليس لديك الصلاحية لتعديل المبيعات.", success: false };
     }
     
@@ -426,7 +426,7 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
 
 export async function deleteSale(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.permissions?.sales?.delete) {
+    if (!session.isLoggedIn || !session.userId || !session.permissions?.sales?.delete) {
         return { message: 'ليس لديك الصلاحية لحذف المبيعات.', success: false };
     }
 

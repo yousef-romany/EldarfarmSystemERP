@@ -23,7 +23,7 @@ type BarnState = {
 
 export async function createBarn(prevState: BarnState, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn) {
+  if (!session.isLoggedIn || !session.userId) {
     redirect('/');
   }
 
@@ -60,7 +60,7 @@ export async function createBarn(prevState: BarnState, formData: FormData) {
 
     await prisma.log.create({
         data: {
-            userId: session.userId!,
+            userId: session.userId,
             action: 'CREATE',
             entityType: 'BARN',
             entityId: barn.id,
@@ -79,7 +79,7 @@ export async function createBarn(prevState: BarnState, formData: FormData) {
 
 export async function updateBarn(id: string, prevState: BarnState, formData: FormData) {
     const session = await getSession();
-    if (!session.isLoggedIn) {
+    if (!session.isLoggedIn || !session.userId) {
         redirect('/');
     }
 
@@ -116,7 +116,7 @@ export async function updateBarn(id: string, prevState: BarnState, formData: For
 
          await prisma.log.create({
             data: {
-                userId: session.userId!,
+                userId: session.userId,
                 action: 'UPDATE',
                 entityType: 'BARN',
                 entityId: barn.id,
@@ -136,7 +136,7 @@ export async function updateBarn(id: string, prevState: BarnState, formData: For
 
 export async function deleteBarn(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn) {
+    if (!session.isLoggedIn || !session.userId) {
         redirect('/');
     }
     
@@ -167,7 +167,7 @@ export async function deleteBarn(id: string) {
 
         await prisma.log.create({
             data: {
-                userId: session.userId!,
+                userId: session.userId,
                 action: 'DELETE',
                 entityType: 'BARN',
                 entityId: id,

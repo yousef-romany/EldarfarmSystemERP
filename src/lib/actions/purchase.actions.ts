@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -35,7 +36,7 @@ type PurchaseState = {
 
 export async function createPurchase(prevState: PurchaseState, formData: FormData): Promise<PurchaseState> {
   const session = await getSession();
-  if (!session.isLoggedIn) {
+  if (!session.isLoggedIn || !session.userId) {
     redirect('/');
   }
 
@@ -183,7 +184,7 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
 
 export async function deletePurchase(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.permissions?.purchases?.delete) {
+    if (!session.isLoggedIn || !session.userId || !session.permissions?.purchases?.delete) {
         return { message: 'ليس لديك الصلاحية لحذف المشتريات.', success: false };
     }
 

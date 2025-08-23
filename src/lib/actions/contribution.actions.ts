@@ -30,7 +30,7 @@ type ContributionState = {
 
 export async function createContribution(prevState: ContributionState, formData: FormData): Promise<ContributionState> {
   const session = await getSession();
-  if (!session.isLoggedIn) {
+  if (!session.isLoggedIn || !session.userId) {
     redirect('/');
   }
 
@@ -152,7 +152,7 @@ export async function getContributionById(id: string) {
 
 export async function updateContribution(contributionId: string, prevState: ContributionState, formData: FormData): Promise<ContributionState> {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.permissions?.contributions?.edit) {
+    if (!session.isLoggedIn || !session.userId || !session.permissions?.contributions?.edit) {
         return { message: "ليس لديك الصلاحية لتعديل المساهمات.", success: false };
     }
     
@@ -253,7 +253,7 @@ export async function updateContribution(contributionId: string, prevState: Cont
 
 export async function deleteContribution(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.permissions?.contributions?.delete) {
+    if (!session.isLoggedIn || !session.userId || !session.permissions?.contributions?.delete) {
         return { message: 'ليس لديك الصلاحية لحذف المساهمات.', success: false };
     }
 

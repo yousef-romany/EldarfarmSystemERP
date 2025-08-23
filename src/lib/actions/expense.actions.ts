@@ -34,7 +34,7 @@ export type ExpenseState = {
 
 export async function createExpense(prevState: ExpenseState, formData: FormData): Promise<ExpenseState> {
   const session = await getSession();
-  if (!session.isLoggedIn) {
+  if (!session.isLoggedIn || !session.userId) {
     redirect('/');
   }
 
@@ -162,7 +162,7 @@ export async function getExpenseById(id: string) {
 
 export async function updateExpense(expenseId: string, prevState: ExpenseState, formData: FormData): Promise<ExpenseState> {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.permissions?.expenses?.edit) {
+    if (!session.isLoggedIn || !session.userId || !session.permissions?.expenses?.edit) {
         return { message: "ليس لديك الصلاحية لتعديل المصروفات.", success: false };
     }
     
@@ -263,7 +263,7 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
 
 export async function deleteExpense(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.permissions?.expenses?.delete) {
+    if (!session.isLoggedIn || !session.userId || !session.permissions?.expenses?.delete) {
         return { message: 'ليس لديك الصلاحية لحذف المصروفات.', success: false };
     }
 

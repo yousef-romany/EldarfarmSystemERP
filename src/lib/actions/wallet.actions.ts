@@ -27,7 +27,7 @@ type WalletState = {
 
 export async function createWallet(prevState: WalletState, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn) {
+  if (!session.isLoggedIn || !session.userId) {
     redirect('/');
   }
 
@@ -65,7 +65,7 @@ export async function createWallet(prevState: WalletState, formData: FormData) {
 
     await prisma.log.create({
         data: {
-            userId: session.userId!,
+            userId: session.userId,
             action: 'CREATE',
             entityType: 'WALLET',
             entityId: wallet.id,
@@ -85,7 +85,7 @@ export async function createWallet(prevState: WalletState, formData: FormData) {
 
 export async function updateWallet(id: string, prevState: WalletState, formData: FormData) {
     const session = await getSession();
-    if (!session.isLoggedIn) {
+    if (!session.isLoggedIn || !session.userId) {
         redirect('/');
     }
 
@@ -122,7 +122,7 @@ export async function updateWallet(id: string, prevState: WalletState, formData:
 
          await prisma.log.create({
             data: {
-                userId: session.userId!,
+                userId: session.userId,
                 action: 'UPDATE',
                 entityType: 'WALLET',
                 entityId: wallet.id,
@@ -143,7 +143,7 @@ export async function updateWallet(id: string, prevState: WalletState, formData:
 
 export async function deleteWallet(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn) {
+    if (!session.isLoggedIn || !session.userId) {
         redirect('/');
     }
     
@@ -173,7 +173,7 @@ export async function deleteWallet(id: string) {
 
         await prisma.log.create({
             data: {
-                userId: session.userId!,
+                userId: session.userId,
                 action: 'DELETE',
                 entityType: 'WALLET',
                 entityId: id,

@@ -30,7 +30,7 @@ type UserState = {
 
 export async function createUser(prevState: UserState, formData: FormData): Promise<UserState> {
   const session = await getSession();
-  if (!session.isLoggedIn || session.permissions?.users?.add !== true) {
+  if (!session.isLoggedIn || !session.userId || session.permissions?.users?.add !== true) {
      return { message: 'ليس لديك الصلاحية لإضافة مستخدمين.', success: false };
   }
 
@@ -66,7 +66,7 @@ export async function createUser(prevState: UserState, formData: FormData): Prom
 
     await prisma.log.create({
         data: {
-            userId: session.userId!,
+            userId: session.userId,
             action: 'CREATE',
             entityType: 'USER',
             entityId: user.id,
@@ -87,7 +87,7 @@ export async function createUser(prevState: UserState, formData: FormData): Prom
 
 export async function updateUserPermissions(userId: string, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn || session.permissions?.users?.edit !== true) {
+  if (!session.isLoggedIn || !session.userId || session.permissions?.users?.edit !== true) {
     return { message: 'ليس لديك الصلاحية لتعديل الصلاحيات.', success: false };
   }
 
@@ -115,7 +115,7 @@ export async function updateUserPermissions(userId: string, formData: FormData) 
     
      await prisma.log.create({
         data: {
-            userId: session.userId!,
+            userId: session.userId,
             action: 'UPDATE',
             entityType: 'USER',
             entityId: userId,

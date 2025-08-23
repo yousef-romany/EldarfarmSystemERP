@@ -33,7 +33,7 @@ type VowState = {
 
 export async function createVow(prevState: VowState, formData: FormData): Promise<VowState> {
   const session = await getSession();
-  if (!session.isLoggedIn) {
+  if (!session.isLoggedIn || !session.userId) {
     redirect('/');
   }
 
@@ -125,7 +125,7 @@ export async function createVow(prevState: VowState, formData: FormData): Promis
 
 export async function updateVow(vowId: string, prevState: VowState, formData: FormData): Promise<VowState> {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.permissions?.vows?.edit) {
+    if (!session.isLoggedIn || !session.userId || !session.permissions?.vows?.edit) {
         return { message: 'ليس لديك الصلاحية لتعديل النذور.', success: false };
     }
     
@@ -245,7 +245,7 @@ export async function getVowById(id: string) {
 
 export async function deleteVow(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.permissions?.vows?.delete) {
+    if (!session.isLoggedIn || !session.userId || !session.permissions?.vows?.delete) {
         return { message: 'ليس لديك الصلاحية لحذف النذور.', success: false };
     }
 

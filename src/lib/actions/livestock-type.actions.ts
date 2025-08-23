@@ -21,7 +21,7 @@ type LivestockTypeState = {
 
 export async function createLivestockType(prevState: LivestockTypeState, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn) {
+  if (!session.isLoggedIn || !session.userId) {
     redirect('/');
   }
 
@@ -57,7 +57,7 @@ export async function createLivestockType(prevState: LivestockTypeState, formDat
 
     await prisma.log.create({
         data: {
-            userId: session.userId!,
+            userId: session.userId,
             action: 'CREATE',
             entityType: 'LIVESTOCK_TYPE',
             entityId: livestockType.id,
@@ -76,7 +76,7 @@ export async function createLivestockType(prevState: LivestockTypeState, formDat
 
 export async function updateLivestockType(id: string, prevState: LivestockTypeState, formData: FormData) {
     const session = await getSession();
-    if (!session.isLoggedIn) {
+    if (!session.isLoggedIn || !session.userId) {
         redirect('/');
     }
 
@@ -111,7 +111,7 @@ export async function updateLivestockType(id: string, prevState: LivestockTypeSt
 
          await prisma.log.create({
             data: {
-                userId: session.userId!,
+                userId: session.userId,
                 action: 'UPDATE',
                 entityType: 'LIVESTOCK_TYPE',
                 entityId: livestockType.id,
@@ -130,7 +130,7 @@ export async function updateLivestockType(id: string, prevState: LivestockTypeSt
 
 export async function deleteLivestockType(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn) {
+    if (!session.isLoggedIn || !session.userId) {
         redirect('/');
     }
     
@@ -160,7 +160,7 @@ export async function deleteLivestockType(id: string) {
 
         await prisma.log.create({
             data: {
-                userId: session.userId!,
+                userId: session.userId,
                 action: 'DELETE',
                 entityType: 'LIVESTOCK_TYPE',
                 entityId: id,
