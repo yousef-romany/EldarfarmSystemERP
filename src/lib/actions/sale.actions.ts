@@ -309,7 +309,33 @@ export async function getSaleById(id: string) {
                 }
             }
         });
-        return sale;
+
+        if (!sale) return null;
+
+        // Serialize Decimal fields before returning
+        return {
+            ...sale,
+            pricePerKg: sale.pricePerKg.toNumber(),
+            totalPrice: sale.totalPrice.toNumber(),
+            amountPaid: sale.amountPaid.toNumber(),
+            remainingAmount: sale.remainingAmount.toNumber(),
+            initialWeight: sale.initialWeight?.toNumber() ?? null,
+            finalWeight: sale.finalWeight?.toNumber() ?? null,
+            livestock: {
+                ...sale.livestock,
+                weight: sale.livestock.weight.toNumber(),
+                cost: sale.livestock.cost.toNumber(),
+            },
+            payments: sale.payments.map(p => ({
+                ...p,
+                amount: p.amount.toNumber(),
+                wallet: {
+                    ...p.wallet,
+                    balance: p.wallet.balance.toNumber()
+                }
+            }))
+        };
+
     } catch (error) {
         console.error("Failed to get sale by ID:", error);
         return null;

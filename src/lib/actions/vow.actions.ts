@@ -235,7 +235,18 @@ export async function getVowById(id: string) {
                 }
             }
         });
-        return vow;
+
+        if (!vow) return null;
+
+        // Serialize Decimal fields
+        return {
+          ...vow,
+          livestock: {
+            ...vow.livestock,
+            weight: vow.livestock.weight.toNumber(),
+            cost: vow.livestock.cost.toNumber()
+          }
+        }
     } catch (error) {
         console.error("Failed to get vow by ID:", error);
         return null;

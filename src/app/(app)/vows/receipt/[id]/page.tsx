@@ -17,10 +17,18 @@ type VowWithDetails = Vow & {
     };
 };
 
+type SerializedVow = Omit<VowWithDetails, 'livestock'> & {
+    livestock: Omit<VowWithDetails['livestock'], 'weight' | 'cost'> & {
+        weight: number;
+        cost: number;
+    }
+}
+
+
 const VowReceiptPage = () => {
   const params = useParams();
   const { id } = params;
-  const [vow, setVow] = useState<VowWithDetails | null>(null);
+  const [vow, setVow] = useState<SerializedVow | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -30,7 +38,7 @@ const VowReceiptPage = () => {
         setIsLoading(true);
         getVowById(id).then(data => {
             if (data) {
-                setVow(data as VowWithDetails);
+                setVow(data as SerializedVow);
             }
             setIsLoading(false);
         });
@@ -41,7 +49,7 @@ const VowReceiptPage = () => {
     window.print();
   };
   
-  const getAnimalType = (animal: VowWithDetails['livestock']) => {
+  const getAnimalType = (animal: SerializedVow['livestock']) => {
     if (animal.isBatch) {
       return `دفعة ${animal.livestockType.name}`;
     }
@@ -104,7 +112,7 @@ const VowReceiptPage = () => {
                             <TableRow>
                             <TableCell>{animal.isBatch ? `${animal.quantity} رأس` : animal.tagId || 'بدون رقم'}</TableCell>
                             <TableCell>{getAnimalType(animal)}</TableCell>
-                            <TableCell>{animal.weight.toNumber()} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
+                            <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
                             <TableCell>{animal.age}</TableCell>
                             </TableRow>
                         </TableBody>

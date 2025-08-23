@@ -141,7 +141,22 @@ export async function getContributionById(id: string) {
                 }
             }
         });
-        return contribution;
+
+        if (!contribution) return null;
+
+        // Serialize Decimal fields
+        return {
+          ...contribution,
+          totalAmount: contribution.totalAmount.toNumber(),
+          payments: contribution.payments.map(p => ({
+            ...p,
+            amount: p.amount.toNumber(),
+            wallet: {
+              ...p.wallet,
+              balance: p.wallet.balance.toNumber()
+            }
+          }))
+        };
     } catch (error) {
         console.error("Failed to get contribution by ID:", error);
         return null;

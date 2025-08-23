@@ -15,10 +15,16 @@ type ContributionWithDetails = Contribution & {
     payments: (Payment & { wallet: Wallet })[];
 };
 
+type SerializedContribution = Omit<ContributionWithDetails, 'totalAmount' | 'payments'> & {
+    totalAmount: number;
+    payments: (Omit<Payment, 'amount'> & { amount: number; wallet: Omit<Wallet, 'balance'> & { balance: number } })[];
+};
+
+
 const ContributionReceiptPage = () => {
   const params = useParams();
   const { id } = params;
-  const [contribution, setContribution] = useState<ContributionWithDetails | null>(null);
+  const [contribution, setContribution] = useState<SerializedContribution | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -28,7 +34,7 @@ const ContributionReceiptPage = () => {
         setIsLoading(true);
         getContributionById(id).then(data => {
             if (data) {
-                setContribution(data as ContributionWithDetails);
+                setContribution(data as SerializedContribution);
             }
             setIsLoading(false);
         });
@@ -39,9 +45,7 @@ const ContributionReceiptPage = () => {
     window.print();
   };
 
-  const getWalletName = (walletId: string) => contribution?.payments.find(p => p.walletId === walletId)?.wallet.name || 'N/A';
-
-  const totalPaid = contribution?.payments.reduce((acc, p) => acc + p.amount.toNumber(), 0) || 0;
+  const totalPaid = contribution?.payments.reduce((acc, p) => acc + p.amount, 0) || 0;
   
   if (isLoading) {
     return <div>جاري تحميل الإيصال...</div>;
@@ -94,7 +98,7 @@ const ContributionReceiptPage = () => {
                         <TableBody>
                             <TableRow>
                                 <TableCell>{contribution.description}</TableCell>
-                                <TableCell className="text-right font-bold">{contribution.totalAmount.toNumber().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                <TableCell className="text-right font-bold">{contribution.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
@@ -111,7 +115,7 @@ const ContributionReceiptPage = () => {
                             {contribution.payments.map((p, i) => (
                                 <TableRow key={i}>
                                     <TableCell>{p.wallet.name}</TableCell>
-                                    <TableCell className="text-right">{p.amount.toNumber().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                    <TableCell className="text-right">{p.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                                 </TableRow>
                              ))}
                         </TableBody>

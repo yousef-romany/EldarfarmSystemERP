@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { getSaleById } from '@/lib/actions/sale.actions';
 import type { Sale, Livestock, LivestockType, Wallet, Payment } from '@prisma/client';
 
+
 type SaleWithDetails = Sale & {
     livestock: Livestock & {
         livestockType: LivestockType;
@@ -18,11 +19,23 @@ type SaleWithDetails = Sale & {
     payments: (Payment & { wallet: Wallet })[];
 };
 
+// This type represents the data after serialization (Decimal -> number)
+type SerializedSale = Omit<SaleWithDetails, 'pricePerKg' | 'totalPrice' | 'amountPaid' | 'remainingAmount' | 'initialWeight' | 'finalWeight' | 'livestock' | 'payments'> & {
+    pricePerKg: number;
+    totalPrice: number;
+    amountPaid: number;
+    remainingAmount: number;
+    initialWeight: number | null;
+    finalWeight: number | null;
+    livestock: Omit<Livestock, 'weight' | 'cost'> & { weight: number, cost: number, livestockType: LivestockType };
+    payments: (Omit<Payment, 'amount'> & { amount: number, wallet: Omit<Wallet, 'balance'> & { balance: number } })[];
+};
+
 
 const InvoicePage = () => {
   const params = useParams();
   const { id } = params;
-  const [sale, setSale] = useState<SaleWithDetails | null>(null);
+  const [sale, setSale] = useState<SerializedSale | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const invoiceRef = useRef<HTMLDivElement>(null);
@@ -32,7 +45,7 @@ const InvoicePage = () => {
         setIsLoading(true);
         getSaleById(id).then(data => {
             if (data) {
-                setSale(data as SaleWithDetails);
+                setSale(data as SerializedSale);
             }
             setIsLoading(false);
         });
@@ -43,8 +56,8 @@ const InvoicePage = () => {
     window.print();
   };
   
-  const totalPaid = sale?.amountPaid.toNumber() || 0;
-  const finalPrice = sale?.totalPrice.toNumber() || 0;
+  const totalPaid = sale?.amountPaid || 0;
+  const finalPrice = sale?.totalPrice || 0;
   const remainingBalance = finalPrice - totalPaid;
 
   if (isLoading) {
@@ -152,7 +165,7 @@ const InvoicePage = () => {
                                     </TableRow>
                                     <TableRow>
                                         <TableCell>فرق الوزن (كجم)</TableCell>
-                                        <TableCell className="text-center font-bold">{(sale.finalWeight.toNumber() - (sale.initialWeight?.toNumber() || 0)).toFixed(2)}</TableCell>
+                                        <TableCell className="text-center font-bold">{(sale.finalWeight - (sale.initialWeight || 0)).toFixed(2)}</TableCell>
                                     </TableRow>
                                     </>
                                 )}
@@ -178,7 +191,7 @@ const InvoicePage = () => {
                                 <TableRow key={i}>
                                      <TableCell>{p.date ? format(new Date(p.date), 'yyyy-MM-dd') : '-'}</TableCell>
                                      <TableCell>دفعة من {p.wallet.name}</TableCell>
-                                     <TableCell className="text-right">{p.amount.toNumber().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                     <TableCell className="text-right">{p.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                                 </TableRow>
                              ))}
                         </TableBody>
@@ -225,5 +238,3 @@ const InvoicePage = () => {
 };
 
 export default InvoicePage;
-
-    
