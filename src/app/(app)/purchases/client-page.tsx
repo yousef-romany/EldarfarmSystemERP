@@ -1,18 +1,18 @@
 
+
 'use client';
 import { useState, useEffect, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { PlusCircle, Trash2, MoreHorizontal, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { createPurchase, deletePurchase } from '@/lib/actions/purchase.actions';
-import type { Barn, LivestockType, Wallet, Purchase, Livestock } from '@prisma/client';
+import type { Barn, LivestockType, Wallet, Purchase, Livestock, Payment } from '@prisma/client';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,11 +20,16 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-type PurchaseWithDetails = Purchase & {
-  livestock: Livestock & {
-    livestockType: LivestockType;
-    barn: Barn;
-  };
+type LivestockWithDetails = Livestock & {
+  livestockType: LivestockType;
+  barn: Barn;
+};
+
+type PurchaseWithDetails = Omit<Purchase, 'totalCost' | 'amountPaid' | 'remainingAmount'> & {
+  totalCost: number;
+  amountPaid: number;
+  remainingAmount: number;
+  livestock: LivestockWithDetails;
 };
 
 type PaymentDetails = {
@@ -41,9 +46,8 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
   );
 }
 
-export default function PurchasesPageClient({ barns, livestockTypes, wallets, purchases }: { barns: Barn[], livestockTypes: LivestockType[], wallets: Wallet[], purchases: PurchaseWithDetails[] }) {
+export default function PurchasesPageClient({ barns, livestockTypes, wallets, purchases }: { barns: Barn[], livestockTypes: LivestockType[], wallets: (Omit<Wallet, 'balance'> & { balance: number })[], purchases: PurchaseWithDetails[] }) {
   const { toast } = useToast();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [createState, createFormAction] = useActionState(createPurchase, { message: null, errors: {}, success: false });
 
   const [registrationType, setRegistrationType] = useState('individual');
@@ -56,7 +60,6 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
   useEffect(() => {
     if (createState.success) {
       toast({ title: 'نجاح', description: createState.message });
-      setIsAddDialogOpen(false);
       resetFormState();
     } else if (createState.message && !createState.success) {
       toast({ title: 'خطأ', description: createState.message, variant: 'destructive' });
@@ -69,11 +72,6 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
     setTotalCost(0);
   };
   
-  const handleOpenDialog = () => {
-      resetFormState();
-      setIsAddDialogOpen(true);
-  }
-
   const handleAddPayment = () => {
     setPayments([...payments, {}]);
   };
@@ -291,7 +289,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                                     <SelectTrigger id={`wallet-${index}`}><SelectValue placeholder="اختر محفظة..." /></SelectTrigger>
                                     <SelectContent>
                                     {wallets.map((wallet) => (
-                                        <SelectItem key={wallet.id} value={wallet.id}>{wallet.name} (الرصيد: {(wallet.balance as number).toLocaleString()})</SelectItem>
+                                        <SelectItem key={wallet.id} value={wallet.id}>{wallet.name} (الرصيد: {wallet.balance.toLocaleString()})</SelectItem>
                                     ))}
                                     </SelectContent>
                                 </Select>
@@ -333,3 +331,4 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
     </>
   );
 }
+

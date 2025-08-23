@@ -1,4 +1,5 @@
 
+
 import { prisma } from '@/lib/prisma';
 import PurchasesPageClient from './client-page';
 import { PageHeader } from '@/components/page-header';
@@ -9,7 +10,19 @@ export default async function PurchasesPage() {
   const walletsData = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
   const purchasesData = await prisma.purchase.findMany({ 
     orderBy: { purchaseDate: 'desc' },
-    include: { livestock: { include: { livestockType: true, barn: true } } }
+    include: { 
+      livestock: { 
+        include: { 
+          livestockType: true, 
+          barn: true 
+        } 
+      },
+      payments: {
+        include: {
+          wallet: true
+        }
+      }
+    }
   });
 
   // Serialize Decimal fields
@@ -23,7 +36,11 @@ export default async function PurchasesPage() {
       ...p.livestock,
       weight: p.livestock.weight.toNumber(),
       cost: p.livestock.cost.toNumber(),
-    }
+    },
+    payments: p.payments.map(payment => ({
+      ...payment,
+      amount: payment.amount.toNumber(),
+    }))
   }));
 
 
@@ -41,3 +58,4 @@ export default async function PurchasesPage() {
     </>
     );
 }
+
