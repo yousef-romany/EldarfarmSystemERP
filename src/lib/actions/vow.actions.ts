@@ -33,11 +33,11 @@ type VowState = {
 
 export async function createVow(prevState: VowState, formData: FormData): Promise<VowState> {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) {
+  if (!session.isLoggedIn || !session.user?.id) {
     redirect('/');
   }
 
-  if (!session.permissions?.vows?.add) {
+  if (!session.user.permissions?.vows?.add) {
     return { message: 'ليس لديك الصلاحية لتسجيل النذور.', success: false };
   }
 
@@ -98,7 +98,7 @@ export async function createVow(prevState: VowState, formData: FormData): Promis
       // 4. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.userId,
+          userId: session.user.id,
           action: 'CREATE',
           entityType: 'VOW',
           entityId: vow.id,
@@ -125,7 +125,7 @@ export async function createVow(prevState: VowState, formData: FormData): Promis
 
 export async function updateVow(vowId: string, prevState: VowState, formData: FormData): Promise<VowState> {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId || !session.permissions?.vows?.edit) {
+    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.vows?.edit) {
         return { message: 'ليس لديك الصلاحية لتعديل النذور.', success: false };
     }
     
@@ -197,7 +197,7 @@ export async function updateVow(vowId: string, prevState: VowState, formData: Fo
             // Log the update
             await tx.log.create({
                 data: {
-                    userId: session.userId,
+                    userId: session.user.id,
                     action: 'UPDATE',
                     entityType: 'VOW',
                     entityId: vowId,
@@ -245,7 +245,7 @@ export async function getVowById(id: string) {
 
 export async function deleteVow(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId || !session.permissions?.vows?.delete) {
+    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.vows?.delete) {
         return { message: 'ليس لديك الصلاحية لحذف النذور.', success: false };
     }
 
@@ -278,7 +278,7 @@ export async function deleteVow(id: string) {
             // 4. Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.userId,
+                    userId: session.user.id,
                     action: 'DELETE',
                     entityType: 'VOW',
                     entityId: id,

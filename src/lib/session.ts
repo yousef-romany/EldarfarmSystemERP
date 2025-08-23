@@ -1,6 +1,8 @@
 
 import { getIronSession, IronSession, SessionOptions } from 'iron-session';
 import { cookies } from 'next/headers';
+import type { UserPermissions } from './types';
+
 
 export const sessionOptions: SessionOptions = {
   // TODO: Use a strong password from environment variables
@@ -16,9 +18,11 @@ export const sessionOptions: SessionOptions = {
 // Define the shape of the session data
 export interface SessionData {
   isLoggedIn: boolean;
-  username?: string;
-  userId?: string;
-  permissions?: any; 
+  user?: {
+      id: string;
+      username: string;
+      permissions: UserPermissions;
+  };
 }
 
 export async function getSession() {

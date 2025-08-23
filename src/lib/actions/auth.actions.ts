@@ -22,10 +22,11 @@ export async function login(prevState: string | undefined, formData: FormData) {
 
   // --- Store user data in session ---
   session.isLoggedIn = true;
-  session.username = user.username;
-  session.userId = user.id;
-  // Parse the permissions from string to JSON object before saving to session
-  session.permissions = JSON.parse(user.permissions as string); 
+  session.user = {
+      id: user.id,
+      username: user.username,
+      permissions: JSON.parse(user.permissions as string)
+  };
 
   await session.save();
 

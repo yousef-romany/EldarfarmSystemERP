@@ -21,13 +21,11 @@ type LivestockTypeState = {
 
 export async function createLivestockType(prevState: LivestockTypeState, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) {
+  if (!session.isLoggedIn || !session.user?.id) {
     redirect('/');
   }
 
-  // NOTE: Assuming permission for this is under 'barns' for now. 
-  // In a real scenario, this should have its own permission key.
-  if (!session.permissions?.livestockTypes?.add) {
+  if (!session.user.permissions?.livestockTypes?.add) {
     return {
       message: 'ليس لديك الصلاحية لإضافة نوع جديد.',
       success: false,
@@ -57,7 +55,7 @@ export async function createLivestockType(prevState: LivestockTypeState, formDat
 
     await prisma.log.create({
         data: {
-            userId: session.userId,
+            userId: session.user.id,
             action: 'CREATE',
             entityType: 'LIVESTOCK_TYPE',
             entityId: livestockType.id,
@@ -76,11 +74,11 @@ export async function createLivestockType(prevState: LivestockTypeState, formDat
 
 export async function updateLivestockType(id: string, prevState: LivestockTypeState, formData: FormData) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId) {
+    if (!session.isLoggedIn || !session.user?.id) {
         redirect('/');
     }
 
-    if (!session.permissions?.livestockTypes?.edit) {
+    if (!session.user.permissions?.livestockTypes?.edit) {
         return {
             message: 'ليس لديك الصلاحية لتعديل الأنواع.',
             success: false,
@@ -111,7 +109,7 @@ export async function updateLivestockType(id: string, prevState: LivestockTypeSt
 
          await prisma.log.create({
             data: {
-                userId: session.userId,
+                userId: session.user.id,
                 action: 'UPDATE',
                 entityType: 'LIVESTOCK_TYPE',
                 entityId: livestockType.id,
@@ -130,11 +128,11 @@ export async function updateLivestockType(id: string, prevState: LivestockTypeSt
 
 export async function deleteLivestockType(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId) {
+    if (!session.isLoggedIn || !session.user?.id) {
         redirect('/');
     }
     
-    if (!session.permissions?.livestockTypes?.delete) {
+    if (!session.user.permissions?.livestockTypes?.delete) {
         return {
             message: 'ليس لديك الصلاحية لحذف الأنواع.',
             success: false,
@@ -160,7 +158,7 @@ export async function deleteLivestockType(id: string) {
 
         await prisma.log.create({
             data: {
-                userId: session.userId,
+                userId: session.user.id,
                 action: 'DELETE',
                 entityType: 'LIVESTOCK_TYPE',
                 entityId: id,

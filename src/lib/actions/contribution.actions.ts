@@ -30,12 +30,11 @@ type ContributionState = {
 
 export async function createContribution(prevState: ContributionState, formData: FormData): Promise<ContributionState> {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) {
+  if (!session.isLoggedIn || !session.user?.id) {
     redirect('/');
   }
 
-  // Assuming 'contributions' is a permission key
-  if (!session.permissions?.contributions?.add) {
+  if (!session.user.permissions?.contributions?.add) {
     return {
       message: 'ليس لديك الصلاحية لإضافة مساهمات.',
       success: false,
@@ -102,7 +101,7 @@ export async function createContribution(prevState: ContributionState, formData:
       // 4. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.userId,
+          userId: session.user.id,
           action: 'CREATE',
           entityType: 'CONTRIBUTION',
           entityId: contribution.id,
@@ -152,7 +151,7 @@ export async function getContributionById(id: string) {
 
 export async function updateContribution(contributionId: string, prevState: ContributionState, formData: FormData): Promise<ContributionState> {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId || !session.permissions?.contributions?.edit) {
+    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.contributions?.edit) {
         return { message: "ليس لديك الصلاحية لتعديل المساهمات.", success: false };
     }
     
@@ -230,7 +229,7 @@ export async function updateContribution(contributionId: string, prevState: Cont
             // 6. Log the update
             await tx.log.create({
                 data: {
-                    userId: session.userId,
+                    userId: session.user.id,
                     action: 'UPDATE',
                     entityType: 'CONTRIBUTION',
                     entityId: contributionId,
@@ -253,7 +252,7 @@ export async function updateContribution(contributionId: string, prevState: Cont
 
 export async function deleteContribution(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId || !session.permissions?.contributions?.delete) {
+    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.contributions?.delete) {
         return { message: 'ليس لديك الصلاحية لحذف المساهمات.', success: false };
     }
 
@@ -289,7 +288,7 @@ export async function deleteContribution(id: string) {
             // Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.userId,
+                    userId: session.user.id,
                     action: 'DELETE',
                     entityType: 'CONTRIBUTION',
                     entityId: id,

@@ -36,11 +36,11 @@ type PurchaseState = {
 
 export async function createPurchase(prevState: PurchaseState, formData: FormData): Promise<PurchaseState> {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) {
+  if (!session.isLoggedIn || !session.user?.id) {
     redirect('/');
   }
 
-  if (!session.permissions?.purchases?.add) {
+  if (!session.user.permissions?.purchases?.add) {
     return {
       message: 'ليس لديك الصلاحية لإضافة عمليات شراء.',
       success: false,
@@ -155,7 +155,7 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
       // 6. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.userId,
+          userId: session.user.id,
           action: 'CREATE',
           entityType: 'PURCHASE',
           entityId: purchase.id,
@@ -184,7 +184,7 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
 
 export async function deletePurchase(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId || !session.permissions?.purchases?.delete) {
+    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.purchases?.delete) {
         return { message: 'ليس لديك الصلاحية لحذف المشتريات.', success: false };
     }
 
@@ -232,7 +232,7 @@ export async function deletePurchase(id: string) {
             // 6. Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.userId,
+                    userId: session.user.id,
                     action: 'DELETE',
                     entityType: 'PURCHASE',
                     entityId: id,

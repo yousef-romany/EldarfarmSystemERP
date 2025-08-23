@@ -23,11 +23,11 @@ type BarnState = {
 
 export async function createBarn(prevState: BarnState, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) {
+  if (!session.isLoggedIn || !session.user?.id) {
     redirect('/');
   }
 
-  if (!session.permissions?.barns?.add) {
+  if (!session.user.permissions?.barns?.add) {
     return {
       message: 'ليس لديك الصلاحية لإضافة عنبر جديد.',
       success: false,
@@ -60,7 +60,7 @@ export async function createBarn(prevState: BarnState, formData: FormData) {
 
     await prisma.log.create({
         data: {
-            userId: session.userId,
+            userId: session.user.id,
             action: 'CREATE',
             entityType: 'BARN',
             entityId: barn.id,
@@ -79,11 +79,11 @@ export async function createBarn(prevState: BarnState, formData: FormData) {
 
 export async function updateBarn(id: string, prevState: BarnState, formData: FormData) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId) {
+    if (!session.isLoggedIn || !session.user?.id) {
         redirect('/');
     }
 
-    if (!session.permissions?.barns?.edit) {
+    if (!session.user.permissions?.barns?.edit) {
         return {
             message: 'ليس لديك الصلاحية لتعديل العنابر.',
             success: false,
@@ -116,7 +116,7 @@ export async function updateBarn(id: string, prevState: BarnState, formData: For
 
          await prisma.log.create({
             data: {
-                userId: session.userId,
+                userId: session.user.id,
                 action: 'UPDATE',
                 entityType: 'BARN',
                 entityId: barn.id,
@@ -136,11 +136,11 @@ export async function updateBarn(id: string, prevState: BarnState, formData: For
 
 export async function deleteBarn(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId) {
+    if (!session.isLoggedIn || !session.user?.id) {
         redirect('/');
     }
     
-    if (!session.permissions?.barns?.delete) {
+    if (!session.user.permissions?.barns?.delete) {
         return {
             message: 'ليس لديك الصلاحية لحذف العنابر.',
             success: false,
@@ -167,7 +167,7 @@ export async function deleteBarn(id: string) {
 
         await prisma.log.create({
             data: {
-                userId: session.userId,
+                userId: session.user.id,
                 action: 'DELETE',
                 entityType: 'BARN',
                 entityId: id,

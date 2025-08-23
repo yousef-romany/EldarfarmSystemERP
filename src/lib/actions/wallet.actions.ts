@@ -27,11 +27,11 @@ type WalletState = {
 
 export async function createWallet(prevState: WalletState, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) {
+  if (!session.isLoggedIn || !session.user?.id) {
     redirect('/');
   }
 
-  if (!session.permissions?.wallets?.add) {
+  if (!session.user.permissions?.wallets?.add) {
     return {
       message: 'ليس لديك الصلاحية لإضافة محافظ جديدة.',
       success: false,
@@ -65,7 +65,7 @@ export async function createWallet(prevState: WalletState, formData: FormData) {
 
     await prisma.log.create({
         data: {
-            userId: session.userId,
+            userId: session.user.id,
             action: 'CREATE',
             entityType: 'WALLET',
             entityId: wallet.id,
@@ -85,11 +85,11 @@ export async function createWallet(prevState: WalletState, formData: FormData) {
 
 export async function updateWallet(id: string, prevState: WalletState, formData: FormData) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId) {
+    if (!session.isLoggedIn || !session.user?.id) {
         redirect('/');
     }
 
-    if (!session.permissions?.wallets?.edit) {
+    if (!session.user.permissions?.wallets?.edit) {
         return {
             message: 'ليس لديك الصلاحية لتعديل المحافظ.',
             success: false,
@@ -122,7 +122,7 @@ export async function updateWallet(id: string, prevState: WalletState, formData:
 
          await prisma.log.create({
             data: {
-                userId: session.userId,
+                userId: session.user.id,
                 action: 'UPDATE',
                 entityType: 'WALLET',
                 entityId: wallet.id,
@@ -143,11 +143,11 @@ export async function updateWallet(id: string, prevState: WalletState, formData:
 
 export async function deleteWallet(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId) {
+    if (!session.isLoggedIn || !session.user?.id) {
         redirect('/');
     }
     
-    if (!session.permissions?.wallets?.delete) {
+    if (!session.user.permissions?.wallets?.delete) {
         return {
             message: 'ليس لديك الصلاحية لحذف المحافظ.',
             success: false,
@@ -173,7 +173,7 @@ export async function deleteWallet(id: string) {
 
         await prisma.log.create({
             data: {
-                userId: session.userId,
+                userId: session.user.id,
                 action: 'DELETE',
                 entityType: 'WALLET',
                 entityId: id,

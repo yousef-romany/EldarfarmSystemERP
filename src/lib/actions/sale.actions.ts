@@ -33,11 +33,11 @@ type SaleState = {
 
 export async function createSale(prevState: SaleState, formData: FormData): Promise<SaleState> {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) {
+  if (!session.isLoggedIn || !session.user?.id) {
     redirect('/');
   }
 
-  if (!session.permissions?.sales?.add) {
+  if (!session.user.permissions?.sales?.add) {
     return { message: 'ليس لديك الصلاحية لتسجيل المبيعات.', success: false };
   }
 
@@ -144,7 +144,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
       // 5. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.userId,
+          userId: session.user.id,
           action: 'CREATE',
           entityType: 'SALE',
           entityId: sale.id,
@@ -179,7 +179,7 @@ type SettleSaleState = {
 
 export async function settleSale(saleId: string, prevState: SettleSaleState, formData: FormData): Promise<SettleSaleState> {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId || !session.permissions?.sales?.edit) {
+  if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.sales?.edit) {
     return { message: "ليس لديك الصلاحية لتسوية المبيعات.", success: false };
   }
 
@@ -266,7 +266,7 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
       // 5. Log the settlement
       await tx.log.create({
         data: {
-          userId: session.userId,
+          userId: session.user.id,
           action: 'UPDATE',
           entityType: 'SALE',
           entityId: sale.id,
@@ -325,7 +325,7 @@ const updateSaleSchema = z.object({
 
 export async function updateSale(saleId: string, prevState: SaleState, formData: FormData): Promise<SaleState> {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId || !session.permissions?.sales?.edit) {
+    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.sales?.edit) {
         return { message: "ليس لديك الصلاحية لتعديل المبيعات.", success: false };
     }
     
@@ -403,7 +403,7 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
             // 6. Log the update
             await tx.log.create({
                 data: {
-                    userId: session.userId,
+                    userId: session.user.id,
                     action: 'UPDATE',
                     entityType: 'SALE',
                     entityId: saleId,
@@ -426,7 +426,7 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
 
 export async function deleteSale(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId || !session.permissions?.sales?.delete) {
+    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.sales?.delete) {
         return { message: 'ليس لديك الصلاحية لحذف المبيعات.', success: false };
     }
 
@@ -478,7 +478,7 @@ export async function deleteSale(id: string) {
             // Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.userId,
+                    userId: session.user.id,
                     action: 'DELETE',
                     entityType: 'SALE',
                     entityId: id,

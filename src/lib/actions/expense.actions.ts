@@ -34,11 +34,11 @@ export type ExpenseState = {
 
 export async function createExpense(prevState: ExpenseState, formData: FormData): Promise<ExpenseState> {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.userId) {
+  if (!session.isLoggedIn || !session.user?.id) {
     redirect('/');
   }
 
-  if (!session.permissions?.expenses?.add) {
+  if (!session.user.permissions?.expenses?.add) {
     return {
       message: 'ليس لديك الصلاحية لإضافة مصروفات.',
       success: false,
@@ -113,7 +113,7 @@ export async function createExpense(prevState: ExpenseState, formData: FormData)
       // 4. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.userId,
+          userId: session.user.id,
           action: 'CREATE',
           entityType: 'EXPENSE',
           entityId: expense.id,
@@ -162,7 +162,7 @@ export async function getExpenseById(id: string) {
 
 export async function updateExpense(expenseId: string, prevState: ExpenseState, formData: FormData): Promise<ExpenseState> {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId || !session.permissions?.expenses?.edit) {
+    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.expenses?.edit) {
         return { message: "ليس لديك الصلاحية لتعديل المصروفات.", success: false };
     }
     
@@ -240,7 +240,7 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
             // 6. Log the update
             await tx.log.create({
                 data: {
-                    userId: session.userId,
+                    userId: session.user.id,
                     action: 'UPDATE',
                     entityType: 'EXPENSE',
                     entityId: expenseId,
@@ -263,7 +263,7 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
 
 export async function deleteExpense(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.userId || !session.permissions?.expenses?.delete) {
+    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.expenses?.delete) {
         return { message: 'ليس لديك الصلاحية لحذف المصروفات.', success: false };
     }
 
@@ -299,7 +299,7 @@ export async function deleteExpense(id: string) {
             // Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.userId,
+                    userId: session.user.id,
                     action: 'DELETE',
                     entityType: 'EXPENSE',
                     entityId: id,
