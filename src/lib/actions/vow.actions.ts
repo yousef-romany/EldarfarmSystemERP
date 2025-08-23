@@ -98,7 +98,7 @@ export async function createVow(prevState: VowState, formData: FormData): Promis
       // 4. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.userId!,
+          userId: session.userId,
           action: 'CREATE',
           entityType: 'VOW',
           entityId: vow.id,
@@ -197,7 +197,7 @@ export async function updateVow(vowId: string, prevState: VowState, formData: Fo
             // Log the update
             await tx.log.create({
                 data: {
-                    userId: session.userId!,
+                    userId: session.userId,
                     action: 'UPDATE',
                     entityType: 'VOW',
                     entityId: vowId,
@@ -278,7 +278,7 @@ export async function deleteVow(id: string) {
             // 4. Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.userId!,
+                    userId: session.userId,
                     action: 'DELETE',
                     entityType: 'VOW',
                     entityId: id,

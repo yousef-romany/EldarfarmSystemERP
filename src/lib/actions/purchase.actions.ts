@@ -155,7 +155,7 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
       // 6. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.userId!,
+          userId: session.userId,
           action: 'CREATE',
           entityType: 'PURCHASE',
           entityId: purchase.id,
@@ -232,7 +232,7 @@ export async function deletePurchase(id: string) {
             // 6. Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.userId!,
+                    userId: session.userId,
                     action: 'DELETE',
                     entityType: 'PURCHASE',
                     entityId: id,

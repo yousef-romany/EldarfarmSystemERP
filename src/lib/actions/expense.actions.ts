@@ -113,7 +113,7 @@ export async function createExpense(prevState: ExpenseState, formData: FormData)
       // 4. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.userId!,
+          userId: session.userId,
           action: 'CREATE',
           entityType: 'EXPENSE',
           entityId: expense.id,
@@ -240,7 +240,7 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
             // 6. Log the update
             await tx.log.create({
                 data: {
-                    userId: session.userId!,
+                    userId: session.userId,
                     action: 'UPDATE',
                     entityType: 'EXPENSE',
                     entityId: expenseId,
@@ -299,7 +299,7 @@ export async function deleteExpense(id: string) {
             // Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.userId!,
+                    userId: session.userId,
                     action: 'DELETE',
                     entityType: 'EXPENSE',
                     entityId: id,

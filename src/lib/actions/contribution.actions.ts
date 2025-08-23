@@ -102,7 +102,7 @@ export async function createContribution(prevState: ContributionState, formData:
       // 4. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.userId!,
+          userId: session.userId,
           action: 'CREATE',
           entityType: 'CONTRIBUTION',
           entityId: contribution.id,
@@ -230,7 +230,7 @@ export async function updateContribution(contributionId: string, prevState: Cont
             // 6. Log the update
             await tx.log.create({
                 data: {
-                    userId: session.userId!,
+                    userId: session.userId,
                     action: 'UPDATE',
                     entityType: 'CONTRIBUTION',
                     entityId: contributionId,
@@ -289,7 +289,7 @@ export async function deleteContribution(id: string) {
             // Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.userId!,
+                    userId: session.userId,
                     action: 'DELETE',
                     entityType: 'CONTRIBUTION',
                     entityId: id,

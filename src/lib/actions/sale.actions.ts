@@ -144,7 +144,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
       // 5. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.userId!,
+          userId: session.userId,
           action: 'CREATE',
           entityType: 'SALE',
           entityId: sale.id,
@@ -266,7 +266,7 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
       // 5. Log the settlement
       await tx.log.create({
         data: {
-          userId: session.userId!,
+          userId: session.userId,
           action: 'UPDATE',
           entityType: 'SALE',
           entityId: sale.id,
@@ -403,7 +403,7 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
             // 6. Log the update
             await tx.log.create({
                 data: {
-                    userId: session.userId!,
+                    userId: session.userId,
                     action: 'UPDATE',
                     entityType: 'SALE',
                     entityId: saleId,
@@ -478,7 +478,7 @@ export async function deleteSale(id: string) {
             // Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.userId!,
+                    userId: session.userId,
                     action: 'DELETE',
                     entityType: 'SALE',
                     entityId: id,
