@@ -30,7 +30,7 @@ type UserState = {
 
 export async function createUser(prevState: UserState, formData: FormData): Promise<UserState> {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.user?.id || session.user.permissions?.users?.add !== true) {
+  if (!session.isLoggedIn || !session.user?.permissions?.users?.add) {
      return { message: 'ليس لديك الصلاحية لإضافة مستخدمين.', success: false };
   }
 
@@ -87,7 +87,7 @@ export async function createUser(prevState: UserState, formData: FormData): Prom
 
 export async function updateUserPermissions(userId: string, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.user?.id || session.user.permissions?.users?.edit !== true) {
+  if (!session.isLoggedIn || !session.user?.permissions?.users?.edit) {
     return { message: 'ليس لديك الصلاحية لتعديل الصلاحيات.', success: false };
   }
 

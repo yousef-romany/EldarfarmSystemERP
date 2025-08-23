@@ -31,7 +31,8 @@ export async function login(prevState: string | undefined, formData: FormData) {
   await session.save();
 
   // Redirect to the dashboard after successful login
-  return redirect('/dashboard');
+  revalidatePath('/dashboard');
+  redirect('/dashboard');
 }
 
 export async function logout() {
