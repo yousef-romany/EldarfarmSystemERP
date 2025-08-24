@@ -14,7 +14,7 @@ import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import type { Expense, Wallet, Payment } from '@prisma/client';
-import { updateExpense } from '@/lib/actions/expense.actions';
+import { updateExpense, ExpenseState } from '@/lib/actions/expense.actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type ExpenseWithDetails = Omit<Expense, 'amount'> & {
@@ -45,8 +45,9 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 export default function EditExpensePage({ expense, wallets }: EditExpensePageProps) {
     const router = useRouter();
     const { toast } = useToast();
-    // Bind the action with the expense ID. This is safe now due to the loading check below.
-    const updateExpenseWithId = expense ? updateExpense.bind(null, expense.id) : async () => {};
+    
+    // The action is now always bound with the ID from props
+    const updateExpenseWithId = updateExpense.bind(null, expense.id);
     const [updateState, updateFormAction] = useActionState(updateExpenseWithId, { message: null, errors: {}, success: false });
 
     const [description, setDescription] = useState('');
@@ -77,7 +78,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
     }, [updateState, toast, router]);
 
     const handleAddPayment = () => {
-        setPayments([...payments, {}]);
+        setPayments([...payments, { walletId: '', amount: 0 }]);
     };
 
     const handleRemovePayment = (index: number) => {
@@ -88,7 +89,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
 
     const handlePaymentChange = (index: number, field: keyof Omit<PaymentState, 'id'>, value: string | number) => {
         const newPayments = [...payments.map(p => ({...p}))];
-        const payment = newPayments[index] || {};
+        const payment = newPayments[index] as Partial<PaymentState>;
         (payment as any)[field] = value;
         newPayments[index] = payment;
         setPayments(newPayments);
@@ -117,7 +118,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
         </CardHeader>
         <CardContent>
           <form className="grid gap-6" action={updateFormAction}>
-            <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p => p.walletId && p.amount))} />
+            <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p => p?.walletId && p.amount))} />
             <input type="hidden" name="description" value={description} />
             <input type="hidden" name="date" value={date} />
             <input type="hidden" name="category" value={category} />
@@ -162,11 +163,11 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
                  <CardContent className='space-y-4'>
                     <Label>الدفعات المسجلة</Label>
                     <div className="space-y-3">
-                    {payments.map((payment, index) => (
-                        <div key={payment?.id || index} className="flex items-end gap-2 p-2 border rounded-md">
+                    {payments.map((payment, index) => payment && (
+                        <div key={payment.id || index} className="flex items-end gap-2 p-2 border rounded-md">
                         <div className="grid gap-2 flex-1">
                             <Label htmlFor={`wallet-${index}`}>المحفظة / الحساب</Label>
-                            <Select value={payment?.walletId} onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}>
+                            <Select value={payment.walletId} onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}>
                             <SelectTrigger id={`wallet-${index}`}>
                                 <SelectValue placeholder="اختر محفظة..." />
                             </SelectTrigger>
@@ -181,7 +182,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor={`amount-${index}`}>المبلغ</Label>
-                            <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
+                            <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
                         </div>
                         <Button
                             type="button"
