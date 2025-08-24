@@ -13,7 +13,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { useState, useEffect, useActionState } from 'react';
+import { useState, useEffect, useActionState, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -25,6 +25,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 import { useSession } from '@/components/session-provider';
+import type { DateRange } from 'react-day-picker';
+
 
 type ExpenseWithDetails = Expense & {
     payments: (Payment & { wallet: Wallet })[]
@@ -58,6 +60,24 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
 
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
   const remainingBalance = totalCost - totalPaid;
+  
+  // Filter states
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState<DateRange | undefined>(undefined);
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(expense => {
+      const categoryMatch = categoryFilter === 'all' || expense.category === categoryFilter;
+      
+      const dateMatch = !dateFilter || (
+        (!dateFilter.from || new Date(expense.date) >= dateFilter.from) &&
+        (!dateFilter.to || new Date(expense.date) <= dateFilter.to)
+      );
+
+      return categoryMatch && dateMatch;
+    });
+  }, [expenses, categoryFilter, dateFilter]);
+
 
   useEffect(() => {
     if (createState.success) {
@@ -166,7 +186,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <h3 className="text-lg font-semibold">سجل المصروفات</h3>
             <div className="ml-auto flex items-center gap-2">
-              <Select>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-full md:w-[180px]">
                   <SelectValue placeholder="فلترة بالنوع" />
                 </SelectTrigger>
@@ -185,11 +205,29 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                     className="w-[280px] justify-start text-left font-normal"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    <span>اختر نطاق زمني</span>
+                    {dateFilter?.from ? (
+                      dateFilter.to ? (
+                        <>
+                          {format(dateFilter.from, "LLL dd, y")} -{" "}
+                          {format(dateFilter.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(dateFilter.from, "LLL dd, y")
+                      )
+                    ) : (
+                      <span>اختر نطاق زمني</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="range" numberOfMonths={2} />
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateFilter?.from}
+                    selected={dateFilter}
+                    onSelect={setDateFilter}
+                    numberOfMonths={2}
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -208,7 +246,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
               </TableRow>
             </TableHeader>
             <TableBody>
-              {expenses.map((expense) => (
+              {filteredExpenses.map((expense) => (
                 <AlertDialog key={expense.id}>
                 <TableRow>
                   <TableCell>{format(new Date(expense.date), 'yyyy-MM-dd')}</TableCell>
@@ -269,6 +307,13 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                 </AlertDialogContent>
                 </AlertDialog>
               ))}
+               {filteredExpenses.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    لا توجد مصروفات تطابق معايير البحث.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
