@@ -74,8 +74,8 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   const remainingBalance = totalPrice - totalPaid;
 
   const settlementTotalPaid = settlementPayments.reduce((acc, p) => acc + (p?.amount || 0), 0);
-  const settlementRemainingBalance = finalTotalPrice - (settlementSale?.amountPaid.toNumber() || 0) - settlementTotalPaid;
-  const weightDifference = settlementSale ? finalWeight - (settlementSale.initialWeight?.toNumber() || 0) : 0;
+  const settlementRemainingBalance = finalTotalPrice - (settlementSale?.amountPaid || 0) - settlementTotalPaid;
+  const weightDifference = settlementSale ? finalWeight - (settlementSale.initialWeight || 0) : 0;
 
   // Form state for settlement action
   const settleSaleWithId = settlementSale ? settleSale.bind(null, settlementSale.id) : async () => {};
@@ -166,8 +166,8 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   // Handlers for Deferred Sale Settlement
   const openSettlementDialog = (sale: Sale) => {
     setSettlementSale(sale);
-    setFinalWeight(sale.initialWeight?.toNumber() || 0);
-    const calculatedPricePerKg = sale.pricePerKg.toNumber() || sale.totalPrice.toNumber() / (sale.initialWeight?.toNumber() || 1);
+    setFinalWeight(sale.initialWeight || 0);
+    const calculatedPricePerKg = sale.pricePerKg || sale.totalPrice / (sale.initialWeight || 1);
     setSettlementPricePerKg(calculatedPricePerKg);
     setSettlementPayments([{}]);
     setIsSettlementDialogOpen(true);
@@ -496,7 +496,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                 <CardContent className="grid md:grid-cols-3 gap-4">
                      <div className="grid gap-1">
                         <Label className="text-sm text-muted-foreground">الوزن الأولي</Label>
-                        <p className="font-semibold">{settlementSale.initialWeight?.toNumber()} كجم</p>
+                        <p className="font-semibold">{settlementSale.initialWeight} كجم</p>
                     </div>
                     <div className="grid gap-1">
                         <Label className="text-sm text-muted-foreground">سعر الكيلو المتفق عليه</Label>
@@ -504,7 +504,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                     </div>
                     <div className="grid gap-1">
                         <Label className="text-sm text-muted-foreground">العربون المدفوع</Label>
-                        <p className="font-semibold">{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(settlementSale.amountPaid.toNumber() || 0)}</p>
+                        <p className="font-semibold">{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(settlementSale.amountPaid || 0)}</p>
                     </div>
                 </CardContent>
               </Card>
@@ -582,7 +582,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                    <div className='flex justify-between items-center p-3 bg-muted rounded-md mb-2'>
                         <span className='font-semibold'>الإجمالي المدفوع (شامل العربون):</span>
                         <span className='font-bold text-lg'>
-                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format((settlementSale.amountPaid.toNumber() || 0) + settlementTotalPaid)}
+                        {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format((settlementSale.amountPaid || 0) + settlementTotalPaid)}
                         </span>
                     </div>
                     <div className='flex justify-between items-center p-3 bg-muted rounded-md'>

@@ -30,7 +30,7 @@ export default async function SalesPage() {
     totalPrice: s.totalPrice.toNumber(),
     amountPaid: s.amountPaid.toNumber(),
     remainingAmount: s.remainingAmount.toNumber(),
-    initialWeight: s.initialWeight?.toNumber() ?? null,
+    initialWeight: s.initialWeight?.toNumber() ?? 0,
     finalWeight: s.finalWeight?.toNumber() ?? null,
   }));
 
