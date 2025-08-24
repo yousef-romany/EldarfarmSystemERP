@@ -249,9 +249,9 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
             await tx.expense.update({
                 where: { id: expenseId },
                 data: {
-                    description,
+                    description: description,
                     date: new Date(date),
-                    category,
+                    category: category,
                     amount: totalAmount,
                 }
             });
@@ -337,3 +337,5 @@ export async function deleteExpense(id: string) {
         return { message: 'فشل في حذف المصروف. قد تكون مرتبطة بسجلات أخرى.', success: false };
     }
 }
+
+    
