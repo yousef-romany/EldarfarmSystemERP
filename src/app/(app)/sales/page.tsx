@@ -49,3 +49,4 @@ export default async function SalesPage() {
   return <SalesPageClient sales={sales} availableLivestock={livestock} wallets={wallets} />;
 }
 
+
