@@ -1,4 +1,3 @@
-
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,14 +46,14 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
     const { toast } = useToast();
     
     // The action is now always bound with the ID from props
-    const updateExpenseWithId = updateExpense.bind(null, expense.id);
-    const [updateState, updateFormAction] = useActionState(updateExpenseWithId, { message: null, errors: {}, success: false });
+    const updateExpenseWithId = expense ? updateExpense.bind(null, expense.id) : null;
+    const [updateState, updateFormAction] = useActionState(updateExpenseWithId!, { message: null, errors: {}, success: false });
 
     const [description, setDescription] = useState('');
     const [date, setDate] = useState('');
     const [category, setCategory] = useState<Expense['category'] | ''>('');
     const [totalAmount, setTotalAmount] = useState(0);
-    const [payments, setPayments] = useState<Partial<PaymentState[]>>([]);
+    const [payments, setPayments] = useState<PaymentState[]>([]);
     
     const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
     const remainingBalance = totalAmount - totalPaid;
@@ -63,7 +62,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
         // Populate state only when expense data is available
         if (expense) {
             setDescription(expense.description);
-            setDate(format(expense.date, 'yyyy-MM-dd'));
+            setDate(format(new Date(expense.date), 'yyyy-MM-dd'));
             setCategory(expense.category);
             setTotalAmount(expense.amount);
             setPayments(expense.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
@@ -89,14 +88,15 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
 
     const handlePaymentChange = (index: number, field: keyof Omit<PaymentState, 'id'>, value: string | number) => {
         const newPayments = [...payments.map(p => ({...p}))];
-        const payment = newPayments[index] as Partial<PaymentState>;
-        (payment as any)[field] = value;
-        newPayments[index] = payment;
-        setPayments(newPayments);
+        const payment = newPayments[index];
+        if (payment) {
+            (payment as any)[field] = value;
+            setPayments(newPayments);
+        }
     };
     
     // Render a loading state or nothing until the expense data is loaded
-    if (!expense) {
+    if (!expense || !updateFormAction) {
         return <div>جاري تحميل بيانات المصروف...</div>;
     }
 
@@ -163,7 +163,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
                  <CardContent className='space-y-4'>
                     <Label>الدفعات المسجلة</Label>
                     <div className="space-y-3">
-                    {payments.map((payment, index) => payment && (
+                    {payments.map((payment, index) => (
                         <div key={payment.id || index} className="flex items-end gap-2 p-2 border rounded-md">
                         <div className="grid gap-2 flex-1">
                             <Label htmlFor={`wallet-${index}`}>المحفظة / الحساب</Label>
