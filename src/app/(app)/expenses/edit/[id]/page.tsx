@@ -54,12 +54,22 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
     const updateExpenseWithId = updateExpense.bind(null, expense.id);
     const [updateState, updateFormAction] = useActionState(updateExpenseWithId, { message: null, errors: {}, success: false });
 
-    const [description, setDescription] = useState(expense.description);
-    const [date, setDate] = useState(format(new Date(expense.date), 'yyyy-MM-dd'));
-    const [category, setCategory] = useState<Expense['category']>(expense.category);
-    const [totalAmount, setTotalAmount] = useState(expense.amount);
-    const [payments, setPayments] = useState<PaymentState[]>(expense.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
+    const [description, setDescription] = useState('');
+    const [date, setDate] = useState('');
+    const [category, setCategory] = useState<Expense['category']>('Other');
+    const [totalAmount, setTotalAmount] = useState(0);
+    const [payments, setPayments] = useState<PaymentState[]>([]);
     
+    useEffect(() => {
+        if (expense) {
+            setDescription(expense.description);
+            setDate(format(new Date(expense.date), 'yyyy-MM-dd'));
+            setCategory(expense.category);
+            setTotalAmount(expense.amount);
+            setPayments(expense.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
+        }
+    }, [expense]);
+
     const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
     const remainingBalance = totalAmount - totalPaid;
     
