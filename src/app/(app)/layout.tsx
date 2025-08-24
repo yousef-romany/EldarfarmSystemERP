@@ -12,8 +12,14 @@ export default async function AppLayout({
 }>) {
   const session = await getSessionData();
 
+  // Create a plain object to pass to the client component
+  const sessionValue = {
+    isLoggedIn: session.isLoggedIn,
+    user: session.user ?? null,
+  };
+
   return (
-    <SessionProvider value={session}>
+    <SessionProvider value={sessionValue}>
       <SidebarProvider>
           <Sidebar side="right" collapsible="icon">
           <SidebarNav />
