@@ -13,7 +13,7 @@ type LivestockWithDetails = Livestock & {
 
 export default async function AvailableLivestockReportPage() {
   
-  const availableLivestock = await prisma.livestock.findMany({
+  const availableLivestockData = await prisma.livestock.findMany({
     where: { status: 'Available' },
     include: {
       barn: true,
@@ -21,6 +21,11 @@ export default async function AvailableLivestockReportPage() {
     },
     orderBy: { tagId: 'asc' }
   });
+
+  const availableLivestock = availableLivestockData.map(animal => ({
+    ...animal,
+    weight: animal.weight.toNumber(),
+  }));
 
   const getTypeText = (animal: LivestockWithDetails) => {
     if (animal.isBatch) {
@@ -59,9 +64,9 @@ export default async function AvailableLivestockReportPage() {
                     <TableCell className="font-medium">
                       {animal.isBatch ? `${animal.quantity} رأس` : animal.tagId}
                     </TableCell>
-                    <TableCell>{getTypeText(animal)}</TableCell>
+                    <TableCell>{getTypeText(animal as any)}</TableCell>
                     <TableCell>{animal.breed}</TableCell>
-                    <TableCell>{animal.weight.toNumber()} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
+                    <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
                     <TableCell>{animal.age}</TableCell>
                     <TableCell>{animal.barn.name}</TableCell>
                     <TableCell>
