@@ -38,7 +38,7 @@ export default function LoginPage() {
           <form action={dispatch} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="username">اسم المستخدم</Label>
-              <Input id="username" name="username" placeholder="e.g., ahmad.mahmoud" required />
+              <Input id="username" name="username" placeholder="e.g., admin" required />
             </div>
             <div className="grid gap-2">
               <div className="flex items-center">

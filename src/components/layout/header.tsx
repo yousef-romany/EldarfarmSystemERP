@@ -53,7 +53,7 @@ export function Header() {
           <DropdownMenuSeparator />
            <form action={logout}>
               <DropdownMenuItem asChild>
-                <button type="submit" className="w-full text-right">تسجيل الخروج</button>
+                <button type="submit" className="w-full text-right cursor-pointer">تسجيل الخروج</button>
               </DropdownMenuItem>
             </form>
         </DropdownMenuContent>

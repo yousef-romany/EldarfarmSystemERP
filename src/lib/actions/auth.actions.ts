@@ -1,4 +1,3 @@
-
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -27,17 +26,16 @@ export async function login(prevState: string | undefined, formData: FormData) {
       username: user.username,
       permissions: JSON.parse(user.permissions as string)
   };
-
   await session.save();
 
   // Redirect to the dashboard after successful login
-  revalidatePath('/dashboard');
+  revalidatePath('/dashboard', 'layout');
   redirect('/dashboard');
 }
 
 export async function logout() {
     const session = await getSession();
     session.destroy();
-    revalidatePath('/'); // Clears the cache for the login page
-    redirect('/');
+    revalidatePath('/login'); // Clears the cache for the login page
+    redirect('/login');
 }

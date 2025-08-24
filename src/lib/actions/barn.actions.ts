@@ -1,4 +1,3 @@
-
 'use server';
 
 import { z } from 'zod';
@@ -23,8 +22,12 @@ type BarnState = {
 
 export async function createBarn(prevState: BarnState, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.user?.permissions?.barns?.add) {
-    redirect('/');
+  if (!session.isLoggedIn || !session.user?.id) {
+    redirect('/login');
+  }
+
+  if (!session.user.permissions?.barns?.add) {
+    return { message: 'ليس لديك الصلاحية لإضافة عنابر.', success: false };
   }
 
   const validatedFields = barnSchema.safeParse({
@@ -72,8 +75,12 @@ export async function createBarn(prevState: BarnState, formData: FormData) {
 
 export async function updateBarn(id: string, prevState: BarnState, formData: FormData) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.user?.permissions?.barns?.edit) {
-        redirect('/');
+    if (!session.isLoggedIn || !session.user?.id) {
+        redirect('/login');
+    }
+
+    if (!session.user.permissions?.barns?.edit) {
+        return { message: 'ليس لديك الصلاحية لتعديل العنابر.', success: false };
     }
 
     const validatedFields = barnSchema.safeParse({
@@ -122,10 +129,14 @@ export async function updateBarn(id: string, prevState: BarnState, formData: For
 
 export async function deleteBarn(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.user?.permissions?.barns?.delete) {
-        redirect('/');
+    if (!session.isLoggedIn || !session.user?.id) {
+        redirect('/login');
     }
     
+    if (!session.user.permissions?.barns?.delete) {
+        return { message: 'ليس لديك الصلاحية لحذف العنابر.', success: false };
+    }
+
     try {
         // First, check if the barn has any livestock.
         const barn = await prisma.barn.findUnique({
