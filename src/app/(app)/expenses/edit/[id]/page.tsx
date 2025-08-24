@@ -99,15 +99,20 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
         <CardContent>
           <form className="grid gap-6" action={updateFormAction}>
             <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p => p.walletId && p.amount))} />
+            <input type="hidden" name="description" value={description} />
+            <input type="hidden" name="date" value={date} />
+            <input type="hidden" name="category" value={category} />
+            <input type="hidden" name="totalAmount" value={totalAmount} />
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor="expense-date">التاريخ</Label>
-                    <Input id="expense-date" name="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    <Input id="expense-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor="expense-category">النوع</Label>
-                    <Select name="category" value={category} onValueChange={(v) => setCategory(v as any)}>
+                    <Select value={category} onValueChange={(v) => setCategory(v as any)}>
                         <SelectTrigger id="expense-category">
                         <SelectValue placeholder="اختر نوع المصروف" />
                         </SelectTrigger>
@@ -122,7 +127,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
             </div>
             <div className="grid gap-2">
                 <Label htmlFor="expense-description">الوصف</Label>
-                <Input id="expense-description" name="description" value={description} onChange={(e) => setDescription(e.target.value)} />
+                <Input id="expense-description" value={description} onChange={(e) => setDescription(e.target.value)} />
             </div>
 
             <Card>
@@ -132,7 +137,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
                 <CardContent className="grid gap-4">
                     <div className="grid gap-2">
                         <Label htmlFor="totalAmount">المبلغ الإجمالي (ج.م)</Label>
-                        <Input name="totalAmount" id="totalAmount" type="number" value={totalAmount} onChange={(e) => setTotalAmount(parseFloat(e.target.value) || 0)} />
+                        <Input id="totalAmount" type="number" value={totalAmount} onChange={(e) => setTotalAmount(parseFloat(e.target.value) || 0)} />
                     </div>
                 </CardContent>
                  <CardContent className='space-y-4'>

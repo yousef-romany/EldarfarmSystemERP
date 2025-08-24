@@ -220,6 +220,11 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
 
             // 4. Apply new payment amounts to wallets
             for (const newPayment of newPayments) {
+                // Check wallet balance before decrementing
+                const wallet = await tx.wallet.findUnique({ where: { id: newPayment.walletId } });
+                if (!wallet || wallet.balance.toNumber() < newPayment.amount) {
+                    throw new Error(`رصيد محفظة "${wallet?.name}" غير كافٍ.`);
+                }
                 await tx.wallet.update({
                     where: { id: newPayment.walletId },
                     data: { balance: { decrement: newPayment.amount } }
@@ -254,9 +259,9 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
         revalidatePath('/wallets');
         revalidatePath('/daily-report');
         return { message: "تم تحديث المصروف بنجاح!", success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error updating expense:", error);
-        return { message: "فشل في تحديث المصروف.", success: false };
+        return { message: `فشل في تحديث المصروف: ${error.message}`, success: false };
     }
 }
 
@@ -315,6 +320,6 @@ export async function deleteExpense(id: string) {
 
     } catch (error) {
         console.error('Error deleting expense:', error);
-        return { message: 'فشل في حذف المصروف. قد يكون مرتبطًا بسجلات أخرى.', success: false };
+        return { message: 'فشل في حذف المصروف. قد تكون مرتبطة بسجلات أخرى.', success: false };
     }
 }
