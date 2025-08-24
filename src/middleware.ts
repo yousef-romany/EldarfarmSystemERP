@@ -64,16 +64,17 @@ export async function middleware(request: NextRequest) {
   // If the user is logged in, check their permissions for the requested page
   if (session.isLoggedIn) {
     const userPermissions = session.user?.permissions;
-    // Find the permission key for the current path, including nested paths
-    const permissionKey = Object.keys(permissionMap).find(key => path.startsWith(key)) as keyof UserPermissions | undefined;
-
-
-    if (permissionKey && permissionMap[permissionKey]) {
-      const requiredPermission = permissionMap[permissionKey];
-      if (!requiredPermission || !userPermissions?.[requiredPermission]?.view) {
-        // User does not have view permission, redirect to forbidden page
-        return NextResponse.redirect(new URL('/forbidden', request.url));
-      }
+    
+    // Find the permission key for the current path (including nested paths)
+    // by checking which key in permissionMap is a prefix of the current path.
+    const matchedKey = Object.keys(permissionMap).find(key => path.startsWith(key));
+    
+    if (matchedKey) {
+        const requiredPermissionKey = permissionMap[matchedKey];
+        if (requiredPermissionKey && !userPermissions?.[requiredPermissionKey]?.view) {
+            // User does not have view permission, redirect to forbidden page
+            return NextResponse.redirect(new URL('/forbidden', request.url));
+        }
     }
   }
 
