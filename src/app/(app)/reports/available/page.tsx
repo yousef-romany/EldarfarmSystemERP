@@ -14,7 +14,11 @@ type LivestockWithDetails = Livestock & {
 export default async function AvailableLivestockReportPage() {
   
   const availableLivestockData = await prisma.livestock.findMany({
-    where: { status: 'Available' },
+    where: { 
+      status: {
+        in: ['Available', 'Vowed']
+      } 
+    },
     include: {
       barn: true,
       livestockType: true,
@@ -34,14 +38,30 @@ export default async function AvailableLivestockReportPage() {
     return animal.livestockType.name;
   }
 
+  const getStatusVariant = (status: Livestock['status']) => {
+    switch (status) {
+      case 'Available': return 'default';
+      case 'Vowed': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
+  const getStatusText = (status: Livestock['status']) => {
+    switch (status) {
+      case 'Available': return 'متاح';
+      case 'Vowed': return 'نذر';
+      default: return status;
+    }
+  };
+
   return (
     <>
       <PageHeader title="تقرير المواشي المتاحة" />
       <Card>
         <CardHeader>
-          <CardTitle>قائمة المواشي المتاحة</CardTitle>
+          <CardTitle>قائمة المواشي المتاحة والنذور</CardTitle>
           <CardDescription>
-            هذا التقرير يعرض جميع الحيوانات والدفعات المتاحة حاليًا في المزرعة وغير مرتبطة بأي عمليات بيع أو نذور.
+            هذا التقرير يعرض جميع الحيوانات والدفعات المتاحة للبيع، بما في ذلك النذور الحية.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -70,7 +90,7 @@ export default async function AvailableLivestockReportPage() {
                     <TableCell>{animal.age}</TableCell>
                     <TableCell>{animal.barn.name}</TableCell>
                     <TableCell>
-                      <Badge variant={'default'}>متاح</Badge>
+                      <Badge variant={getStatusVariant(animal.status)}>{getStatusText(animal.status)}</Badge>
                     </TableCell>
                   </TableRow>
                 ))
@@ -88,3 +108,4 @@ export default async function AvailableLivestockReportPage() {
     </>
   );
 }
+
