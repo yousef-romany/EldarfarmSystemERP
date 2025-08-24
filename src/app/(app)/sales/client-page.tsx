@@ -158,7 +158,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
     const animal = availableLivestock.find(a => a.id === animalId);
     setSelectedAnimal(animal || null);
     if (animal) {
-      setCurrentWeight(animal.weight.toNumber());
+      setCurrentWeight(animal.weight);
     } else {
       setCurrentWeight(0);
     }
@@ -359,7 +359,7 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                                           selectedAnimal?.id === animal.id ? "opacity-100" : "opacity-0"
                                         )}
                                       />
-                                      {animal.tagId} - {animal.breed} - {animal.weight.toNumber()} كجم
+                                      {animal.tagId} - {animal.breed} - {animal.weight} كجم
                                     </CommandItem>
                                   ))}
                               </CommandGroup>
