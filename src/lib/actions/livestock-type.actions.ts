@@ -21,8 +21,12 @@ type LivestockTypeState = {
 
 export async function createLivestockType(prevState: LivestockTypeState, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.user?.permissions?.livestockTypes?.add) {
-    redirect('/');
+  if (!session.isLoggedIn || !session.user) {
+    redirect('/login');
+  }
+
+  if (!session.user.permissions?.livestockTypes?.add) {
+    return { message: 'ليس لديك الصلاحية لإضافة أنواع المواشي.', success: false };
   }
 
   const validatedFields = livestockTypeSchema.safeParse({
@@ -67,8 +71,12 @@ export async function createLivestockType(prevState: LivestockTypeState, formDat
 
 export async function updateLivestockType(id: string, prevState: LivestockTypeState, formData: FormData) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.user?.permissions?.livestockTypes?.edit) {
-        redirect('/');
+    if (!session.isLoggedIn || !session.user) {
+        redirect('/login');
+    }
+
+    if (!session.user.permissions?.livestockTypes?.edit) {
+      return { message: 'ليس لديك الصلاحية لتعديل أنواع المواشي.', success: false };
     }
 
     const validatedFields = livestockTypeSchema.safeParse({
@@ -114,8 +122,12 @@ export async function updateLivestockType(id: string, prevState: LivestockTypeSt
 
 export async function deleteLivestockType(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.user?.permissions?.livestockTypes?.delete) {
-        redirect('/');
+    if (!session.isLoggedIn || !session.user) {
+        redirect('/login');
+    }
+    
+    if (!session.user.permissions?.livestockTypes?.delete) {
+      return { message: 'ليس لديك الصلاحية لحذف أنواع المواشي.', success: false };
     }
     
     try {

@@ -30,8 +30,12 @@ type UserState = {
 
 export async function createUser(prevState: UserState, formData: FormData): Promise<UserState> {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.user?.permissions?.users?.add) {
-     return { message: 'ليس لديك الصلاحية لإضافة مستخدمين.', success: false };
+  if (!session.isLoggedIn || !session.user) {
+     redirect('/login');
+  }
+  
+  if (!session.user.permissions?.users?.add) {
+    return { message: 'ليس لديك الصلاحية لإضافة مستخدمين.', success: false };
   }
 
   const validatedFields = createUserSchema.safeParse({
@@ -87,7 +91,11 @@ export async function createUser(prevState: UserState, formData: FormData): Prom
 
 export async function updateUserPermissions(userId: string, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.user?.permissions?.users?.edit) {
+  if (!session.isLoggedIn || !session.user) {
+    return { message: 'جلسة غير صالحة.', success: false };
+  }
+
+  if (!session.user.permissions?.users?.edit) {
     return { message: 'ليس لديك الصلاحية لتعديل الصلاحيات.', success: false };
   }
 

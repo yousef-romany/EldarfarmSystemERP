@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -22,7 +23,7 @@ type BarnState = {
 
 export async function createBarn(prevState: BarnState, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.user?.id) {
+  if (!session.isLoggedIn || !session.user) {
     redirect('/login');
   }
 
@@ -75,7 +76,7 @@ export async function createBarn(prevState: BarnState, formData: FormData) {
 
 export async function updateBarn(id: string, prevState: BarnState, formData: FormData) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.user?.id) {
+    if (!session.isLoggedIn || !session.user) {
         redirect('/login');
     }
 
@@ -129,7 +130,7 @@ export async function updateBarn(id: string, prevState: BarnState, formData: For
 
 export async function deleteBarn(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.user?.id) {
+    if (!session.isLoggedIn || !session.user) {
         redirect('/login');
     }
     

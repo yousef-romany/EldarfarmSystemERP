@@ -27,8 +27,8 @@ type WalletState = {
 
 export async function createWallet(prevState: WalletState, formData: FormData) {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.user?.id) {
-    redirect('/');
+  if (!session.isLoggedIn || !session.user) {
+    redirect('/login');
   }
 
   if (!session.user.permissions?.wallets?.add) {
@@ -85,8 +85,8 @@ export async function createWallet(prevState: WalletState, formData: FormData) {
 
 export async function updateWallet(id: string, prevState: WalletState, formData: FormData) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.user?.id) {
-        redirect('/');
+    if (!session.isLoggedIn || !session.user) {
+        redirect('/login');
     }
 
     if (!session.user.permissions?.wallets?.edit) {
@@ -143,8 +143,8 @@ export async function updateWallet(id: string, prevState: WalletState, formData:
 
 export async function deleteWallet(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.user?.id) {
-        redirect('/');
+    if (!session.isLoggedIn || !session.user) {
+        redirect('/login');
     }
     
     if (!session.user.permissions?.wallets?.delete) {
