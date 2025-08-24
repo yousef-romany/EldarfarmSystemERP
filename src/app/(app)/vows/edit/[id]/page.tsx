@@ -19,8 +19,10 @@ import { updateVow } from '@/lib/actions/vow.actions';
 import { AlertTriangle, ChevronRight } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-type VowWithDetails = Vow & {
-    livestock: Livestock & {
+type VowWithDetails = Omit<Vow, 'livestock'> & {
+    livestock: Omit<Livestock, 'weight'| 'cost'> & {
+        weight: number;
+        cost: number;
         livestockType: LivestockType;
         barn: Barn;
     };
@@ -137,7 +139,7 @@ export default function EditVowPage({ vow, barns, livestockTypes }: EditVowPageP
               )}
               <div className="grid gap-2">
                 <Label htmlFor="weight">الوزن عند الاستلام (كجم)</Label>
-                <Input name="weight" id="weight" type="number" defaultValue={vow.livestock.weight.toNumber()} placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required/>
+                <Input name="weight" id="weight" type="number" defaultValue={vow.livestock.weight} placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required/>
                  {updateState?.errors?.weight && <p className="text-xs text-red-500">{updateState.errors.weight[0]}</p>}
               </div>
               <div className="grid gap-2">

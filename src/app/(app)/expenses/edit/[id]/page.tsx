@@ -17,8 +17,9 @@ import type { Expense, Wallet, Payment } from '@prisma/client';
 import { updateExpense } from '@/lib/actions/expense.actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-type ExpenseWithDetails = Expense & {
-    payments: (Payment & { wallet: Wallet })[];
+type ExpenseWithDetails = Omit<Expense, 'amount'> & {
+    amount: number;
+    payments: (Omit<Payment, 'amount'> & { amount: number, wallet: Wallet })[];
 };
 
 type EditExpensePageProps = {
@@ -49,8 +50,8 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
     const [description, setDescription] = useState(expense.description);
     const [date, setDate] = useState(format(new Date(expense.date), 'yyyy-MM-dd'));
     const [category, setCategory] = useState(expense.category);
-    const [totalAmount, setTotalAmount] = useState(expense.amount.toNumber());
-    const [payments, setPayments] = useState<Partial<PaymentState[]>>(expense.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount.toNumber() })));
+    const [totalAmount, setTotalAmount] = useState(expense.amount);
+    const [payments, setPayments] = useState<Partial<PaymentState[]>>(expense.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
     
     const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
     const remainingBalance = totalAmount - totalPaid;

@@ -153,7 +153,21 @@ export async function getExpenseById(id: string) {
                 }
             }
         });
-        return expense;
+
+        if (!expense) return null;
+
+        return {
+            ...expense,
+            amount: expense.amount.toNumber(),
+            payments: expense.payments.map(p => ({
+                ...p,
+                amount: p.amount.toNumber(),
+                wallet: {
+                    ...p.wallet,
+                    balance: p.wallet.balance.toNumber()
+                }
+            }))
+        };
     } catch (error) {
         console.error("Failed to get expense by ID:", error);
         return null;

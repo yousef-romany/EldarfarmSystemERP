@@ -19,9 +19,15 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
 
-type SaleWithDetails = Sale & {
+type SaleWithDetails = Omit<Sale, 'pricePerKg' | 'totalPrice' | 'amountPaid' | 'remainingAmount' | 'initialWeight' | 'finalWeight' | 'payments' | 'livestock'> & {
+    pricePerKg: number;
+    totalPrice: number;
+    amountPaid: number;
+    remainingAmount: number;
+    initialWeight: number | null;
+    finalWeight: number | null;
     livestock: Livestock;
-    payments: (Payment & { wallet: Wallet })[];
+    payments: (Omit<Payment, 'amount'> & { amount: number, wallet: Wallet })[];
 };
 
 type EditSalePageProps = {
@@ -51,13 +57,13 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
 
     const [customerName, setCustomerName] = useState(sale.customerName);
     const [saleDate, setSaleDate] = useState(format(new Date(sale.saleDate), 'yyyy-MM-dd'));
-    const [totalPrice, setTotalPrice] = useState(sale.totalPrice.toNumber());
-    const [payments, setPayments] = useState<Partial<PaymentState[]>>(sale.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount.toNumber() })));
+    const [totalPrice, setTotalPrice] = useState(sale.totalPrice);
+    const [payments, setPayments] = useState<Partial<PaymentState[]>>(sale.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
     
     // State for deferred sale details
-    const [initialWeight] = useState(sale.initialWeight?.toNumber() || 0);
-    const [finalWeight, setFinalWeight] = useState(sale.finalWeight?.toNumber() || 0);
-    const [pricePerKg, setPricePerKg] = useState(sale.pricePerKg.toNumber() || 0);
+    const [initialWeight] = useState(sale.initialWeight || 0);
+    const [finalWeight, setFinalWeight] = useState(sale.finalWeight || 0);
+    const [pricePerKg, setPricePerKg] = useState(sale.pricePerKg || 0);
 
     const isDeferred = sale.type === 'Deferred';
 

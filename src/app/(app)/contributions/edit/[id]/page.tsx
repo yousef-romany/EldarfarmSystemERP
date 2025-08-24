@@ -18,8 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { updateContribution } from '@/lib/actions/contribution.actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-type ContributionWithDetails = Contribution & {
-    payments: (Payment & { wallet: Wallet })[];
+type ContributionWithDetails = Omit<Contribution, 'totalAmount'> & {
+    totalAmount: number;
+    payments: (Omit<Payment, 'amount'> & { amount: number; wallet: Omit<Wallet, 'balance'> & { balance: number } })[];
 };
 
 type EditContributionPageProps = {
@@ -50,8 +51,8 @@ export default function EditContributionPage({ contribution, wallets }: EditCont
   const [donorName, setDonorName] = useState(contribution.donorName);
   const [description, setDescription] = useState(contribution.description);
   const [date, setDate] = useState(format(new Date(contribution.date), 'yyyy-MM-dd'));
-  const [totalAmount, setTotalAmount] = useState(contribution.totalAmount.toNumber());
-  const [payments, setPayments] = useState<Partial<PaymentState[]>>(contribution.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount.toNumber() })));
+  const [totalAmount, setTotalAmount] = useState(contribution.totalAmount);
+  const [payments, setPayments] = useState<Partial<PaymentState[]>>(contribution.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
   
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
   const remainingBalance = totalAmount - totalPaid;
