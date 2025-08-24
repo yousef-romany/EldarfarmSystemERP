@@ -33,6 +33,7 @@ import {
   ArchiveRestore,
   FileSpreadsheet,
   Box,
+  Repeat,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -68,13 +69,14 @@ export function SidebarNav() {
   ];
   
   const financialReportsItems = [
-    { href: '/daily-report', label: 'التقرير اليومي', icon: BookCheck, permission: user?.permissions.reports.view },
+    { href: '/daily-report', label: 'التقرير النقدي اليومي', icon: BookCheck, permission: user?.permissions.reports.view },
     { href: '/settlement', label: 'تسوية اليومية', icon: ArchiveRestore, permission: user?.permissions.reports.view },
   ];
 
   const livestockReportsItems = [
-      { href: '/reports/bookings', label: 'تقارير الحجوزات', icon: FileSpreadsheet, permission: user?.permissions.reports.view },
+      { href: '/reports/livestock-movement', label: 'تقرير حركة المواشي', icon: Repeat, permission: user?.permissions.reports.view },
       { href: '/reports/available', label: 'المواشي المتاحة', icon: FileSpreadsheet, permission: user?.permissions.reports.view },
+      { href: '/reports/bookings', label: 'تقارير الحجوزات', icon: FileSpreadsheet, permission: user?.permissions.reports.view },
   ]
 
   const managementVisible = managementItems.some(item => item.permission);

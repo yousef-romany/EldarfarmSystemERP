@@ -23,6 +23,7 @@ const permissionMap: Record<string, keyof UserPermissions | null> = {
   // Add other specific report pages if necessary
   '/reports/available': 'reports',
   '/reports/bookings': 'reports',
+  '/reports/livestock-movement': 'reports',
 };
 
 
