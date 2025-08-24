@@ -11,14 +11,6 @@ export default function DashboardPage() {
     <>
        <PageHeader
         title="نظرة عامة على المواشي"
-        action={
-          <Button asChild>
-            <Link href="/purchases">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              إضافة حيوان
-            </Link>
-          </Button>
-        }
       />
       <Suspense fallback={<div>Loading...</div>}>
         <DashboardClientPage />

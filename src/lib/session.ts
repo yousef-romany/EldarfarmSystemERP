@@ -1,7 +1,7 @@
 
 import { getIronSession, IronSession, SessionOptions } from 'iron-session';
 import { cookies } from 'next/headers';
-import type { UserPermissions } from './types';
+import type { SessionUser } from './types';
 
 
 export const sessionOptions: SessionOptions = {
@@ -18,13 +18,21 @@ export const sessionOptions: SessionOptions = {
 // Define the shape of the session data
 export interface SessionData {
   isLoggedIn: boolean;
-  user?: {
-      id: string;
-      username: string;
-      permissions: UserPermissions;
-  };
+  user?: SessionUser;
 }
 
 export async function getSession() {
-  return getIronSession<SessionData>(await cookies(), sessionOptions);
+  const session = await getIronSession<SessionData>(cookies(), sessionOptions);
+  // This is a workaround for a bug in iron-session where the session is not saved
+  // when the user is not logged in. This causes the session to be re-created on
+  // every request, which breaks the flash message system.
+  if (!session.isLoggedIn) {
+    session.isLoggedIn = false;
+  }
+  return session;
+}
+
+export async function getSessionData() {
+    const session = await getSession();
+    return session;
 }

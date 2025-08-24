@@ -16,6 +16,7 @@ import { createLivestockType, updateLivestockType, deleteLivestockType } from '@
 import type { LivestockType } from '@prisma/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useSession } from '@/components/session-provider';
 
 
 function SubmitButton({ pendingText = 'جاري الحفظ...', text = 'حفظ' }) {
@@ -28,6 +29,7 @@ function SubmitButton({ pendingText = 'جاري الحفظ...', text = 'حفظ' 
 }
 
 export function LivestockTypesClient({ types }: { types: LivestockType[] }) {
+  const { user } = useSession();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<LivestockType | null>(null);
@@ -102,10 +104,12 @@ export function LivestockTypesClient({ types }: { types: LivestockType[] }) {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>الأنواع المسجلة</CardTitle>
-              <Button onClick={() => setIsAddDialogOpen(true)} size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                إضافة نوع
-              </Button>
+              {user?.permissions.livestockTypes.add && (
+                <Button onClick={() => setIsAddDialogOpen(true)} size="sm">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  إضافة نوع
+                </Button>
+              )}
             </div>
             <CardDescription>
               إدارة الأنواع الرئيسية للمواشي في المزرعة (e.g., أبقار, أغنام).
@@ -125,14 +129,18 @@ export function LivestockTypesClient({ types }: { types: LivestockType[] }) {
                       <TableRow>
                         <TableCell className="font-medium">{type.name}</TableCell>
                         <TableCell className="text-left">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditClick(type)}>
-                                <Edit className="h-4 w-4" />
-                            </Button>
+                          {user?.permissions.livestockTypes.edit && (
+                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(type)}>
+                                  <Edit className="h-4 w-4" />
+                              </Button>
+                          )}
+                          {user?.permissions.livestockTypes.delete && (
                              <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="text-destructive">
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                              </AlertDialogTrigger>
+                          )}
                         </TableCell>
                       </TableRow>
                        <AlertDialogContent>

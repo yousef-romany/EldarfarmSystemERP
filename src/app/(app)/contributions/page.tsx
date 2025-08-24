@@ -15,14 +15,6 @@ export default async function ContributionsPage() {
         <>
             <PageHeader
                 title="سجل المساهمات النقدية"
-                action={
-                    <Button asChild>
-                        <Link href="/contributions/new">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            إضافة مساهمة
-                        </Link>
-                    </Button>
-                }
             />
             <ContributionsClientPage contributions={contributions} />
         </>

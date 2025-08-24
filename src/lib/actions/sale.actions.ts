@@ -346,6 +346,8 @@ const updateSaleSchema = z.object({
   customerName: z.string().min(1, "اسم العميل مطلوب"),
   saleDate: z.string().min(1, "تاريخ البيع مطلوب"),
   totalPrice: z.coerce.number().min(0, "السعر الإجمالي لا يمكن أن يكون سالبًا"),
+  pricePerKg: z.coerce.number().min(0, "سعر الكيلو لا يمكن أن يكون سالبًا"),
+  finalWeight: z.coerce.number().min(0, "الوزن النهائي لا يمكن أن يكون سالبًا"),
   payments: z.array(paymentSchema),
 });
 
@@ -360,6 +362,8 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
         customerName: formData.get('customerName'),
         saleDate: formData.get('saleDate'),
         totalPrice: formData.get('totalPrice'),
+        pricePerKg: formData.get('pricePerKg'),
+        finalWeight: formData.get('finalWeight'),
         payments: paymentsData,
     });
 
@@ -367,7 +371,7 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
         return { errors: validatedFields.error.flatten().fieldErrors, message: "بيانات غير صالحة.", success: false };
     }
 
-    const { customerName, saleDate, totalPrice, payments: newPayments } = validatedFields.data;
+    const { customerName, saleDate, totalPrice, pricePerKg, finalWeight, payments: newPayments } = validatedFields.data;
     const totalPaid = newPayments.reduce((acc, p) => acc + p.amount, 0);
 
     if (Math.abs(totalPaid - totalPrice) > 0.01) {
@@ -423,6 +427,8 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
                     totalPrice,
                     amountPaid: totalPaid,
                     remainingAmount: totalPrice - totalPaid,
+                    pricePerKg,
+                    finalWeight: originalSale.type === 'Deferred' ? finalWeight : originalSale.finalWeight,
                 }
             });
 

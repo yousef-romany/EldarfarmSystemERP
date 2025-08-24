@@ -14,8 +14,10 @@ import Link from 'next/link';
 import { SidebarTrigger } from '../ui/sidebar';
 import { logout } from '@/lib/actions/auth.actions';
 import { ThemeToggle } from '../theme-toggle';
+import { useSession } from '../session-provider';
 
 export function Header() {
+  const { user } = useSession();
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
         <div className="flex items-center gap-2">
@@ -46,9 +48,11 @@ export function Header() {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>حسابي</DropdownMenuLabel>
           <DropdownMenuSeparator />
-           <DropdownMenuItem asChild>
+           {user?.permissions.settings.view && (
+            <DropdownMenuItem asChild>
               <Link href="/settings">الإعدادات</Link>
             </DropdownMenuItem>
+           )}
           <DropdownMenuItem>الدعم</DropdownMenuItem>
           <DropdownMenuSeparator />
            <form action={logout}>

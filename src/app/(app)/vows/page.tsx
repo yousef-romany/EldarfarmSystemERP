@@ -26,14 +26,6 @@ export default async function VowsPage() {
         <>
             <PageHeader
                 title="سجل النذور الحية"
-                action={
-                    <Button asChild>
-                        <Link href="/vows/new">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            إضافة نذر جديد
-                        </Link>
-                    </Button>
-                }
             />
             <VowsClientPage vows={vows} />
         </>

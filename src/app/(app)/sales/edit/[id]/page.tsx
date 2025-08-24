@@ -54,6 +54,22 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
     const [totalPrice, setTotalPrice] = useState(sale.totalPrice.toNumber());
     const [payments, setPayments] = useState<Partial<PaymentState[]>>(sale.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount.toNumber() })));
     
+    // State for deferred sale details
+    const [initialWeight] = useState(sale.initialWeight?.toNumber() || 0);
+    const [finalWeight, setFinalWeight] = useState(sale.finalWeight?.toNumber() || 0);
+    const [pricePerKg, setPricePerKg] = useState(sale.pricePerKg.toNumber() || 0);
+
+    const isDeferred = sale.type === 'Deferred';
+
+    // Recalculate total price if it's a deferred sale and details change
+    useEffect(() => {
+        if (isDeferred && sale.status !== 'Completed') {
+            setTotalPrice(initialWeight * pricePerKg);
+        } else if (isDeferred && sale.status === 'Completed') {
+            setTotalPrice(finalWeight * pricePerKg);
+        }
+    }, [initialWeight, finalWeight, pricePerKg, isDeferred, sale.status]);
+
     const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
     const remainingBalance = totalPrice - totalPaid;
 
@@ -97,12 +113,13 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
         <CardHeader>
           <CardDescription>
             قم بتحديث بيانات عملية البيع أدناه.
+            {isDeferred && sale.status === 'Pending' && <span className='font-bold text-destructive'> (لم تتم التسوية بعد)</span>}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="grid gap-6" action={updateFormAction}>
              <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p => p.walletId && p.amount))} />
-
+             <input type="hidden" name="finalWeight" value={finalWeight} />
 
              <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -124,9 +141,25 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                   <CardTitle className="text-lg">تفاصيل السعر والدفع</CardTitle>
                 </CardHeader>
                 <CardContent className="grid md:grid-cols-2 gap-4">
+                    {isDeferred && (
+                        <>
+                           <div className="grid gap-2">
+                                <Label htmlFor="initialWeight">الوزن المبدئي (كجم)</Label>
+                                <Input id="initialWeight" value={initialWeight} disabled />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="finalWeight">الوزن النهائي (كجم)</Label>
+                                <Input name="finalWeight" id="finalWeight" type="number" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} disabled={sale.status === 'Completed'} />
+                            </div>
+                        </>
+                    )}
+                     <div className="grid gap-2">
+                        <Label htmlFor="pricePerKg">سعر الكيلو (ج.م)</Label>
+                        <Input name="pricePerKg" id="pricePerKg" type="number" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} />
+                    </div>
                     <div className="grid gap-2">
                         <Label htmlFor="totalPrice">السعر الإجمالي (ج.م)</Label>
-                        <Input name="totalPrice" id="totalPrice" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} />
+                        <Input name="totalPrice" id="totalPrice" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} disabled={isDeferred} />
                     </div>
                 </CardContent>
                  <CardContent className='space-y-4'>

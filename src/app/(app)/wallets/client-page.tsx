@@ -17,6 +17,7 @@ import type { Wallet } from '@prisma/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
+import { useSession } from '@/components/session-provider';
 
 
 function SubmitButton({ pendingText = 'جاري الحفظ...', text = 'حفظ' }) {
@@ -29,6 +30,7 @@ function SubmitButton({ pendingText = 'جاري الحفظ...', text = 'حفظ' 
 }
 
 export default function WalletsClientPage({ wallets }: { wallets: Wallet[] }) {
+  const { user } = useSession();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
@@ -100,10 +102,12 @@ export default function WalletsClientPage({ wallets }: { wallets: Wallet[] }) {
       <PageHeader
         title="إدارة المحافظ والخزائن"
         action={
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            إضافة محفظة
-          </Button>
+          user?.permissions.wallets.add && (
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              إضافة محفظة
+            </Button>
+          )
         }
       />
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -125,19 +129,23 @@ export default function WalletsClientPage({ wallets }: { wallets: Wallet[] }) {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                               <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => handleEditClick(wallet)}>
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  تعديل
-                              </DropdownMenuItem>
+                              {user?.permissions.wallets.edit && (
+                                <DropdownMenuItem onClick={() => handleEditClick(wallet)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    تعديل
+                                </DropdownMenuItem>
+                              )}
                                <DropdownMenuItem asChild>
                                   <Link href={`/wallets/${wallet.id}/transactions`}>عرض الحركات</Link>
                                 </DropdownMenuItem>
-                              <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      حذف
-                                  </DropdownMenuItem>
-                              </AlertDialogTrigger>
+                              {user?.permissions.wallets.delete && (
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        حذف
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                              )}
                               </DropdownMenuContent>
                           </DropdownMenu>
                       </div>

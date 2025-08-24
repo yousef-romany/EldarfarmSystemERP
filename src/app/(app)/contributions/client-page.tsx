@@ -1,6 +1,6 @@
 
 'use client';
-import { MoreHorizontal, Printer, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Printer, Pencil, Trash2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -12,8 +12,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 } from '@/components/ui/alert-dialog';
 import { deleteContribution } from '@/lib/actions/contribution.actions';
 import { useToast } from '@/hooks/use-toast';
+import { useSession } from '@/components/session-provider';
 
 export default function ContributionsClientPage({ contributions }: { contributions: Contribution[] }) {
+  const { user } = useSession();
   const { toast } = useToast();
   
   const handlePrint = (contributionId: string) => {
@@ -39,9 +41,19 @@ export default function ContributionsClientPage({ contributions }: { contributio
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>المساهمات المسجلة</CardTitle>
-        <CardDescription>قائمة بجميع المساهمات النقدية والنذور المسجلة.</CardDescription>
+      <CardHeader className='flex-row items-center justify-between'>
+        <div>
+          <CardTitle>المساهمات المسجلة</CardTitle>
+          <CardDescription>قائمة بجميع المساهمات النقدية والنذور المسجلة.</CardDescription>
+        </div>
+        {user?.permissions.contributions.add && (
+          <Button asChild>
+            <Link href="/contributions/new">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              إضافة مساهمة
+            </Link>
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -74,22 +86,26 @@ export default function ContributionsClientPage({ contributions }: { contributio
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/contributions/edit/${contribution.id}`}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              تعديل
-                            </Link>
-                          </DropdownMenuItem>
+                          {user?.permissions.contributions.edit && (
+                            <DropdownMenuItem asChild>
+                              <Link href={`/contributions/edit/${contribution.id}`}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                تعديل
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => handlePrint(contribution.id)}>
                             <Printer className="mr-2 h-4 w-4" />
                             طباعة الإيصال
                           </DropdownMenuItem>
+                          {user?.permissions.contributions.delete && (
                            <AlertDialogTrigger asChild>
                               <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 حذف
                               </DropdownMenuItem>
                            </AlertDialogTrigger>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

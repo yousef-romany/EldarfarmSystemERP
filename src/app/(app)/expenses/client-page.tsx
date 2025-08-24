@@ -24,6 +24,7 @@ import type { Expense, Wallet, Payment } from '@prisma/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
+import { useSession } from '@/components/session-provider';
 
 type ExpenseWithDetails = Expense & {
     payments: (Payment & { wallet: Wallet })[]
@@ -44,6 +45,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 }
 
 export default function ExpensesClientPage({ expenses, wallets, totalExpenses }: { expenses: ExpenseWithDetails[], wallets: Wallet[], totalExpenses: number }) {
+  const { user } = useSession();
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
@@ -137,10 +139,12 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
       <PageHeader
         title="إدارة المصروفات"
         action={
-          <Button onClick={handleOpenDialog}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            إضافة مصروف
-          </Button>
+          user?.permissions.expenses.add && (
+            <Button onClick={handleOpenDialog}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              إضافة مصروف
+            </Button>
+          )
         }
       />
       <div className="grid gap-6 md:grid-cols-4 mb-6">
@@ -226,18 +230,22 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                            <Link href={`/expenses/edit/${expense.id}`}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                تعديل
-                            </Link>
-                        </DropdownMenuItem>
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            حذف
-                          </DropdownMenuItem>
-                        </AlertDialogTrigger>
+                        {user?.permissions.expenses.edit && (
+                            <DropdownMenuItem asChild>
+                                <Link href={`/expenses/edit/${expense.id}`}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    تعديل
+                                </Link>
+                            </DropdownMenuItem>
+                        )}
+                        {user?.permissions.expenses.delete && (
+                            <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                حذف
+                            </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

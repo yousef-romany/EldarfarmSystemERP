@@ -1,6 +1,6 @@
 
 'use client';
-import { MoreHorizontal, Printer, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Printer, Pencil, Trash2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 } from '@/components/ui/alert-dialog';
 import { deleteVow } from '@/lib/actions/vow.actions';
 import { useToast } from '@/hooks/use-toast';
+import { useSession } from '@/components/session-provider';
 
 
 type VowWithDetails = Vow & {
@@ -21,6 +22,7 @@ type VowWithDetails = Vow & {
 };
 
 export default function VowsClientPage({ vows }: { vows: VowWithDetails[] }) {
+  const { user } = useSession();
   const { toast } = useToast();
 
   const getLivestockDetails = (livestock: VowWithDetails['livestock']) => {
@@ -55,9 +57,19 @@ export default function VowsClientPage({ vows }: { vows: VowWithDetails[] }) {
 
   return (
       <Card>
-        <CardHeader>
-            <CardTitle>النذور المسجلة</CardTitle>
-            <CardDescription>قائمة بجميع الحيوانات والدفعات التي تم استلامها كنذور.</CardDescription>
+        <CardHeader className='flex-row items-center justify-between'>
+            <div>
+              <CardTitle>النذور المسجلة</CardTitle>
+              <CardDescription>قائمة بجميع الحيوانات والدفعات التي تم استلامها كنذور.</CardDescription>
+            </div>
+            {user?.permissions.vows.add && (
+              <Button asChild>
+                  <Link href="/vows/new">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      إضافة نذر جديد
+                  </Link>
+              </Button>
+            )}
         </CardHeader>
         <CardContent>
           <Table>
@@ -90,22 +102,26 @@ export default function VowsClientPage({ vows }: { vows: VowWithDetails[] }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                            <Link href={`/vows/edit/${vow.id}`}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                تعديل
-                            </Link>
-                        </DropdownMenuItem>
+                        {user?.permissions.vows.edit && (
+                          <DropdownMenuItem asChild>
+                              <Link href={`/vows/edit/${vow.id}`}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  تعديل
+                              </Link>
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => handlePrint(vow.id)}>
                             <Printer className="mr-2 h-4 w-4" />
                             طباعة الإيصال
                         </DropdownMenuItem>
-                        <AlertDialogTrigger asChild>
-                            <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                حذف
-                            </DropdownMenuItem>
-                        </AlertDialogTrigger>
+                        {user?.permissions.vows.delete && (
+                          <AlertDialogTrigger asChild>
+                              <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  حذف
+                              </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

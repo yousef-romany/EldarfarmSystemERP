@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { createUser, updateUserPermissions } from '@/lib/actions/user.actions';
 import type { User as PrismaUser } from '@prisma/client';
 import type { UserPermissions, Permission } from '@/lib/types';
+import { useSession } from '@/components/session-provider';
 
 
 type UserWithPermissions = Omit<PrismaUser, 'permissions'> & {
@@ -59,6 +60,7 @@ function PermissionsSubmitButton() {
 }
 
 export default function UsersClientPage({ users }: { users: UserWithPermissions[] }) {
+  const { user: sessionUser } = useSession();
   const { toast } = useToast();
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -134,10 +136,12 @@ export default function UsersClientPage({ users }: { users: UserWithPermissions[
       <PageHeader
         title="إدارة المستخدمين"
         action={
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            إضافة مستخدم
-          </Button>
+          sessionUser?.permissions.users.add && (
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              إضافة مستخدم
+            </Button>
+          )
         }
       />
       <Card>
@@ -177,12 +181,14 @@ export default function UsersClientPage({ users }: { users: UserWithPermissions[
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <DropdownMenuItem>تعديل</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openPermissionsDialog(user)}>
-                            <ShieldCheck className="mr-2 h-4 w-4" />
-                            تعديل الصلاحيات
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>حذف</DropdownMenuItem>
+                        {sessionUser?.permissions.users.edit && <DropdownMenuItem>تعديل</DropdownMenuItem> }
+                        {sessionUser?.permissions.users.edit && (
+                           <DropdownMenuItem onClick={() => openPermissionsDialog(user)}>
+                              <ShieldCheck className="mr-2 h-4 w-4" />
+                              تعديل الصلاحيات
+                          </DropdownMenuItem>
+                        )}
+                        {sessionUser?.permissions.users.delete && <DropdownMenuItem>حذف</DropdownMenuItem>}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

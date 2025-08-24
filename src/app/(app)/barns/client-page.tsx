@@ -18,6 +18,7 @@ import type { Barn } from '@prisma/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
+import { useSession } from '@/components/session-provider';
 
 
 function SubmitButton({ pendingText = 'جاري الحفظ...', text = 'حفظ' }) {
@@ -30,6 +31,7 @@ function SubmitButton({ pendingText = 'جاري الحفظ...', text = 'حفظ' 
 }
 
 export function BarnsClient({ barns }: { barns: Barn[] }) {
+  const { user } = useSession();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedBarn, setSelectedBarn] = useState<Barn | null>(null);
@@ -104,10 +106,12 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
       <PageHeader
         title="إدارة العنابر"
         action={
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            إضافة عنبر
-          </Button>
+          user?.permissions.barns.add && (
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              إضافة عنبر
+            </Button>
+          )
         }
       />
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -134,15 +138,21 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                           <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleEditClick(barn)}>تعديل</DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/barns/${barn.id}/livestock`}>عرض الحيوانات</Link>
-                          </DropdownMenuItem>
-                          <AlertDialogTrigger asChild>
-                              <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                                  حذف
-                              </DropdownMenuItem>
-                          </AlertDialogTrigger>
+                          {user?.permissions.barns.edit && (
+                            <DropdownMenuItem onClick={() => handleEditClick(barn)}>تعديل</DropdownMenuItem>
+                          )}
+                          {user?.permissions.barns.view && (
+                            <DropdownMenuItem asChild>
+                              <Link href={`/barns/${barn.id}/livestock`}>عرض الحيوانات</Link>
+                            </DropdownMenuItem>
+                          )}
+                          {user?.permissions.barns.delete && (
+                            <AlertDialogTrigger asChild>
+                                <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                    حذف
+                                </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                          )}
                           </DropdownMenuContent>
                       </DropdownMenu>
                   </div>
