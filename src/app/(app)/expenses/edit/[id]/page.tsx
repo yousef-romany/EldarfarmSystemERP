@@ -48,7 +48,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
     const [updateState, updateFormAction] = useActionState(updateExpense.bind(null, expense.id), { message: null, errors: {}, success: false });
 
     const [description, setDescription] = useState(expense.description);
-    const [date, setDate] = useState(format(new Date(expense.date), 'yyyy-MM-dd'));
+    const [date, setDate] = useState(format(expense.date, 'yyyy-MM-dd'));
     const [category, setCategory] = useState(expense.category);
     const [totalAmount, setTotalAmount] = useState(expense.amount);
     const [payments, setPayments] = useState<Partial<PaymentState[]>>(expense.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
