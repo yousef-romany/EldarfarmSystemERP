@@ -46,8 +46,8 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
     const { toast } = useToast();
     
     // The action is now always bound with the ID from props
-    const updateExpenseWithId = expense ? updateExpense.bind(null, expense.id) : null;
-    const [updateState, updateFormAction] = useActionState(updateExpenseWithId!, { message: null, errors: {}, success: false });
+    const updateExpenseWithId = updateExpense.bind(null, expense.id);
+    const [updateState, updateFormAction] = useActionState(updateExpenseWithId, { message: null, errors: {}, success: false });
 
     const [description, setDescription] = useState('');
     const [date, setDate] = useState('');
@@ -96,7 +96,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
     };
     
     // Render a loading state or nothing until the expense data is loaded
-    if (!expense || !updateFormAction) {
+    if (!expense) {
         return <div>جاري تحميل بيانات المصروف...</div>;
     }
 
