@@ -21,7 +21,7 @@ const saleSchema = z.object({
   pricePerKg: z.coerce.number().positive("سعر الكيلو يجب أن يكون أكبر من صفر"),
   initialWeight: z.coerce.number().positive("الوزن يجب أن يكون أكبر من صفر"),
   totalPrice: z.coerce.number().positive("السعر الإجمالي يجب أن يكون أكبر من صفر"),
-  isDeferred: z.boolean(),
+  saleType: z.enum(['immediate', 'deferred']),
   payments: z.array(paymentSchema),
 });
 
@@ -41,7 +41,6 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     return { message: 'ليس لديك الصلاحية لتسجيل المبيعات.', success: false };
   }
 
-  const isDeferred = formData.get('isDeferred') === 'true';
   const paymentsData = JSON.parse(formData.get('payments') as string || '[]');
 
   const validatedFields = saleSchema.safeParse({
@@ -51,7 +50,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     pricePerKg: formData.get('pricePerKg'),
     initialWeight: formData.get('initialWeight'),
     totalPrice: formData.get('totalPrice'),
-    isDeferred,
+    saleType: formData.get('saleType'),
     payments: paymentsData,
   });
 
@@ -63,7 +62,8 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     };
   }
 
-  const { livestockId, totalPrice, payments, initialWeight } = validatedFields.data;
+  const { livestockId, totalPrice, payments, saleType } = validatedFields.data;
+  const isDeferred = saleType === 'deferred';
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
   if (!isDeferred && Math.abs(totalPaid - totalPrice) > 0.01) {
@@ -78,7 +78,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
 
   try {
     const livestock = await prisma.livestock.findUnique({ where: { id: livestockId } });
-    if (!livestock || livestock.status !== 'Available') {
+    if (!livestock || livestock.status === 'Sold' || livestock.status === 'PendingSale') {
         return { message: 'الحيوان المحدد غير متاح للبيع.', success: false };
     }
 

@@ -40,10 +40,10 @@ type PaymentDetails = {
 }
 
 
-function SubmitButton({ text, disabled }: { text: string, disabled?: boolean}) {
+function SubmitButton({ text, disabled, name, value, variant }: { text: string, disabled?: boolean, name?: string, value?: string, variant?: "default" | "secondary" }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending || disabled}>
+    <Button type="submit" name={name} value={value} disabled={pending || disabled} variant={variant}>
       {pending ? 'جاري الحفظ...' : text}
     </Button>
   );
@@ -61,7 +61,6 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [customerName, setCustomerName] = useState('');
-  const [isDeferredSale, setIsDeferredSale] = useState(false);
 
   // State for Deferred Sale Settlement
   const [isSettlementDialogOpen, setIsSettlementDialogOpen] = useState(false);
@@ -112,7 +111,6 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
       setTotalPrice(0);
       setPayments([{}]);
       setCustomerName('');
-      setIsDeferredSale(false);
     } else if (createState?.message && !createState?.success) {
       toast({ title: 'خطأ', description: createState.message, variant: 'destructive' });
     }
@@ -315,7 +313,6 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
             </CardHeader>
             <CardContent className="space-y-4">
               <form action={createFormAction}>
-                  <input type="hidden" name="isDeferred" value={String(isDeferredSale)} />
                   <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p=>p.walletId && p.amount))} />
                   <input type="hidden" name="livestockId" value={selectedAnimal?.id || ''} />
                   <input type="hidden" name="initialWeight" value={currentWeight} />
@@ -458,8 +455,19 @@ export default function SalesPageClient({ sales, availableLivestock, wallets }: 
                   </Card>
 
                   <div className="flex justify-end mt-4 gap-4">
-                     <Button type="button" variant="secondary" onClick={() => { setIsDeferredSale(true); document.getElementById('submit-sale-button')?.click(); }}>تسجيل كبيع آجل</Button>
-                     <Button id="submit-sale-button" type="submit" onClick={() => setIsDeferredSale(false)} disabled={!selectedAnimal || !pricePerKg || remainingBalance !== 0}>تسجيل كبيع فوري</Button>
+                      <SubmitButton
+                          name="saleType"
+                          value="deferred"
+                          text="تسجيل كبيع آجل"
+                          variant="secondary"
+                          disabled={!selectedAnimal || !pricePerKg || totalPaid === 0}
+                      />
+                      <SubmitButton
+                          name="saleType"
+                          value="immediate"
+                          text="تسجيل كبيع فوري"
+                          disabled={!selectedAnimal || !pricePerKg || remainingBalance !== 0}
+                      />
                   </div>
               </form>
             </CardContent>
