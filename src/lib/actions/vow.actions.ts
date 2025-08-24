@@ -34,7 +34,7 @@ type VowState = {
 export async function createVow(prevState: VowState, formData: FormData): Promise<VowState> {
   const session = await getSession();
   if (!session.isLoggedIn || !session.user?.id) {
-    redirect('/');
+    redirect('/login');
   }
 
   if (!session.user.permissions?.vows?.add) {
@@ -74,6 +74,7 @@ export async function createVow(prevState: VowState, formData: FormData): Promis
       const livestock = await tx.livestock.create({
         data: {
           ...livestockData,
+          barnId, // Ensure barnId is passed
           status: 'Vowed', // Set status for vowed animals
         }
       });
@@ -98,7 +99,7 @@ export async function createVow(prevState: VowState, formData: FormData): Promis
       // 4. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.user.id,
+          userId: session.user!.id,
           action: 'CREATE',
           entityType: 'VOW',
           entityId: vow.id,
@@ -118,6 +119,9 @@ export async function createVow(prevState: VowState, formData: FormData): Promis
              return { message: `فشل في تسجيل النذر: الرقم التعريفي '${validatedFields.data.tagId}' مستخدم بالفعل.`, success: false };
         }
         return { message: `فشل في تسجيل النذر: ${error.message}`, success: false };
+    }
+     if (error instanceof Prisma.PrismaClientValidationError) {
+        return { message: `فشل في التحقق من صحة البيانات: ${error.message}`, success: false };
     }
     return { message: 'فشل في تسجيل النذر. حدث خطأ غير متوقع.', success: false };
   }
@@ -179,6 +183,7 @@ export async function updateVow(vowId: string, prevState: VowState, formData: Fo
                 where: { id: originalLivestock.id },
                 data: {
                     ...livestockData,
+                    barnId, // pass barnId here too
                     status: 'Vowed' // Ensure status remains Vowed
                 }
             });
@@ -197,7 +202,7 @@ export async function updateVow(vowId: string, prevState: VowState, formData: Fo
             // Log the update
             await tx.log.create({
                 data: {
-                    userId: session.user.id,
+                    userId: session.user!.id,
                     action: 'UPDATE',
                     entityType: 'VOW',
                     entityId: vowId,
@@ -289,7 +294,7 @@ export async function deleteVow(id: string) {
             // 4. Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.user.id,
+                    userId: session.user!.id,
                     action: 'DELETE',
                     entityType: 'VOW',
                     entityId: id,

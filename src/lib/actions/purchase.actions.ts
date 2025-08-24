@@ -37,7 +37,7 @@ type PurchaseState = {
 export async function createPurchase(prevState: PurchaseState, formData: FormData): Promise<PurchaseState> {
   const session = await getSession();
   if (!session.isLoggedIn || !session.user?.id) {
-    redirect('/');
+    redirect('/login');
   }
 
   if (!session.user.permissions?.purchases?.add) {
@@ -73,7 +73,7 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
     };
   }
   
-  const { totalCost, payments, barnId, quantity } = validatedFields.data;
+  const { totalCost, payments, barnId, quantity, ...livestockData } = validatedFields.data;
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
   if (Math.abs(totalPaid - totalCost) > 0.01) {
@@ -99,16 +99,16 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
       // 1. Create Livestock
       const livestock = await tx.livestock.create({
         data: {
-          isBatch: validatedFields.data.isBatch,
-          tagId: validatedFields.data.tagId,
-          quantity: validatedFields.data.quantity,
-          livestockTypeId: validatedFields.data.livestockTypeId,
-          breed: validatedFields.data.breed,
-          weight: validatedFields.data.weight,
-          age: validatedFields.data.age,
-          barnId: validatedFields.data.barnId,
+          isBatch: livestockData.isBatch,
+          tagId: livestockData.tagId,
+          quantity: livestockData.quantity,
+          livestockTypeId: livestockData.livestockTypeId,
+          breed: livestockData.breed,
+          weight: livestockData.weight,
+          age: livestockData.age,
+          barnId: barnId,
           status: 'Available',
-          cost: validatedFields.data.totalCost,
+          cost: totalCost,
         }
       });
 
@@ -116,9 +116,9 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
       const purchase = await tx.purchase.create({
         data: {
           livestockId: livestock.id,
-          supplier: validatedFields.data.supplier,
-          purchaseDate: new Date(validatedFields.data.purchaseDate),
-          totalCost: validatedFields.data.totalCost,
+          supplier: livestockData.supplier,
+          purchaseDate: new Date(livestockData.purchaseDate),
+          totalCost: totalCost,
           amountPaid: totalPaid,
           remainingAmount: totalCost - totalPaid,
         }
@@ -148,14 +148,14 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
 
       // 5. Update barn occupancy
       await tx.barn.update({
-        where: { id: validatedFields.data.barnId },
+        where: { id: barnId },
         data: { currentOccupancy: { increment: occupancyNeeded } },
       });
 
       // 6. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.user.id,
+          userId: session.user!.id,
           action: 'CREATE',
           entityType: 'PURCHASE',
           entityId: purchase.id,
@@ -177,6 +177,9 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
             return { message: `فشل في تسجيل الشراء: الرقم التعريفي '${validatedFields.data.tagId}' مستخدم بالفعل.`, success: false };
        }
         return { message: `فشل في تسجيل الشراء: ${error.message}`, success: false };
+    }
+     if (error instanceof Prisma.PrismaClientValidationError) {
+        return { message: `فشل في التحقق من صحة البيانات: ${error.message}`, success: false };
     }
     return { message: 'فشل في تسجيل عملية الشراء. حدث خطأ غير متوقع.', success: false };
   }
@@ -232,7 +235,7 @@ export async function deletePurchase(id: string) {
             // 6. Log the deletion
             await tx.log.create({
                 data: {
-                    userId: session.user.id,
+                    userId: session.user!.id,
                     action: 'DELETE',
                     entityType: 'PURCHASE',
                     entityId: id,
