@@ -45,17 +45,30 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 export default function EditExpensePage({ expense, wallets }: EditExpensePageProps) {
     const router = useRouter();
     const { toast } = useToast();
-    const [updateState, updateFormAction] = useActionState(updateExpense.bind(null, expense.id), { message: null, errors: {}, success: false });
+    // Bind the action with the expense ID. This is safe now due to the loading check below.
+    const updateExpenseWithId = expense ? updateExpense.bind(null, expense.id) : async () => {};
+    const [updateState, updateFormAction] = useActionState(updateExpenseWithId, { message: null, errors: {}, success: false });
 
-    const [description, setDescription] = useState(expense.description);
-    const [date, setDate] = useState(format(expense.date, 'yyyy-MM-dd'));
-    const [category, setCategory] = useState(expense.category);
-    const [totalAmount, setTotalAmount] = useState(expense.amount);
-    const [payments, setPayments] = useState<Partial<PaymentState[]>>(expense.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
+    const [description, setDescription] = useState('');
+    const [date, setDate] = useState('');
+    const [category, setCategory] = useState<Expense['category'] | ''>('');
+    const [totalAmount, setTotalAmount] = useState(0);
+    const [payments, setPayments] = useState<Partial<PaymentState[]>>([]);
     
     const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
     const remainingBalance = totalAmount - totalPaid;
 
+    useEffect(() => {
+        // Populate state only when expense data is available
+        if (expense) {
+            setDescription(expense.description);
+            setDate(format(expense.date, 'yyyy-MM-dd'));
+            setCategory(expense.category);
+            setTotalAmount(expense.amount);
+            setPayments(expense.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
+        }
+    }, [expense]);
+    
     useEffect(() => {
         if (updateState.success) {
             toast({ title: 'نجاح', description: updateState.message });
@@ -80,6 +93,11 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
         newPayments[index] = payment;
         setPayments(newPayments);
     };
+    
+    // Render a loading state or nothing until the expense data is loaded
+    if (!expense) {
+        return <div>جاري تحميل بيانات المصروف...</div>;
+    }
 
   return (
     <>
@@ -103,7 +121,7 @@ export default function EditExpensePage({ expense, wallets }: EditExpensePagePro
             <input type="hidden" name="description" value={description} />
             <input type="hidden" name="date" value={date} />
             <input type="hidden" name="category" value={category} />
-            <input type="hidden" name="totalAmount" value={totalAmount} />
+            <input type="hidden" name="amount" value={totalAmount} />
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

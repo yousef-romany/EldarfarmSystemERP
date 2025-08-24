@@ -22,10 +22,6 @@ const expenseSchema = z.object({
   payments: z.array(paymentSchema).min(1, "يجب تحديد دفعة واحدة على الأقل"),
 });
 
-const updateExpenseSchema = expenseSchema.omit({ amount: true }).extend({
-    totalAmount: z.coerce.number().positive("المبلغ الإجمالي يجب أن يكون أكبر من صفر")
-});
-
 export type ExpenseState = {
   errors?: z.ZodError<any>['formErrors']['fieldErrors'];
   message?: string | null;
@@ -181,11 +177,11 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
     }
     
     const paymentsData = JSON.parse(formData.get('payments') as string || '[]');
-    const validatedFields = updateExpenseSchema.safeParse({
+    const validatedFields = expenseSchema.safeParse({
         description: formData.get('description'),
         date: formData.get('date'),
         category: formData.get('category'),
-        totalAmount: formData.get('totalAmount'),
+        amount: formData.get('amount'),
         payments: paymentsData,
     });
 
@@ -193,10 +189,10 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
         return { errors: validatedFields.error.flatten().fieldErrors, message: "بيانات غير صالحة.", success: false };
     }
 
-    const { description, date, category, totalAmount, payments: newPayments } = validatedFields.data;
+    const { description, date, category, amount, payments: newPayments } = validatedFields.data;
     const totalPaid = newPayments.reduce((acc, p) => acc + p.amount, 0);
 
-    if (Math.abs(totalPaid - totalAmount) > 0.01) {
+    if (Math.abs(totalPaid - amount) > 0.01) {
         return { message: "مجموع الدفعات يجب أن يساوي المبلغ الإجمالي المحدث.", success: false };
     }
 
@@ -252,7 +248,7 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
                     description: description,
                     date: new Date(date),
                     category: category,
-                    amount: totalAmount,
+                    amount: amount,
                 }
             });
 
@@ -337,5 +333,3 @@ export async function deleteExpense(id: string) {
         return { message: 'فشل في حذف المصروف. قد تكون مرتبطة بسجلات أخرى.', success: false };
     }
 }
-
-    
