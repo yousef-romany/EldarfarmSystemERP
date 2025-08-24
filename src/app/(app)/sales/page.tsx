@@ -14,7 +14,11 @@ export default async function SalesPage() {
     }
   });
   const livestockData = await prisma.livestock.findMany({
-    where: { status: 'Available' },
+    where: { 
+      status: { 
+        in: ['Available', 'Vowed'] 
+      } 
+    },
     orderBy: { tagId: 'asc' },
   });
   const walletsData = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
@@ -44,3 +48,4 @@ export default async function SalesPage() {
 
   return <SalesPageClient sales={sales} availableLivestock={livestock} wallets={wallets} />;
 }
+
