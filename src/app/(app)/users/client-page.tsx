@@ -1,6 +1,6 @@
 
 'use client';
-import { MoreHorizontal, PlusCircle, ShieldCheck } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, ShieldCheck, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createUser, updateUserPermissions } from '@/lib/actions/user.actions';
+import { createUser, updateUserPermissions, deleteUser } from '@/lib/actions/user.actions';
 import type { User as PrismaUser } from '@prisma/client';
 import type { UserPermissions, Permission } from '@/lib/types';
 import { useSession } from '@/components/session-provider';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 
 type UserWithPermissions = Omit<PrismaUser, 'permissions'> & {
@@ -132,6 +134,15 @@ export default function UsersClientPage({ users }: { users: UserWithPermissions[
       }
   }
 
+  const handleDelete = async (userId: string) => {
+    const result = await deleteUser(userId);
+    if (result?.success) {
+        toast({ title: 'نجاح', description: result.message });
+    } else {
+        toast({ title: 'خطأ', description: result.message, variant: 'destructive' });
+    }
+  }
+
 
   return (
     <>
@@ -158,43 +169,69 @@ export default function UsersClientPage({ users }: { users: UserWithPermissions[
             </TableHeader>
             <TableBody>
               {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar data-ai-hint="person portrait">
-                        <AvatarImage src={user.avatar || undefined} alt={user.username} />
-                        <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="font-medium">
-                        <div>{user.username}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getRoleVariant(user.role)}>{getRoleText(user.role)}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        {sessionUser?.permissions.users.edit && <DropdownMenuItem>تعديل</DropdownMenuItem> }
-                        {sessionUser?.permissions.users.edit && (
-                           <DropdownMenuItem onClick={() => openPermissionsDialog(user)}>
-                              <ShieldCheck className="mr-2 h-4 w-4" />
-                              تعديل الصلاحيات
-                          </DropdownMenuItem>
-                        )}
-                        {sessionUser?.permissions.users.delete && <DropdownMenuItem>حذف</DropdownMenuItem>}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                 <AlertDialog key={user.id}>
+                    <TableRow>
+                    <TableCell>
+                        <div className="flex items-center gap-3">
+                        <Avatar data-ai-hint="person portrait">
+                            <AvatarImage src={user.avatar || undefined} alt={user.username} />
+                            <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="font-medium">
+                            <div>{user.username}</div>
+                        </div>
+                        </div>
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant={getRoleVariant(user.role)}>{getRoleText(user.role)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                        <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                            {sessionUser?.permissions.users.edit && <DropdownMenuItem disabled>تعديل (قريبا)</DropdownMenuItem> }
+                            {sessionUser?.permissions.users.edit && (
+                            <DropdownMenuItem onClick={() => openPermissionsDialog(user)}>
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                تعديل الصلاحيات
+                            </DropdownMenuItem>
+                            )}
+                            {sessionUser?.permissions.users.delete && (
+                               <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        حذف
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                            )}
+                        </DropdownMenuContent>
+                        </DropdownMenu>
+                    </TableCell>
+                    </TableRow>
+                     <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
+                            <AlertDialogDescription>
+                            سيتم حذف المستخدم "{user.username}" نهائيًا. لا يمكن التراجع عن هذا الإجراء.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                            <AlertDialogAction
+                            onClick={() => handleDelete(user.id)}
+                            className="bg-destructive hover:bg-destructive/90"
+                            >
+                            نعم، قم بالحذف
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
               ))}
             </TableBody>
           </Table>

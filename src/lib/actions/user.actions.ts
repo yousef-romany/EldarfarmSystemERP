@@ -145,3 +145,52 @@ export async function updateUserPermissions(userId: string, formData: FormData) 
     return { message: 'فشل في تحديث الصلاحيات.', success: false };
   }
 }
+
+export async function deleteUser(userId: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.user) {
+        redirect('/login');
+    }
+
+    if (!session.user.permissions?.users?.delete) {
+        return { message: 'ليس لديك الصلاحية لحذف المستخدمين.', success: false };
+    }
+
+    if (session.user.id === userId) {
+        return { message: 'لا يمكنك حذف حسابك الخاص.', success: false };
+    }
+
+    try {
+        const userToDelete = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!userToDelete) {
+            return { message: 'المستخدم غير موجود.', success: false };
+        }
+
+        if (userToDelete.username === 'admin') {
+            return { message: 'لا يمكن حذف حساب المسؤول الرئيسي.', success: false };
+        }
+
+        await prisma.user.delete({
+            where: { id: userId },
+        });
+
+        await prisma.log.create({
+            data: {
+                userId: session.user.id,
+                action: 'DELETE',
+                entityType: 'USER',
+                entityId: userId,
+                details: `قام بحذف المستخدم: ${userToDelete.username}`,
+            },
+        });
+
+        revalidatePath('/users');
+        return { message: 'تم حذف المستخدم بنجاح!', success: true };
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        return { message: 'فشل في حذف المستخدم.', success: false };
+    }
+}
