@@ -1,13 +1,13 @@
 
 import { prisma } from '@/lib/prisma';
-import DeferredSaleClientPage from './client-page';
+import POSClientPage from './client-page';
 
-export default async function DeferredSalePage() {
+export default async function POSPage() {
   const [availableLivestockData, walletsData] = await Promise.all([
     prisma.livestock.findMany({
       where: {
         status: { in: ['Available', 'Vowed'] },
-        isBatch: false,
+        isBatch: false, // POS is usually for individual animals
       },
       orderBy: { tagId: 'asc' },
     }),
@@ -25,5 +25,5 @@ export default async function DeferredSalePage() {
     balance: w.balance.toNumber()
   }));
 
-  return <DeferredSaleClientPage availableLivestock={availableLivestock} wallets={wallets} />;
+  return <POSClientPage availableLivestock={availableLivestock} wallets={wallets} />;
 }

@@ -21,7 +21,7 @@ const saleSchema = z.object({
   pricePerKg: z.coerce.number().positive("سعر الكيلو يجب أن يكون أكبر من صفر"),
   initialWeight: z.coerce.number().positive("الوزن يجب أن يكون أكبر من صفر"),
   totalPrice: z.coerce.number().positive("السعر الإجمالي يجب أن يكون أكبر من صفر"),
-  saleType: z.enum(['immediate', 'deferred']),
+  saleType: z.enum(['Immediate', 'Deferred']),
   payments: z.array(paymentSchema),
 });
 
@@ -37,8 +37,11 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     redirect('/');
   }
 
-  if (!session.user.permissions?.sales?.add) {
-    return { message: 'ليس لديك الصلاحية لتسجيل المبيعات.', success: false };
+  const saleType = formData.get('saleType') as 'Immediate' | 'Deferred';
+  const hasPermission = saleType === 'Immediate' ? session.user.permissions?.pos?.add : session.user.permissions?.deferredSales?.add;
+
+  if (!hasPermission) {
+    return { message: 'ليس لديك الصلاحية لتسجيل هذا النوع من المبيعات.', success: false };
   }
 
   const paymentsData = JSON.parse(formData.get('payments') as string || '[]');
@@ -50,7 +53,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     pricePerKg: formData.get('pricePerKg'),
     initialWeight: formData.get('initialWeight'),
     totalPrice: formData.get('totalPrice'),
-    saleType: formData.get('saleType'),
+    saleType: saleType,
     payments: paymentsData,
   });
 
@@ -62,8 +65,8 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     };
   }
 
-  const { livestockId, totalPrice, payments, saleType } = validatedFields.data;
-  const isDeferred = saleType === 'deferred';
+  const { livestockId, totalPrice, payments } = validatedFields.data;
+  const isDeferred = saleType === 'Deferred';
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
   if (!isDeferred && Math.abs(totalPaid - totalPrice) > 0.01) {
@@ -89,7 +92,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
           livestockId: validatedFields.data.livestockId,
           customerName: validatedFields.data.customerName,
           saleDate: new Date(validatedFields.data.saleDate),
-          type: isDeferred ? 'Deferred' : 'Immediate',
+          type: saleType,
           status: isDeferred ? 'Pending' : 'Completed',
           pricePerKg: validatedFields.data.pricePerKg,
           initialWeight: validatedFields.data.initialWeight,
@@ -97,6 +100,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
           totalPrice: validatedFields.data.totalPrice,
           amountPaid: totalPaid,
           remainingAmount: totalPrice - totalPaid,
+          settlementDate: isDeferred ? null : new Date(),
         }
       });
 
@@ -153,7 +157,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
       });
     });
 
-    revalidatePath('/sales');
+    revalidatePath('/sales', 'layout');
     revalidatePath('/dashboard');
     return { message: `تم تسجيل عملية البيع ${isDeferred ? 'الآجل' : 'الفوري'} بنجاح!`, success: true };
 
@@ -179,7 +183,7 @@ type SettleSaleState = {
 
 export async function settleSale(saleId: string, prevState: SettleSaleState, formData: FormData): Promise<SettleSaleState> {
   const session = await getSession();
-  if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.sales?.edit) {
+  if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.deferredSales?.edit) {
     return { message: "ليس لديك الصلاحية لتسوية المبيعات.", success: false };
   }
 
@@ -275,7 +279,7 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
       });
     });
 
-    revalidatePath('/sales');
+    revalidatePath('/sales', 'layout');
     revalidatePath('/dashboard');
     revalidatePath('/reports/bookings');
     revalidatePath('/daily-report');
@@ -353,8 +357,8 @@ const updateSaleSchema = z.object({
 
 export async function updateSale(saleId: string, prevState: SaleState, formData: FormData): Promise<SaleState> {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.sales?.edit) {
-        return { message: "ليس لديك الصلاحية لتعديل المبيعات.", success: false };
+    if (!session.isLoggedIn || !session.user?.id) {
+      redirect('/');
     }
     
     const paymentsData = JSON.parse(formData.get('payments') as string || '[]');
@@ -370,6 +374,14 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
     if (!validatedFields.success) {
         return { errors: validatedFields.error.flatten().fieldErrors, message: "بيانات غير صالحة.", success: false };
     }
+    
+    const originalSale = await prisma.sale.findUnique({ where: { id: saleId } });
+    if (!originalSale) return { message: 'Sale not found', success: false };
+    const hasPermission = originalSale.type === 'Immediate' ? session.user.permissions?.pos?.edit : session.user.permissions?.deferredSales?.edit;
+     if (!hasPermission) {
+        return { message: "ليس لديك الصلاحية لتعديل هذا النوع من المبيعات.", success: false };
+    }
+
 
     const { customerName, saleDate, totalPrice, pricePerKg, finalWeight, payments: newPayments } = validatedFields.data;
     const totalPaid = newPayments.reduce((acc, p) => acc + p.amount, 0);
@@ -444,7 +456,7 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
             });
         });
 
-        revalidatePath('/sales');
+        revalidatePath('/sales', 'layout');
         revalidatePath(`/sales/edit/${saleId}`);
         revalidatePath('/wallets');
         revalidatePath('/daily-report');
@@ -458,21 +470,28 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
 
 export async function deleteSale(id: string) {
     const session = await getSession();
-    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.sales?.delete) {
+    if (!session.isLoggedIn || !session.user?.id) {
         return { message: 'ليس لديك الصلاحية لحذف المبيعات.', success: false };
     }
 
     try {
+        const sale = await prisma.sale.findUnique({
+            where: { id },
+            include: { payments: true, livestock: true }
+        });
+
+        if (!sale) {
+            throw new Error('عملية البيع غير موجودة.');
+        }
+        
+        const hasPermission = sale.type === 'Immediate' ? session.user.permissions?.pos?.delete : session.user.permissions?.deferredSales?.delete;
+        if (!hasPermission) {
+          return { message: 'ليس لديك الصلاحية لحذف هذا النوع من المبيعات.', success: false };
+        }
+
+
         await prisma.$transaction(async (tx) => {
-            const sale = await tx.sale.findUnique({
-                where: { id },
-                include: { payments: true, livestock: true }
-            });
-
-            if (!sale) {
-                throw new Error('عملية البيع غير موجودة.');
-            }
-
+            
             // Reverse wallet transactions
             for (const payment of sale.payments) {
                 await tx.wallet.update({
@@ -519,7 +538,7 @@ export async function deleteSale(id: string) {
             });
         });
 
-        revalidatePath('/sales');
+        revalidatePath('/sales', 'layout');
         revalidatePath('/wallets');
         revalidatePath('/daily-report');
         revalidatePath('/dashboard');

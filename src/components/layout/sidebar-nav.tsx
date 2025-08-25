@@ -34,6 +34,7 @@ import {
   FileSpreadsheet,
   Box,
   Repeat,
+  List,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -61,7 +62,9 @@ export function SidebarNav() {
 
   const operationsItems = [
     { href: '/purchases', label: 'المشتريات', icon: ShoppingCart, permission: user?.permissions.purchases.view },
-    { href: '/sales', label: 'المبيعات', icon: DollarSign, permission: user?.permissions.sales.view },
+    { href: '/sales/pos', label: 'نقطة البيع (فوري)', icon: DollarSign, permission: user?.permissions.pos.view },
+    { href: '/sales/deferred', label: 'مبيعات آجلة', icon: DollarSign, permission: user?.permissions.deferredSales.view },
+    { href: '/sales', label: 'سجل المبيعات', icon: List, permission: user?.permissions.sales.view },
     { href: '/vows', label: 'النذور الحية', icon: Gift, permission: user?.permissions.vows.view },
     { href: '/contributions', label: 'المساهمات النقدية', icon: Coins, permission: user?.permissions.contributions.view },
     { href: '/expenses', label: 'المصروفات', icon: ClipboardList, permission: user?.permissions.expenses.view },
@@ -140,7 +143,7 @@ export function SidebarNav() {
                       {operationsItems.map((item) => item.permission && (
                           <SidebarMenuSubItem key={item.href}>
                               <Link href={item.href}>
-                                  <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                                  <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
                                       <div>
                                           <item.icon />
                                           <span>{item.label}</span>

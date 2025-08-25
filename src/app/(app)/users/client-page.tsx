@@ -26,13 +26,15 @@ type UserWithPermissions = Omit<PrismaUser, 'permissions'> & {
   permissions: UserPermissions;
 };
 
-const permissionLabels: { [key in keyof UserPermissions]: string } = {
+const permissionLabels: { [key in keyof UserPermissions]?: string } = {
     overview: 'نظرة عامة',
     users: 'المستخدمون',
     barns: 'العنابر',
     livestockTypes: 'أنواع المواشي',
     purchases: 'المشتريات',
-    sales: 'المبيعات',
+    sales: 'سجل المبيعات',
+    pos: 'نقطة البيع (فوري)',
+    deferredSales: 'البيع الآجل',
     vows: 'النذور',
     contributions: 'المساهمات النقدية',
     expenses: 'المصروفات',
@@ -257,29 +259,33 @@ export default function UsersClientPage({ users }: { users: UserWithPermissions[
           </DialogHeader>
            <input type="hidden" name="permissions" value={JSON.stringify(currentUserPermissions)} />
           <div className="flex-1 overflow-y-auto pr-6 -mr-6">
-            {currentUserPermissions && Object.entries(currentUserPermissions).map(([pageKey, permissions]) => (
-              <div key={pageKey} className="mb-4">
-                 <h4 className="text-lg font-semibold mb-3">{permissionLabels[pageKey as keyof UserPermissions]}</h4>
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-lg">
-                    <div className="flex items-center space-x-2">
-                        <Switch id={`${pageKey}-view`} checked={(permissions as Permission).view} onCheckedChange={(val) => handlePermissionChange(pageKey as keyof UserPermissions, 'view', val)} />
-                        <Label htmlFor={`${pageKey}-view`}>عرض</Label>
+            {currentUserPermissions && Object.entries(currentUserPermissions).map(([pageKey, permissions]) => {
+                const label = permissionLabels[pageKey as keyof UserPermissions];
+                if (!label) return null;
+                return (
+                    <div key={pageKey} className="mb-4">
+                        <h4 className="text-lg font-semibold mb-3">{label}</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-lg">
+                            <div className="flex items-center space-x-2">
+                                <Switch id={`${pageKey}-view`} checked={(permissions as Permission).view} onCheckedChange={(val) => handlePermissionChange(pageKey as keyof UserPermissions, 'view', val)} />
+                                <Label htmlFor={`${pageKey}-view`}>عرض</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch id={`${pageKey}-add`} checked={(permissions as Permission).add} onCheckedChange={(val) => handlePermissionChange(pageKey as keyof UserPermissions, 'add', val)} />
+                                <Label htmlFor={`${pageKey}-add`}>إضافة</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch id={`${pageKey}-edit`} checked={(permissions as Permission).edit} onCheckedChange={(val) => handlePermissionChange(pageKey as keyof UserPermissions, 'edit', val)} />
+                                <Label htmlFor={`${pageKey}-edit`}>تعديل</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch id={`${pageKey}-delete`} checked={(permissions as Permission).delete} onCheckedChange={(val) => handlePermissionChange(pageKey as keyof UserPermissions, 'delete', val)} />
+                                <Label htmlFor={`${pageKey}-delete`}>حذف</Label>
+                            </div>
+                        </div>
                     </div>
-                     <div className="flex items-center space-x-2">
-                        <Switch id={`${pageKey}-add`} checked={(permissions as Permission).add} onCheckedChange={(val) => handlePermissionChange(pageKey as keyof UserPermissions, 'add', val)} />
-                        <Label htmlFor={`${pageKey}-add`}>إضافة</Label>
-                    </div>
-                     <div className="flex items-center space-x-2">
-                        <Switch id={`${pageKey}-edit`} checked={(permissions as Permission).edit} onCheckedChange={(val) => handlePermissionChange(pageKey as keyof UserPermissions, 'edit', val)} />
-                        <Label htmlFor={`${pageKey}-edit`}>تعديل</Label>
-                    </div>
-                     <div className="flex items-center space-x-2">
-                        <Switch id={`${pageKey}-delete`} checked={(permissions as Permission).delete} onCheckedChange={(val) => handlePermissionChange(pageKey as keyof UserPermissions, 'delete', val)} />
-                        <Label htmlFor={`${pageKey}-delete`}>حذف</Label>
-                    </div>
-                 </div>
-              </div>
-            ))}
+                )
+            })}
           </div>
           <DialogFooter>
             <DialogClose asChild>
