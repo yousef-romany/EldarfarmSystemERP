@@ -33,6 +33,13 @@ export default function DashboardClientPage() {
   
   const { data: barns, error: barnsError } = useSWR<Barn[]>('/api/barns', fetcher);
   const { data: livestockTypes, error: typesError } = useSWR<LivestockType[]>('/api/livestock-types', fetcher);
+  
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
 
   const createQueryString = () => {
     const params = new URLSearchParams();
@@ -83,6 +90,11 @@ export default function DashboardClientPage() {
     }
     return animal.livestockType.name;
   };
+  
+  if (!isClient) {
+    return null;
+  }
+
 
   return (
     <>
