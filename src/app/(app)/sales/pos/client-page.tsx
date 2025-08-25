@@ -108,133 +108,133 @@ export default function POSClientPage({ availableLivestock, wallets }: { availab
   return (
     <>
       <PageHeader title="نقطة البيع (فوري)" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left Side - Form */}
-        <div className="md:col-span-2">
-            <form action={createFormAction}>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>تفاصيل عملية البيع</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <input type="hidden" name="saleType" value="Immediate" />
-                        <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p=>p.walletId && p.amount))} />
-                        <input type="hidden" name="livestockId" value={selectedAnimal?.id || ''} />
-                        <input type="hidden" name="initialWeight" value={currentWeight} />
-                        <input type="hidden name="pricePerKg" value={pricePerKg} />
-                        <input type="hidden" name="totalPrice" value={totalPrice} />
-                        <input type="hidden" name="saleDate" value={format(new Date(), 'yyyy-MM-dd')} />
+      <form action={createFormAction}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left Side - Form */}
+          <div className="md:col-span-2">
+              <Card>
+                  <CardHeader>
+                      <CardTitle>تفاصيل عملية البيع</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      <input type="hidden" name="saleType" value="Immediate" />
+                      <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p=>p.walletId && p.amount))} />
+                      <input type="hidden" name="livestockId" value={selectedAnimal?.id || ''} />
+                      <input type="hidden" name="initialWeight" value={currentWeight} />
+                      <input type="hidden" name="pricePerKg" value={pricePerKg} />
+                      <input type="hidden" name="totalPrice" value={totalPrice} />
+                      <input type="hidden" name="saleDate" value={format(new Date(), 'yyyy-MM-dd')} />
 
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="animal-select">اختر الحيوان</Label>
-                                <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" aria-expanded={comboboxOpen} className="w-full justify-between">
-                                            {selectedAnimal ? `${selectedAnimal.tagId} - ${selectedAnimal.weight} كجم` : "اختر حيوانًا..."}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="ابحث بالرقم التعريفي..." />
-                                            <CommandList>
-                                                <CommandEmpty>لم يتم العثور على حيوان.</CommandEmpty>
-                                                <CommandGroup>
-                                                    {availableLivestock.map((animal) => (
-                                                        <CommandItem key={animal.id} value={animal.id} onSelect={() => handleAnimalSelect(animal.id)}>
-                                                            <Check className={cn("mr-2 h-4 w-4", selectedAnimal?.id === animal.id ? "opacity-100" : "opacity-0")} />
-                                                            {animal.tagId} - {animal.breed} - {animal.weight} كجم
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="customer-name">اسم العميل</Label>
-                                <Input name="customerName" id="customer-name" placeholder="اسم المشتري" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-                            </div>
-                        </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                              <Label htmlFor="animal-select">اختر الحيوان</Label>
+                              <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                                  <PopoverTrigger asChild>
+                                      <Button variant="outline" role="combobox" aria-expanded={comboboxOpen} className="w-full justify-between">
+                                          {selectedAnimal ? `${selectedAnimal.tagId} - ${selectedAnimal.weight} كجم` : "اختر حيوانًا..."}
+                                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                      </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                      <Command>
+                                          <CommandInput placeholder="ابحث بالرقم التعريفي..." />
+                                          <CommandList>
+                                              <CommandEmpty>لم يتم العثور على حيوان.</CommandEmpty>
+                                              <CommandGroup>
+                                                  {availableLivestock.map((animal) => (
+                                                      <CommandItem key={animal.id} value={animal.id} onSelect={() => handleAnimalSelect(animal.id)}>
+                                                          <Check className={cn("mr-2 h-4 w-4", selectedAnimal?.id === animal.id ? "opacity-100" : "opacity-0")} />
+                                                          {animal.tagId} - {animal.breed} - {animal.weight} كجم
+                                                      </CommandItem>
+                                                  ))}
+                                              </CommandGroup>
+                                          </CommandList>
+                                      </Command>
+                                  </PopoverContent>
+                              </Popover>
+                          </div>
+                          <div className="grid gap-2">
+                              <Label htmlFor="customer-name">اسم العميل</Label>
+                              <Input name="customerName" id="customer-name" placeholder="اسم المشتري" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+                          </div>
+                      </div>
 
-                        {selectedAnimal && (
-                        <div className='grid md:grid-cols-3 gap-4'>
-                            <div className="grid gap-2">
-                            <Label htmlFor="current-weight">الوزن الحالي (كجم)</Label>
-                            <Input id="current-weight" type="number" value={currentWeight} onChange={(e) => setCurrentWeight(parseFloat(e.target.value) || 0)} />
-                            </div>
-                            <div className="grid gap-2">
-                            <Label htmlFor="price-per-kg">سعر الكيلو (ج.م)</Label>
-                            <Input id="price-per-kg" type="number" placeholder="أدخل سعر الكيلو" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} />
-                            </div>
-                            <div className="grid gap-2">
-                            <Label htmlFor="total-price-display">السعر الإجمالي</Label>
-                            <Input id="total-price-display" type="number" value={totalPrice} readOnly />
-                            </div>
-                        </div>
-                        )}
-                    </CardContent>
-                </Card>
-             </form>
-        </div>
+                      {selectedAnimal && (
+                      <div className='grid md:grid-cols-3 gap-4'>
+                          <div className="grid gap-2">
+                          <Label htmlFor="current-weight">الوزن الحالي (كجم)</Label>
+                          <Input id="current-weight" type="number" value={currentWeight} onChange={(e) => setCurrentWeight(parseFloat(e.target.value) || 0)} />
+                          </div>
+                          <div className="grid gap-2">
+                          <Label htmlFor="price-per-kg">سعر الكيلو (ج.م)</Label>
+                          <Input id="price-per-kg" type="number" placeholder="أدخل سعر الكيلو" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} />
+                          </div>
+                          <div className="grid gap-2">
+                          <Label htmlFor="total-price-display">السعر الإجمالي</Label>
+                          <Input id="total-price-display" type="number" value={totalPrice} readOnly />
+                          </div>
+                      </div>
+                      )}
+                  </CardContent>
+              </Card>
+          </div>
 
-        {/* Right Side - Payment */}
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>الدفع</CardTitle>
-              <CardDescription>أدخل تفاصيل الدفع لتسوية الفاتورة.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-               <div className="space-y-3">
-                {payments.map((payment, index) => (
-                  <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
-                    <div className="grid gap-2 flex-1">
-                      <Label htmlFor={`wallet-${index}`}>المحفظة</Label>
-                      <Select value={payment.walletId} onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}>
-                        <SelectTrigger id={`wallet-${index}`}>
-                          <SelectValue placeholder="اختر محفظة..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {wallets.map((wallet) => (
-                            <SelectItem key={wallet.id} value={wallet.id}>{wallet.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+          {/* Right Side - Payment */}
+          <div className="md:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle>الدفع</CardTitle>
+                <CardDescription>أدخل تفاصيل الدفع لتسوية الفاتورة.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                 <div className="space-y-3">
+                  {payments.map((payment, index) => (
+                    <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
+                      <div className="grid gap-2 flex-1">
+                        <Label htmlFor={`wallet-${index}`}>المحفظة</Label>
+                        <Select value={payment.walletId} onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}>
+                          <SelectTrigger id={`wallet-${index}`}>
+                            <SelectValue placeholder="اختر محفظة..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {wallets.map((wallet) => (
+                              <SelectItem key={wallet.id} value={wallet.id}>{wallet.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor={`amount-${index}`}>المبلغ</Label>
+                        <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
+                      </div>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => handleRemovePayment(index)} disabled={payments.length === 1}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor={`amount-${index}`}>المبلغ</Label>
-                      <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
-                    </div>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => handleRemovePayment(index)} disabled={payments.length === 1}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                  ))}
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddPayment}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  إضافة دفعة
+                </Button>
+              </CardContent>
+              <CardContent>
+                  <div className='flex justify-between items-center p-3 bg-muted rounded-md mb-2'>
+                      <span className='font-semibold'>الإجمالي المدفوع:</span>
+                      <span className='font-bold text-lg'>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalPaid)}</span>
                   </div>
-                ))}
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={handleAddPayment}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                إضافة دفعة
-              </Button>
-            </CardContent>
-            <CardContent>
-                <div className='flex justify-between items-center p-3 bg-muted rounded-md mb-2'>
-                    <span className='font-semibold'>الإجمالي المدفوع:</span>
-                    <span className='font-bold text-lg'>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalPaid)}</span>
-                </div>
-                <div className='flex justify-between items-center p-3 bg-muted rounded-md'>
-                    <span className='font-semibold'>المبلغ المتبقي:</span>
-                    <span className={`font-bold text-lg ${remainingBalance === 0 ? 'text-green-600' : 'text-destructive'}`}>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(remainingBalance)}</span>
-                </div>
-            </CardContent>
-            <CardContent>
-                 <SubmitButton text="إتمام البيع" disabled={!selectedAnimal || !pricePerKg || remainingBalance !== 0} />
-            </CardContent>
-          </Card>
+                  <div className='flex justify-between items-center p-3 bg-muted rounded-md'>
+                      <span className='font-semibold'>المبلغ المتبقي:</span>
+                      <span className={`font-bold text-lg ${remainingBalance === 0 ? 'text-green-600' : 'text-destructive'}`}>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(remainingBalance)}</span>
+                  </div>
+              </CardContent>
+              <CardContent>
+                   <SubmitButton text="إتمام البيع" disabled={!selectedAnimal || !pricePerKg || remainingBalance !== 0} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      </form>
     </>
   );
 }
