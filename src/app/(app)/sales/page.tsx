@@ -2,8 +2,15 @@
 import { prisma } from '@/lib/prisma';
 import SalesPageClient from './client-page';
 import { PageHeader } from '@/components/page-header';
+import { getSessionData } from '@/lib/session';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { PlusCircle } from 'lucide-react';
 
 export default async function SalesPage() {
+  const session = await getSessionData();
+  const user = session.user;
+
   const salesData = await prisma.sale.findMany({
     orderBy: { saleDate: 'desc' },
     include: {
@@ -31,5 +38,32 @@ export default async function SalesPage() {
     balance: w.balance.toNumber()
   }));
 
-  return <SalesPageClient sales={sales} wallets={wallets} />;
+  return (
+    <>
+       <PageHeader
+        title="سجل المبيعات"
+        action={
+          <div className="flex items-center gap-2">
+            {user?.permissions.pos?.add && (
+               <Button asChild>
+                <Link href="/sales/pos">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  إضافة بيع فوري
+                </Link>
+              </Button>
+            )}
+            {user?.permissions.deferredSales?.add && (
+              <Button asChild variant="secondary">
+                <Link href="/sales/deferred">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  إضافة بيع آجل
+                </Link>
+              </Button>
+            )}
+          </div>
+        }
+      />
+      <SalesPageClient sales={sales} wallets={wallets} />
+    </>
+  );
 }
