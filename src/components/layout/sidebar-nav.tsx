@@ -51,6 +51,7 @@ export function SidebarNav() {
   
   const [managementOpen, setManagementOpen] = useState(true);
   const [operationsOpen, setOperationsOpen] = useState(true);
+  const [salesOpen, setSalesOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(true);
 
 
@@ -60,12 +61,15 @@ export function SidebarNav() {
     { href: '/barns', label: 'العنابر', icon: Warehouse, permission: user?.permissions.barns?.view },
     { href: '/livestock-types', label: 'أنواع المواشي', icon: Box, permission: user?.permissions.livestockTypes?.view },
   ];
-
-  const operationsItems = [
-    { href: '/purchases', label: 'المشتريات', icon: ShoppingCart, permission: user?.permissions.purchases?.view },
+  
+  const salesItems = [
     { href: '/sales/pos', label: 'نقطة البيع (فوري)', icon: DollarSign, permission: user?.permissions.pos?.view },
     { href: '/sales/deferred', label: 'مبيعات آجلة', icon: DollarSign, permission: user?.permissions.deferredSales?.view },
     { href: '/sales', label: 'سجل المبيعات', icon: List, permission: user?.permissions.sales?.view },
+  ]
+
+  const operationsItems = [
+    { href: '/purchases', label: 'المشتريات', icon: ShoppingCart, permission: user?.permissions.purchases?.view },
     { href: '/vows', label: 'النذور الحية', icon: Gift, permission: user?.permissions.vows?.view },
     { href: '/contributions', label: 'المساهمات النقدية', icon: Coins, permission: user?.permissions.contributions?.view },
     { href: '/expenses', label: 'المصروفات', icon: ClipboardList, permission: user?.permissions.expenses?.view },
@@ -85,6 +89,7 @@ export function SidebarNav() {
 
   const managementVisible = managementItems.some(item => item.permission);
   const operationsVisible = operationsItems.some(item => item.permission);
+  const salesVisible = salesItems.some(item => item.permission);
   const reportsVisible = [...financialReportsItems, ...livestockReportsItems].some(item => item.permission);
 
   return (
@@ -142,6 +147,35 @@ export function SidebarNav() {
                   <CollapsibleContent>
                       <SidebarMenuSub>
                       {operationsItems.map((item) => item.permission && (
+                          <SidebarMenuSubItem key={item.href}>
+                              <Link href={item.href}>
+                                  <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
+                                      <div>
+                                          <item.icon />
+                                          <span>{item.label}</span>
+                                      </div>
+                                  </SidebarMenuSubButton>
+                              </Link>
+                          </SidebarMenuSubItem>
+                      ))}
+                      </SidebarMenuSub>
+                  </CollapsibleContent>
+              </Collapsible>
+            )}
+            {salesVisible && (
+               <Collapsible open={salesOpen} onOpenChange={setSalesOpen} disabled={state === 'collapsed'}>
+                  <CollapsibleTrigger className="w-full" asChild>
+                      <SidebarMenuButton className="w-full justify-between" tooltip="المبيعات">
+                          <div className="flex items-center gap-2">
+                              <DollarSign />
+                              <span className="truncate">المبيعات</span>
+                          </div>
+                          <ChevronDown className={cn("h-4 w-4 transition-transform group-data-[collapsible=icon]:hidden", salesOpen && "rotate-180")} />
+                      </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                      <SidebarMenuSub>
+                      {salesItems.map((item) => item.permission && (
                           <SidebarMenuSubItem key={item.href}>
                               <Link href={item.href}>
                                   <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
