@@ -54,32 +54,32 @@ export function SidebarNav() {
 
 
   const managementItems = [
-    { href: '/dashboard', label: 'نظرة عامة', icon: LayoutGrid, permission: user?.permissions.overview.view },
-    { href: '/users', label: 'المستخدمون', icon: Users, permission: user?.permissions.users.view },
-    { href: '/barns', label: 'العنابر', icon: Warehouse, permission: user?.permissions.barns.view },
-    { href: '/livestock-types', label: 'أنواع المواشي', icon: Box, permission: user?.permissions.livestockTypes.view },
+    { href: '/dashboard', label: 'نظرة عامة', icon: LayoutGrid, permission: user?.permissions.overview?.view },
+    { href: '/users', label: 'المستخدمون', icon: Users, permission: user?.permissions.users?.view },
+    { href: '/barns', label: 'العنابر', icon: Warehouse, permission: user?.permissions.barns?.view },
+    { href: '/livestock-types', label: 'أنواع المواشي', icon: Box, permission: user?.permissions.livestockTypes?.view },
   ];
 
   const operationsItems = [
-    { href: '/purchases', label: 'المشتريات', icon: ShoppingCart, permission: user?.permissions.purchases.view },
-    { href: '/sales/pos', label: 'نقطة البيع (فوري)', icon: DollarSign, permission: user?.permissions.pos.view },
-    { href: '/sales/deferred', label: 'مبيعات آجلة', icon: DollarSign, permission: user?.permissions.deferredSales.view },
-    { href: '/sales', label: 'سجل المبيعات', icon: List, permission: user?.permissions.sales.view },
-    { href: '/vows', label: 'النذور الحية', icon: Gift, permission: user?.permissions.vows.view },
-    { href: '/contributions', label: 'المساهمات النقدية', icon: Coins, permission: user?.permissions.contributions.view },
-    { href: '/expenses', label: 'المصروفات', icon: ClipboardList, permission: user?.permissions.expenses.view },
-    { href: '/wallets', label: 'المحافظ', icon: Wallet, permission: user?.permissions.wallets.view },
+    { href: '/purchases', label: 'المشتريات', icon: ShoppingCart, permission: user?.permissions.purchases?.view },
+    { href: '/sales/pos', label: 'نقطة البيع (فوري)', icon: DollarSign, permission: user?.permissions.pos?.view },
+    { href: '/sales/deferred', label: 'مبيعات آجلة', icon: DollarSign, permission: user?.permissions.deferredSales?.view },
+    { href: '/sales', label: 'سجل المبيعات', icon: List, permission: user?.permissions.sales?.view },
+    { href: '/vows', label: 'النذور الحية', icon: Gift, permission: user?.permissions.vows?.view },
+    { href: '/contributions', label: 'المساهمات النقدية', icon: Coins, permission: user?.permissions.contributions?.view },
+    { href: '/expenses', label: 'المصروفات', icon: ClipboardList, permission: user?.permissions.expenses?.view },
+    { href: '/wallets', label: 'المحافظ', icon: Wallet, permission: user?.permissions.wallets?.view },
   ];
   
   const financialReportsItems = [
-    { href: '/daily-report', label: 'التقرير النقدي اليومي', icon: BookCheck, permission: user?.permissions.reports.view },
-    { href: '/settlement', label: 'تسوية اليومية', icon: ArchiveRestore, permission: user?.permissions.reports.view },
+    { href: '/daily-report', label: 'التقرير النقدي اليومي', icon: BookCheck, permission: user?.permissions.reports?.view },
+    { href: '/settlement', label: 'تسوية اليومية', icon: ArchiveRestore, permission: user?.permissions.reports?.view },
   ];
 
   const livestockReportsItems = [
-      { href: '/reports/livestock-movement', label: 'تقرير حركة المواشي', icon: Repeat, permission: user?.permissions.reports.view },
-      { href: '/reports/available', label: 'المواشي المتاحة', icon: FileSpreadsheet, permission: user?.permissions.reports.view },
-      { href: '/reports/bookings', label: 'تقارير الحجوزات', icon: FileSpreadsheet, permission: user?.permissions.reports.view },
+      { href: '/reports/livestock-movement', label: 'تقرير حركة المواشي', icon: Repeat, permission: user?.permissions.reports?.view },
+      { href: '/reports/available', label: 'المواشي المتاحة', icon: FileSpreadsheet, permission: user?.permissions.reports?.view },
+      { href: '/reports/bookings', label: 'تقارير الحجوزات', icon: FileSpreadsheet, permission: user?.permissions.reports?.view },
   ]
 
   const managementVisible = managementItems.some(item => item.permission);
@@ -202,7 +202,7 @@ export function SidebarNav() {
       <SidebarSeparator />
       <SidebarFooter>
         <SidebarMenu>
-          {user?.permissions.settings.view && (
+          {user?.permissions.settings?.view && (
             <SidebarMenuItem>
               <Link href="/settings" className="w-full">
                 <SidebarMenuButton tooltip="الإعدادات">
@@ -227,5 +227,3 @@ export function SidebarNav() {
     </>
   );
 }
-
-import { logout } from '@/lib/actions/auth.actions';

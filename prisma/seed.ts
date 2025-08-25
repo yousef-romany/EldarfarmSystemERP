@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client'
-import { defaultPermissions, adminPermissions } from '../src/lib/data';
+import { adminPermissions } from '../src/lib/data';
 
 const prisma = new PrismaClient()
 
@@ -9,7 +9,9 @@ async function main() {
   
   const adminUser = await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: {
+      permissions: JSON.stringify(adminPermissions),
+    },
     create: {
         username: 'admin',
         password: 'admin123', // In a real app, this should be hashed!
