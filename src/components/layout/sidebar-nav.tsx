@@ -41,6 +41,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/colla
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useSession } from '../session-provider';
+import { logout } from '@/lib/actions/auth.actions';
 
 
 export function SidebarNav() {
