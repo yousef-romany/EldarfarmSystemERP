@@ -13,7 +13,9 @@ import { Badge } from '@/components/ui/badge';
 import type { Livestock, LivestockType, Barn } from '@prisma/client';
 import useSWR from 'swr';
 
-type LivestockWithDetails = Livestock & {
+type LivestockWithDetails = Omit<Livestock, 'weight' | 'cost'> & {
+  weight: number;
+  cost: number;
   barn: Barn;
   livestockType: LivestockType;
 };
@@ -146,7 +148,7 @@ export default function DashboardClientPage() {
                   </TableCell>
                   <TableCell>{getTypeText(animal)}</TableCell>
                   <TableCell>{animal.breed}</TableCell>
-                  <TableCell>{animal.weight.toNumber()} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
+                  <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
                   <TableCell>{animal.age}</TableCell>
                   <TableCell>{animal.barn.name}</TableCell>
                   <TableCell>
