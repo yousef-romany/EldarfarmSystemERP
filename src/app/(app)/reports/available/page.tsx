@@ -1,4 +1,5 @@
 
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
@@ -56,7 +57,7 @@ export default async function AvailableLivestockReportPage() {
 
   return (
     <>
-      <PageHeader title="تقرير المواشي المتاحة" />
+      <PageHeader title="تقرير المواشي المتاحة والنذور الحية" />
       <Card>
         <CardHeader>
           <CardTitle>قائمة المواشي المتاحة والنذور</CardTitle>
@@ -108,4 +109,5 @@ export default async function AvailableLivestockReportPage() {
     </>
   );
 }
+
 
