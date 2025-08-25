@@ -17,6 +17,11 @@ const createUserSchema = z.object({
   role: UserRole,
 });
 
+const updateUserSchema = z.object({
+    username: z.string().min(3, 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل'),
+    role: UserRole,
+});
+
 const updateUserPermissionsSchema = z.object({
   permissions: z.string(), // We'll receive it as a stringified JSON
 });
@@ -24,6 +29,12 @@ const updateUserPermissionsSchema = z.object({
 
 type UserState = {
   errors?: z.ZodError<typeof createUserSchema>['formErrors']['fieldErrors'];
+  message?: string | null;
+  success?: boolean;
+}
+
+type UpdateUserState = {
+  errors?: z.ZodError<typeof updateUserSchema>['formErrors']['fieldErrors'];
   message?: string | null;
   success?: boolean;
 }
@@ -88,6 +99,62 @@ export async function createUser(prevState: UserState, formData: FormData): Prom
     return { message: 'فشل في إنشاء المستخدم.', success: false };
   }
 }
+
+export async function updateUser(userId: string, prevState: UpdateUserState, formData: FormData): Promise<UpdateUserState> {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.user) {
+        redirect('/login');
+    }
+
+    if (!session.user.permissions?.users?.edit) {
+        return { message: 'ليس لديك الصلاحية لتعديل المستخدمين.', success: false };
+    }
+
+    const validatedFields = updateUserSchema.safeParse({
+        username: formData.get('username'),
+        role: formData.get('role'),
+    });
+
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'بيانات غير صالحة.',
+            success: false,
+        };
+    }
+    
+    const { username, role } = validatedFields.data;
+
+    try {
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                username,
+                role,
+            },
+        });
+
+        await prisma.log.create({
+            data: {
+                userId: session.user.id,
+                action: 'UPDATE',
+                entityType: 'USER',
+                entityId: user.id,
+                details: `قام بتحديث بيانات المستخدم: ${username}`
+            }
+        });
+
+        revalidatePath('/users');
+        return { message: 'تم تحديث المستخدم بنجاح!', success: true };
+    } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            return { message: 'اسم المستخدم هذا موجود بالفعل.', success: false };
+        }
+        console.error('Error updating user:', error);
+        return { message: 'فشل في تحديث المستخدم.', success: false };
+    }
+}
+
 
 export async function updateUserPermissions(userId: string, formData: FormData) {
   const session = await getSession();
