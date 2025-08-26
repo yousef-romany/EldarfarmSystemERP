@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { z } from 'zod';
@@ -81,38 +82,18 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
   }
 
   try {
-    const barn = await prisma.barn.findUnique({ where: { id: barnId } });
-    const occupancyNeeded = quantity || 1;
-    if (!barn || barn.capacity - barn.currentOccupancy < occupancyNeeded) {
-        return { message: 'سعة العنبر المحددة غير كافية.', success: false };
-    }
-    
-    for (const payment of payments) {
-        const wallet = await prisma.wallet.findUnique({ where: { id: payment.walletId } });
-        if (!wallet || wallet.balance.toNumber() < payment.amount) {
-            return { message: `رصيد محفظة "${wallet?.name}" غير كافٍ لإتمام عملية الدفع.`, success: false };
-        }
-    }
-
-
     await prisma.$transaction(async (tx) => {
-      // 1. Create Livestock
+      // 1. Create Livestock but keep it quarantined as it's a draft
       const livestock = await tx.livestock.create({
         data: {
-          isBatch: livestockData.isBatch,
-          tagId: livestockData.tagId,
-          quantity: livestockData.quantity,
-          livestockTypeId: livestockData.livestockTypeId,
-          breed: livestockData.breed,
-          weight: livestockData.weight,
-          age: livestockData.age,
+          ...livestockData,
           barnId: barnId,
-          status: 'Available',
+          status: 'Quarantined', // Keep it in a non-available state
           cost: totalCost,
         }
       });
 
-      // 2. Create Purchase record
+      // 2. Create Purchase record with Draft status
       const purchase = await tx.purchase.create({
         data: {
           livestockId: livestock.id,
@@ -121,10 +102,11 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
           totalCost: totalCost,
           amountPaid: totalPaid,
           remainingAmount: totalCost - totalPaid,
+          status: 'Draft', // Set status to Draft
         }
       });
       
-      // 3. Create Payment records and link to purchase
+      // 3. Create Payment records but link them to the purchase draft
       if (payments.length > 0) {
         await tx.payment.createMany({
           data: payments.map(p => ({
@@ -133,57 +115,140 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
             purchaseId: purchase.id,
             date: new Date(),
             type: 'Expense',
-            description: `دفعة لشراء الحيوان/الدفعة رقم ${livestock.tagId || livestock.id}`
+            description: `[مسودة] دفعة لشراء ${livestock.tagId || livestock.id}`
           }))
         });
       }
 
-      // 4. Update wallet balances
-      for (const payment of payments) {
-        await tx.wallet.update({
-          where: { id: payment.walletId },
-          data: { balance: { decrement: payment.amount } },
-        });
-      }
+      // DO NOT update wallet or barn occupancy yet. This happens on confirmation.
 
-      // 5. Update barn occupancy
-      await tx.barn.update({
-        where: { id: barnId },
-        data: { currentOccupancy: { increment: occupancyNeeded } },
-      });
-
-      // 6. Create Log entry
+      // 4. Create Log entry for draft creation
       await tx.log.create({
         data: {
           userId: session.user!.id,
           action: 'CREATE',
-          entityType: 'PURCHASE',
+          entityType: 'PURCHASE_DRAFT',
           entityId: purchase.id,
-          details: `تسجيل عملية شراء جديدة للحيوان ${livestock.tagId || livestock.id} بتكلفة إجمالية ${totalCost}.`
+          details: `إنشاء مسودة شراء للحيوان ${livestock.tagId || livestock.id} بتكلفة ${totalCost}.`
         }
       });
-
     });
 
     revalidatePath('/purchases');
-    revalidatePath('/dashboard');
-    return { message: 'تم تسجيل عملية الشراء بنجاح!', success: true };
+    return { message: 'تم حفظ مسودة الشراء بنجاح! يجب تأكيدها من قبل المدير.', success: true };
 
   } catch (error) {
-    console.error('Error creating purchase:', error);
+    console.error('Error creating purchase draft:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        // Handle known errors, like unique constraint violations
         if (error.code === 'P2002' && (error.meta?.target as string[])?.includes('tagId')) {
-            return { message: `فشل في تسجيل الشراء: الرقم التعريفي '${validatedFields.data.tagId}' مستخدم بالفعل.`, success: false };
+            return { message: `فشل في حفظ المسودة: الرقم التعريفي '${validatedFields.data.tagId}' مستخدم بالفعل.`, success: false };
        }
-        return { message: `فشل في تسجيل الشراء: ${error.message}`, success: false };
+        return { message: `فشل في حفظ المسودة: ${error.message}`, success: false };
     }
      if (error instanceof Prisma.PrismaClientValidationError) {
         return { message: `فشل في التحقق من صحة البيانات: ${error.message}`, success: false };
     }
-    return { message: 'فشل في تسجيل عملية الشراء. حدث خطأ غير متوقع.', success: false };
+    return { message: 'فشل في حفظ مسودة الشراء. حدث خطأ غير متوقع.', success: false };
   }
 }
+
+type ConfirmState = {
+  message?: string | null;
+  success?: boolean;
+};
+
+export async function confirmPurchase(prevState: ConfirmState, formData: FormData): Promise<ConfirmState> {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.user?.id) {
+        redirect('/login');
+    }
+    
+    if (!session.user.permissions?.purchases?.confirm) {
+        return { message: 'ليس لديك الصلاحية لتأكيد عمليات الشراء.', success: false };
+    }
+
+    const purchaseId = formData.get('purchaseId') as string;
+    if (!purchaseId) {
+        return { message: 'معرف الشراء مطلوب.', success: false };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const purchase = await tx.purchase.findUnique({
+                where: { id: purchaseId },
+                include: { livestock: true, payments: true }
+            });
+
+            if (!purchase || purchase.status !== 'Draft') {
+                throw new Error("لا يمكن تأكيد هذه العملية. قد تكون مكتملة بالفعل أو ملغاة.");
+            }
+
+            const { livestock, payments } = purchase;
+            const occupancyNeeded = livestock.quantity || 1;
+
+            // 1. Check wallet balances
+            for (const payment of payments) {
+                const wallet = await tx.wallet.findUnique({ where: { id: payment.walletId } });
+                if (!wallet || wallet.balance.toNumber() < payment.amount.toNumber()) {
+                    throw new Error(`رصيد محفظة "${wallet?.name}" غير كافٍ لإتمام عملية الدفع.`);
+                }
+            }
+            
+            // 2. Check barn capacity
+            const barn = await tx.barn.findUnique({ where: { id: livestock.barnId } });
+            if (!barn || barn.capacity - barn.currentOccupancy < occupancyNeeded) {
+                throw new Error('سعة العنبر المحددة غير كافية.');
+            }
+            
+            // 3. Update wallet balances by decrementing
+            for (const payment of payments) {
+                await tx.wallet.update({
+                    where: { id: payment.walletId },
+                    data: { balance: { decrement: payment.amount } }
+                });
+            }
+            
+            // 4. Update barn occupancy
+            await tx.barn.update({
+                where: { id: livestock.barnId },
+                data: { currentOccupancy: { increment: occupancyNeeded } }
+            });
+            
+            // 5. Update livestock status to 'Available'
+            await tx.livestock.update({
+                where: { id: livestock.id },
+                data: { status: 'Available' }
+            });
+            
+            // 6. Update purchase status to 'Completed'
+            await tx.purchase.update({
+                where: { id: purchaseId },
+                data: { status: 'Completed' }
+            });
+
+            // 7. Log the confirmation
+            await tx.log.create({
+                data: {
+                    userId: session.user.id,
+                    action: 'UPDATE',
+                    entityType: 'PURCHASE',
+                    entityId: purchase.id,
+                    details: `تأكيد عملية الشراء للحيوان ${livestock.tagId || livestock.id}.`
+                }
+            });
+        });
+
+        revalidatePath('/purchases');
+        revalidatePath('/dashboard');
+        revalidatePath('/wallets');
+        return { message: 'تم تأكيد عملية الشراء بنجاح!', success: true };
+
+    } catch (error: any) {
+        console.error('Error confirming purchase:', error);
+        return { message: `فشل تأكيد العملية: ${error.message}`, success: false };
+    }
+}
+
 
 export async function deletePurchase(id: string) {
     const session = await getSession();
@@ -202,20 +267,24 @@ export async function deletePurchase(id: string) {
                 throw new Error('عملية الشراء غير موجودة.');
             }
 
-            // 1. Reverse wallet transactions
-            for (const payment of purchase.payments) {
-                await tx.wallet.update({
-                    where: { id: payment.walletId },
-                    data: { balance: { increment: payment.amount } }
+            // If the purchase was already completed, revert the transactions
+            if (purchase.status === 'Completed') {
+                // 1. Reverse wallet transactions
+                for (const payment of purchase.payments) {
+                    await tx.wallet.update({
+                        where: { id: payment.walletId },
+                        data: { balance: { increment: payment.amount } }
+                    });
+                }
+
+                // 2. Decrement barn occupancy
+                const occupancyToDecrement = purchase.livestock.quantity || 1;
+                await tx.barn.update({
+                    where: { id: purchase.livestock.barnId },
+                    data: { currentOccupancy: { decrement: occupancyToDecrement } }
                 });
             }
 
-            // 2. Decrement barn occupancy
-            const occupancyToDecrement = purchase.livestock.quantity || 1;
-            await tx.barn.update({
-                where: { id: purchase.livestock.barnId },
-                data: { currentOccupancy: { decrement: occupancyToDecrement } }
-            });
 
             // 3. Delete associated payments
             await tx.payment.deleteMany({

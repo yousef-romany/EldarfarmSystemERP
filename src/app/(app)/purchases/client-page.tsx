@@ -3,7 +3,7 @@
 'use client';
 import { useState, useEffect, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { PlusCircle, Trash2, MoreHorizontal, Pencil } from 'lucide-react';
+import { PlusCircle, Trash2, MoreHorizontal, Pencil, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,14 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { createPurchase, deletePurchase } from '@/lib/actions/purchase.actions';
-import type { Barn, LivestockType, Wallet, Purchase, Livestock, Payment } from '@prisma/client';
+import { createPurchase, deletePurchase, confirmPurchase } from '@/lib/actions/purchase.actions';
+import type { Barn, LivestockType, Wallet, Purchase, Livestock, Payment, PurchaseStatus } from '@prisma/client';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useSession } from '@/components/session-provider';
+import { Badge } from '@/components/ui/badge';
 
 type LivestockWithDetails = Livestock & {
   livestockType: LivestockType;
@@ -41,14 +43,16 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending || disabled}>
-      {pending ? 'جاري الحفظ...' : 'حفظ عملية الشراء'}
+      {pending ? 'جاري الحفظ...' : 'حفظ كمسودة'}
     </Button>
   );
 }
 
 export default function PurchasesPageClient({ barns, livestockTypes, wallets, purchases }: { barns: Barn[], livestockTypes: LivestockType[], wallets: (Omit<Wallet, 'balance'> & { balance: number })[], purchases: PurchaseWithDetails[] }) {
   const { toast } = useToast();
+  const { user } = useSession();
   const [createState, createFormAction] = useActionState(createPurchase, { message: null, errors: {}, success: false });
+  const [confirmState, confirmFormAction] = useActionState(confirmPurchase, { message: null, success: false });
 
   const [registrationType, setRegistrationType] = useState('individual');
   const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);
@@ -66,10 +70,21 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
     }
   }, [createState, toast]);
 
+  useEffect(() => {
+    if (confirmState.success) {
+      toast({ title: 'نجاح', description: confirmState.message });
+    } else if (confirmState.message && !confirmState.success) {
+      toast({ title: 'خطأ', description: confirmState.message, variant: 'destructive' });
+    }
+  }, [confirmState, toast]);
+
   const resetFormState = () => {
     setRegistrationType('individual');
     setPayments([{}]);
     setTotalCost(0);
+    // You might need to reset the form itself if it's not part of this component's state
+    const form = document.querySelector('form');
+    form?.reset();
   };
   
   const handleAddPayment = () => {
@@ -106,28 +121,37 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
     }
   }
 
+  const getStatusBadge = (status: PurchaseStatus) => {
+    switch (status) {
+        case 'Draft': return <Badge variant="secondary">مسودة</Badge>;
+        case 'Completed': return <Badge variant="default">مكتملة</Badge>;
+        case 'Cancelled': return <Badge variant="destructive">ملغاة</Badge>;
+        default: return <Badge>{status}</Badge>;
+    }
+  }
+
   return (
     <>
       <Tabs defaultValue="list" dir="rtl">
         <div className='flex justify-between items-center mb-4'>
             <TabsList className="grid grid-cols-2">
                 <TabsTrigger value="list">سجل المشتريات</TabsTrigger>
-                <TabsTrigger value="new">إضافة عملية شراء</TabsTrigger>
+                {user?.permissions.purchases.add && <TabsTrigger value="new">إضافة عملية شراء</TabsTrigger>}
             </TabsList>
         </div>
         <TabsContent value="list">
           <Card>
             <CardHeader>
               <CardTitle>قائمة عمليات الشراء</CardTitle>
-              <CardDescription>عرض لجميع عمليات الشراء المسجلة.</CardDescription>
+              <CardDescription>عرض لجميع عمليات الشراء المسجلة، بما في ذلك المسودات.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>الحالة</TableHead>
                     <TableHead>التاريخ</TableHead>
                     <TableHead>الحيوان/الدفعة</TableHead>
-                    <TableHead>النوع</TableHead>
                     <TableHead>المورد</TableHead>
                     <TableHead>التكلفة</TableHead>
                     <TableHead><span className="sr-only">الإجراءات</span></TableHead>
@@ -136,53 +160,85 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                 <TableBody>
                   {purchases.map(p => (
                     <AlertDialog key={p.id}>
-                      <TableRow>
+                      <TableRow className={p.status === 'Draft' ? 'bg-muted/50' : ''}>
+                          <TableCell>{getStatusBadge(p.status)}</TableCell>
                           <TableCell>{format(new Date(p.purchaseDate), 'yyyy-MM-dd')}</TableCell>
                           <TableCell className="font-medium">{p.livestock.isBatch ? `${p.livestock.quantity} رأس` : p.livestock.tagId}</TableCell>
-                          <TableCell>{p.livestock.livestockType.name}</TableCell>
                           <TableCell>{p.supplier || 'غير محدد'}</TableCell>
                           <TableCell>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(p.totalCost as number)}</TableCell>
                           <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button aria-haspopup="true" size="icon" variant="ghost">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">فتح القائمة</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                                <DropdownMenuItem disabled>
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  تعديل (قريبًا)
-                                </DropdownMenuItem>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    حذف
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                             <form action={confirmFormAction}>
+                              <input type="hidden" name="purchaseId" value={p.id} />
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button aria-haspopup="true" size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">فتح القائمة</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                                   {p.status === 'Draft' && user?.permissions.purchases.confirm && (
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem className="text-green-600" onSelect={(e) => e.preventDefault()}>
+                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                        تأكيد العملية
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                   )}
+                                  {user?.permissions.purchases.edit && (
+                                    <DropdownMenuItem disabled>
+                                      <Pencil className="mr-2 h-4 w-4" />
+                                      تعديل (قريبًا)
+                                    </DropdownMenuItem>
+                                  )}
+                                  {user?.permissions.purchases.delete && (
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        حذف
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                              <AlertDialogContent>
+                                {p.status === 'Draft' ? (
+                                    <>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>تأكيد عملية الشراء؟</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                            سيؤدي هذا الإجراء إلى إتمام عملية الشراء، وخصم المبلغ من المحفظة، وإضافة الحيوان إلى المخزون. لا يمكن التراجع عن هذا الإجراء.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                            <Button type="submit" formAction={confirmFormAction}>نعم، قم بالتأكيد</Button>
+                                        </AlertDialogFooter>
+                                    </>
+                                ) : (
+                                     <>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          سيتم حذف عملية الشراء هذه والحيوان المرتبط بها نهائيًا. سيؤثر هذا على أرصدة المحافظ وإشغال العنبر. لا يمكن التراجع عن هذا الإجراء.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDelete(p.id)}
+                                          className="bg-destructive hover:bg-destructive/90"
+                                        >
+                                          نعم، قم بالحذف
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </>
+                                )}
+                              </AlertDialogContent>
+                            </form>
                           </TableCell>
                       </TableRow>
-                       <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              سيتم حذف عملية الشراء هذه والحيوان المرتبط بها نهائيًا. سيؤثر هذا على أرصدة المحافظ وإشغال العنبر. لا يمكن التراجع عن هذا الإجراء.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(p.id)}
-                              className="bg-destructive hover:bg-destructive/90"
-                            >
-                              نعم، قم بالحذف
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
                     </AlertDialog>
                   ))}
                    {purchases.length === 0 && (
@@ -201,7 +257,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
           <Card>
             <CardHeader>
               <CardTitle>تسجيل عملية شراء جديدة</CardTitle>
-              <CardDescription>املأ النموذج أدناه لتسجيل حيوانات تم شراؤها.</CardDescription>
+              <CardDescription>املأ النموذج أدناه لحفظ عملية الشراء كمسودة. يجب على المدير تأكيدها لاحقًا.</CardDescription>
             </CardHeader>
             <CardContent>
                <form className="grid gap-6" action={createFormAction}>
@@ -331,4 +387,3 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
     </>
   );
 }
-

@@ -10,6 +10,7 @@ export type Permission = {
   add: boolean;
   edit: boolean;
   delete: boolean;
+  confirm?: boolean; // Added for confirming drafts
 };
 
 export type UserPermissions = {
@@ -87,7 +88,7 @@ export type Sale = {
   deposit?: number;
   initialWeight?: number;
   finalWeight?: number;
-  status: 'Pending' | 'Completed';
+  status: 'Pending' | 'Completed' | 'Draft';
 };
 
 export type Wallet = {
