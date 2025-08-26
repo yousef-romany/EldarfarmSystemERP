@@ -22,7 +22,7 @@ export interface SessionData {
 }
 
 export async function getSession() {
-  const session = await getIronSession<SessionData>(cookies(), sessionOptions);
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   // This is a workaround for a bug in iron-session where the session is not saved
   // when the user is not logged in. This causes the session to be re-created on
   // every request, which breaks the flash message system.

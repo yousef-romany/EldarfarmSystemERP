@@ -4,12 +4,25 @@ CREATE TABLE `User` (
     `username` VARCHAR(191) NOT NULL,
     `password` VARCHAR(191) NOT NULL,
     `role` VARCHAR(191) NOT NULL,
-    `permissions` TEXT NOT NULL,
     `avatar` VARCHAR(191) NULL,
+    `permissions` JSON NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `User_username_key`(`username`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Log` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `action` VARCHAR(191) NOT NULL,
+    `entityType` VARCHAR(191) NOT NULL,
+    `entityId` VARCHAR(191) NOT NULL,
+    `details` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -22,7 +35,6 @@ CREATE TABLE `Barn` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `Barn_name_key`(`name`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -42,12 +54,12 @@ CREATE TABLE `Livestock` (
     `tagId` VARCHAR(191) NULL,
     `quantity` INTEGER NULL,
     `livestockTypeId` VARCHAR(191) NOT NULL,
-    `breed` VARCHAR(191) NOT NULL,
-    `weight` DECIMAL(65, 30) NOT NULL,
+    `breed` VARCHAR(191) NULL,
+    `weight` DECIMAL(10, 2) NOT NULL,
     `age` INTEGER NOT NULL,
     `barnId` VARCHAR(191) NOT NULL,
     `status` VARCHAR(191) NOT NULL,
-    `cost` DECIMAL(65, 30) NULL,
+    `cost` DECIMAL(10, 2) NOT NULL DEFAULT 0,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -61,9 +73,9 @@ CREATE TABLE `Purchase` (
     `livestockId` VARCHAR(191) NOT NULL,
     `supplier` VARCHAR(191) NULL,
     `purchaseDate` DATETIME(3) NOT NULL,
-    `totalCost` DECIMAL(65, 30) NOT NULL,
-    `amountPaid` DECIMAL(65, 30) NOT NULL,
-    `remainingAmount` DECIMAL(65, 30) NOT NULL,
+    `totalCost` DECIMAL(10, 2) NOT NULL,
+    `amountPaid` DECIMAL(10, 2) NOT NULL,
+    `remainingAmount` DECIMAL(10, 2) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -80,15 +92,16 @@ CREATE TABLE `Sale` (
     `settlementDate` DATETIME(3) NULL,
     `type` VARCHAR(191) NOT NULL,
     `status` VARCHAR(191) NOT NULL,
-    `pricePerKg` DECIMAL(65, 30) NOT NULL,
-    `initialWeight` DECIMAL(65, 30) NULL,
-    `finalWeight` DECIMAL(65, 30) NULL,
-    `totalPrice` DECIMAL(65, 30) NOT NULL,
-    `amountPaid` DECIMAL(65, 30) NOT NULL,
-    `remainingAmount` DECIMAL(65, 30) NOT NULL,
+    `pricePerKg` DECIMAL(10, 2) NOT NULL,
+    `initialWeight` DECIMAL(10, 2) NULL,
+    `finalWeight` DECIMAL(10, 2) NULL,
+    `totalPrice` DECIMAL(10, 2) NOT NULL,
+    `amountPaid` DECIMAL(10, 2) NOT NULL,
+    `remainingAmount` DECIMAL(10, 2) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
+    UNIQUE INDEX `Sale_livestockId_key`(`livestockId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -98,12 +111,25 @@ CREATE TABLE `Vow` (
     `donorName` VARCHAR(191) NOT NULL,
     `receiptId` VARCHAR(191) NULL,
     `date` DATETIME(3) NOT NULL,
-    `notes` TEXT NULL,
     `livestockId` VARCHAR(191) NOT NULL,
+    `notes` TEXT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `Vow_livestockId_key`(`livestockId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Expense` (
+    `id` VARCHAR(191) NOT NULL,
+    `date` DATETIME(3) NOT NULL,
+    `category` VARCHAR(191) NOT NULL,
+    `amount` DECIMAL(10, 2) NOT NULL,
+    `description` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -113,20 +139,7 @@ CREATE TABLE `Contribution` (
     `donorName` VARCHAR(191) NOT NULL,
     `description` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NOT NULL,
-    `totalAmount` DECIMAL(65, 30) NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Expense` (
-    `id` VARCHAR(191) NOT NULL,
-    `date` DATETIME(3) NOT NULL,
-    `category` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NOT NULL,
-    `amount` DECIMAL(65, 30) NOT NULL,
+    `totalAmount` DECIMAL(10, 2) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -137,7 +150,7 @@ CREATE TABLE `Expense` (
 CREATE TABLE `Wallet` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
-    `balance` DECIMAL(65, 30) NOT NULL DEFAULT 0,
+    `balance` DECIMAL(15, 2) NOT NULL DEFAULT 0,
     `icon` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -150,31 +163,22 @@ CREATE TABLE `Wallet` (
 CREATE TABLE `Payment` (
     `id` VARCHAR(191) NOT NULL,
     `walletId` VARCHAR(191) NOT NULL,
-    `amount` DECIMAL(65, 30) NOT NULL,
+    `amount` DECIMAL(10, 2) NOT NULL,
     `date` DATETIME(3) NOT NULL,
     `type` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
+    `description` VARCHAR(191) NOT NULL,
     `purchaseId` VARCHAR(191) NULL,
     `saleId` VARCHAR(191) NULL,
     `expenseId` VARCHAR(191) NULL,
     `contributionId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateTable
-CREATE TABLE `Log` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `action` VARCHAR(191) NOT NULL,
-    `entityType` VARCHAR(191) NOT NULL,
-    `entityId` VARCHAR(191) NOT NULL,
-    `details` TEXT NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- AddForeignKey
+ALTER TABLE `Log` ADD CONSTRAINT `Log_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Livestock` ADD CONSTRAINT `Livestock_livestockTypeId_fkey` FOREIGN KEY (`livestockTypeId`) REFERENCES `LivestockType`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -205,6 +209,3 @@ ALTER TABLE `Payment` ADD CONSTRAINT `Payment_expenseId_fkey` FOREIGN KEY (`expe
 
 -- AddForeignKey
 ALTER TABLE `Payment` ADD CONSTRAINT `Payment_contributionId_fkey` FOREIGN KEY (`contributionId`) REFERENCES `Contribution`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Log` ADD CONSTRAINT `Log_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

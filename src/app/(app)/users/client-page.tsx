@@ -302,7 +302,7 @@ export default function UsersClientPage({ users }: { users: UserWithParsedPermis
       
        {/* Edit Permissions Dialog */}
        <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+        <DialogContent className="max-w-4xl overflow-y-scroll max-h-[90vh] flex flex-col">
             <DialogHeader>
                 <DialogTitle>تعديل صلاحيات: {selectedUser?.username}</DialogTitle>
                 <DialogDescription>

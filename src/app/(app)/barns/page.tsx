@@ -1,6 +1,5 @@
 
 import { prisma } from '@/lib/prisma';
-import type { Barn } from '@prisma/client';
 import { BarnsClient } from './client-page';
 
 

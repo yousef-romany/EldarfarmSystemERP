@@ -131,7 +131,7 @@ export default function EditVowPageClient({ vow, barns, livestockTypes }: EditVo
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="breed">السلالة</Label>
-                <Input name="breed" id="breed" defaultValue={vow.livestock.breed || ''} placeholder="e.g., هولشتاين, ساسو" required/>
+                <Input name="breed" id="breed" defaultValue={vow.livestock.breed || ''} placeholder="e.g., هولشتاين, ساسو"/>
                  {updateState?.errors?.breed && <p className="text-xs text-red-500">{updateState.errors.breed[0]}</p>}
               </div>
               {registrationType === 'batch' && (
