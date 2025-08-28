@@ -1,9 +1,19 @@
 
+
 import { prisma } from '@/lib/prisma';
 import UsersClientPage from './client-page';
+import { getSession } from '@/lib/session';
 
 export default async function UsersPage() {
+  const session = await getSession();
+  
   const users = await prisma.user.findMany({
+    where: {
+      // Exclude developers from the list for non-developer users
+      role: {
+        not: 'DEVELOPER'
+      }
+    },
     orderBy: { role: 'asc' },
   });
 

@@ -1,4 +1,5 @@
 
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getSession } from './lib/session';
@@ -22,6 +23,7 @@ const permissionMap: Record<string, keyof UserPermissions | null> = {
   '/reports': 'reports',
   '/daily-report': 'reports',
   '/settlement': 'reports',
+  '/logs': 'logs',
   // Add other specific report pages if necessary
   '/reports/available': 'reports',
   '/reports/bookings': 'reports',

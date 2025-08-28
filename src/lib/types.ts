@@ -28,6 +28,7 @@ export type UserPermissions = {
   wallets: Permission;
   settings: Permission;
   reports: Permission;
+  logs: Permission;
 };
 
 export type User = {

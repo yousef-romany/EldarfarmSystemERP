@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -35,6 +36,7 @@ import {
   Box,
   Repeat,
   List,
+  Terminal,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -237,6 +239,16 @@ export function SidebarNav() {
       <SidebarSeparator />
       <SidebarFooter>
         <SidebarMenu>
+          {user?.permissions.logs?.view && (
+              <SidebarMenuItem>
+              <Link href="/logs" className="w-full">
+                  <SidebarMenuButton tooltip="سجلات النظام">
+                  <Terminal />
+                  <span>سجلات النظام</span>
+                  </SidebarMenuButton>
+              </Link>
+              </SidebarMenuItem>
+          )}
           {user?.permissions.settings?.view && (
             <SidebarMenuItem>
               <Link href="/settings" className="w-full">

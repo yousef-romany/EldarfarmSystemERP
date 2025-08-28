@@ -1,4 +1,3 @@
-
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -15,18 +14,12 @@ model User {
   id          String   @id @default(cuid())
   username    String   @unique
   password    String
-  role        UserRole @default(STAFF)
+  role        Role     @default(STAFF)
   permissions Json
   avatar      String?
+  logs        Log[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  logs        Log[]
-}
-
-enum UserRole {
-  ADMIN
-  MANAGER
-  STAFF
 }
 
 model Barn {
@@ -34,77 +27,73 @@ model Barn {
   name             String      @unique
   capacity         Int
   currentOccupancy Int         @default(0)
+  livestock        Livestock[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
-  livestock        Livestock[]
 }
 
 model LivestockType {
   id        String      @id @default(cuid())
   name      String      @unique
   livestock Livestock[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }
 
 model Livestock {
   id              String         @id @default(cuid())
-  tagId           String?        @unique
-  livestockTypeId String
-  livestockType   LivestockType  @relation(fields: [livestockTypeId], references: [id])
-  breed           String?
-  weight          Decimal        @default(0)
-  age             Int?
-  cost            Decimal        @default(0)
   isBatch         Boolean        @default(false)
+  tagId           String?        @unique
   quantity        Int?
+  livestockTypeId String
+  breed           String?
+  weight          Decimal        @db.Decimal(10, 2)
+  age             Int
+  cost            Decimal        @default(0) @db.Decimal(10, 2)
+  status          LivestockStatus
   barnId          String
-  barn            Barn           @relation(fields: [barnId], references: [id])
-  status          String // Available, Sold, Quarantined, Vowed, PendingSale
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  livestockType   LivestockType  @relation(fields: [livestockTypeId], references: [id])
+  barn            Barn           @relation(fields: [barnId], references: [id])
   purchase        Purchase?
   sale            Sale?
   vow             Vow?
 }
 
 model Purchase {
-  id              String   @id @default(cuid())
-  livestockId     String   @unique
-  livestock       Livestock @relation(fields: [livestockId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  livestockId     String         @unique
   supplier        String?
   purchaseDate    DateTime
-  totalCost       Decimal
-  amountPaid      Decimal  @default(0)
-  remainingAmount Decimal  @default(0)
-  payments        Payment[]
+  totalCost       Decimal        @db.Decimal(10, 2)
+  amountPaid      Decimal        @db.Decimal(10, 2)
+  remainingAmount Decimal        @db.Decimal(10, 2)
   status          PurchaseStatus @default(Draft)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-enum PurchaseStatus {
-  Draft
-  Completed
-  Cancelled
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  livestock       Livestock      @relation(fields: [livestockId], references: [id], onDelete: Cascade)
+  payments        Payment[]
 }
 
 model Sale {
-  id              String   @id @default(cuid())
-  livestockId     String   @unique
-  livestock       Livestock @relation(fields: [livestockId], references: [id])
+  id              String       @id @default(cuid())
+  livestockId     String       @unique
   customerName    String
   saleDate        DateTime
   settlementDate  DateTime?
-  type            String // Immediate, Deferred
-  pricePerKg      Decimal
-  totalPrice      Decimal
-  amountPaid      Decimal
-  remainingAmount Decimal
-  initialWeight   Decimal?
-  finalWeight     Decimal?
+  type            SaleType
+  status          SaleStatus
+  pricePerKg      Decimal      @db.Decimal(10, 2)
+  initialWeight   Decimal?     @db.Decimal(10, 2)
+  finalWeight     Decimal?     @db.Decimal(10, 2)
+  totalPrice      Decimal      @db.Decimal(10, 2)
+  amountPaid      Decimal      @db.Decimal(10, 2)
+  remainingAmount Decimal      @db.Decimal(10, 2)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  livestock       Livestock    @relation(fields: [livestockId], references: [id], onDelete: Cascade)
   payments        Payment[]
-  status          String // Draft, Pending, Completed, Cancelled
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 }
 
 model Vow {
@@ -112,63 +101,63 @@ model Vow {
   donorName   String
   receiptId   String?
   date        DateTime
-  notes       String?
   livestockId String    @unique
-  livestock   Livestock @relation(fields: [livestockId], references: [id], onDelete: Cascade)
+  notes       String?   @db.Text
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-}
-
-model Expense {
-  id          String   @id @default(cuid())
-  date        DateTime
-  category    String // Feed, Vet, Maintenance, Other
-  amount      Decimal
-  description String
-  payments    Payment[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  livestock   Livestock @relation(fields: [livestockId], references: [id], onDelete: Cascade)
 }
 
 model Contribution {
   id          String    @id @default(cuid())
   donorName   String
-  description String
+  description String    @db.Text
   date        DateTime
-  totalAmount Decimal
-  payments    Payment[]
+  totalAmount Decimal   @db.Decimal(10, 2)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  payments    Payment[]
+}
+
+model Expense {
+  id          String         @id @default(cuid())
+  date        DateTime
+  category    ExpenseCategory
+  amount      Decimal        @db.Decimal(10, 2)
+  description String         @db.Text
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  payments    Payment[]
 }
 
 model Wallet {
   id        String    @id @default(cuid())
   name      String    @unique
-  balance   Decimal
-  icon      String // 'wallet' or 'cash'
-  payments  Payment[]
+  balance   Decimal   @db.Decimal(12, 2)
+  icon      String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  payments  Payment[]
 }
 
 model Payment {
-  id             String        @id @default(cuid())
-  amount         Decimal
-  date           DateTime      @default(now())
-  type           String // Income, Expense
-  description    String?
-  walletId       String
-  wallet         Wallet        @relation(fields: [walletId], references: [id])
-  purchaseId     String?
-  purchase       Purchase?     @relation(fields: [purchaseId], references: [id])
-  saleId         String?
-  sale           Sale?         @relation(fields: [saleId], references: [id])
-  expenseId      String?
-  expense        Expense?      @relation(fields: [expenseId], references: [id])
-  contributionId String?
-  contribution   Contribution? @relation(fields: [contributionId], references: [id])
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  amount          Decimal       @db-Decimal(10, 2)
+  date            DateTime
+  type            PaymentType
+  description     String?
+  walletId        String
+  purchaseId      String?
+  saleId          String?
+  expenseId       String?
+  contributionId  String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  wallet          Wallet        @relation(fields: [walletId], references: [id])
+  purchase        Purchase?     @relation(fields: [purchaseId], references: [id])
+  sale            Sale?         @relation(fields: [saleId], references: [id])
+  expense         Expense?      @relation(fields: [expenseId], references: [id])
+  contribution    Contribution? @relation(fields: [contributionId], references: [id])
 
   @@index([purchaseId])
   @@index([saleId])
@@ -177,12 +166,82 @@ model Payment {
 }
 
 model Log {
-  id         String   @id @default(cuid())
+  id         String     @id @default(cuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  action     String // CREATE, UPDATE, DELETE, LOGIN, LOGOUT
-  entityType String // USER, BARN, LIVESTOCK, etc.
+  action     LogAction
+  entityType EntityType
   entityId   String
-  details    String   @db.Text
-  createdAt  DateTime @default(now())
+  details    String     @db.Text
+  createdAt  DateTime   @default(now())
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+enum Role {
+  DEVELOPER
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum LivestockStatus {
+  Available
+  Sold
+  Quarantined
+  Vowed
+  PendingSale
+}
+
+enum PurchaseStatus {
+  Draft
+  Completed
+  Cancelled
+}
+
+enum SaleStatus {
+  Draft
+  Pending // For deferred sales waiting for final weight
+  Completed
+  Cancelled
+}
+
+enum SaleType {
+  Immediate
+  Deferred
+}
+
+enum ExpenseCategory {
+  Feed
+  Vet
+  Maintenance
+  Other
+}
+
+enum PaymentType {
+  Income
+  Expense
+}
+
+enum LogAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+}
+
+enum EntityType {
+  USER
+  BARN
+  LIVESTOCK_TYPE
+  LIVESTOCK
+  PURCHASE
+  PURCHASE_DRAFT
+  SALE
+  SALE_DRAFT
+  VOW
+  CONTRIBUTION
+  EXPENSE
+  WALLET
 }

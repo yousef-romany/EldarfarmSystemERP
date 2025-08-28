@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { z } from 'zod';
@@ -6,10 +7,10 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { adminPermissions, managerPermissions, staffPermissions } from '@/lib/data';
+import { adminPermissions, managerPermissions, staffPermissions, developerPermissions } from '@/lib/data';
 import { Prisma } from '@prisma/client';
 
-const UserRole = z.enum(['ADMIN', 'MANAGER', 'STAFF']);
+const UserRole = z.enum(['DEVELOPER', 'ADMIN', 'MANAGER', 'STAFF']);
 
 const createUserSchema = z.object({
   username: z.string().min(3, 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل'),
@@ -68,6 +69,9 @@ export async function createUser(prevState: UserState, formData: FormData): Prom
   // Assign permissions based on role
   let permissions;
     switch (role) {
+        case 'DEVELOPER':
+            permissions = developerPermissions;
+            break;
         case 'ADMIN':
             permissions = adminPermissions;
             break;
@@ -124,6 +128,11 @@ export async function updateUser(userId: string, prevState: UpdateUserState, for
         return { message: 'ليس لديك الصلاحية لتعديل المستخدمين.', success: false };
     }
 
+    const userToUpdate = await prisma.user.findUnique({ where: { id: userId } });
+    if (userToUpdate?.role === 'DEVELOPER') {
+        return { message: 'لا يمكن تعديل بيانات المطور.', success: false };
+    }
+
     const validatedFields = updateUserSchema.safeParse({
         username: formData.get('username'),
         role: formData.get('role'),
@@ -142,6 +151,8 @@ export async function updateUser(userId: string, prevState: UpdateUserState, for
     // Assign permissions based on role
     let permissions;
     switch (role) {
+        case 'DEVELOPER':
+             return { message: 'لا يمكن تعيين دور المطور.', success: false };
         case 'ADMIN':
             permissions = adminPermissions;
             break;
@@ -195,6 +206,11 @@ export async function updateUserPermissions(userId: string, formData: FormData) 
 
   if (!session.user.permissions?.users?.edit) {
     return { message: 'ليس لديك الصلاحية لتعديل الصلاحيات.', success: false };
+  }
+  
+  const userToUpdate = await prisma.user.findUnique({ where: { id: userId } });
+  if (userToUpdate?.role === 'DEVELOPER') {
+      return { message: 'لا يمكن تعديل صلاحيات المطور.', success: false };
   }
 
   const validatedFields = updateUserPermissionsSchema.safeParse({
@@ -267,8 +283,8 @@ export async function deleteUser(userId: string) {
             return { message: 'المستخدم غير موجود.', success: false };
         }
 
-        if (userToDelete.username === 'admin') {
-            return { message: 'لا يمكن حذف حساب المسؤول الرئيسي.', success: false };
+        if (userToDelete.username === 'admin' || userToDelete.role === 'DEVELOPER') {
+            return { message: 'لا يمكن حذف حساب المسؤول الرئيسي أو المطور.', success: false };
         }
 
         await prisma.user.delete({
