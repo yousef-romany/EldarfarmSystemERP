@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client'
-import { adminPermissions } from '../src/lib/data';
+import { adminPermissions, developerPermissions } from '../src/lib/data';
 
 const prisma = new PrismaClient()
 
@@ -21,6 +21,20 @@ async function main() {
     }
   });
   console.log(`Created admin user: ${adminUser.username}`);
+
+  const devUser = await prisma.user.upsert({
+    where: { username: 'dev' },
+    update: {
+      permissions: JSON.stringify(developerPermissions),
+    },
+    create: {
+        username: 'dev',
+        password: 'dev123', // In a real app, this should be hashed!
+        role: 'DEVELOPER',
+        permissions: JSON.stringify(developerPermissions),
+    }
+  });
+  console.log(`Created developer user: ${devUser.username}`);
 
   console.log(`Seeding finished.`)
 }
