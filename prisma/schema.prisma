@@ -1,3 +1,4 @@
+
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -14,12 +15,19 @@ model User {
   id          String   @id @default(cuid())
   username    String   @unique
   password    String
-  role        Role     @default(STAFF)
-  permissions Json
+  role        UserRole @default(STAFF)
+  permissions Json? // Can be string or JSON based on adapter
   avatar      String?
-  logs        Log[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  logs        Log[]
+}
+
+enum UserRole {
+  DEVELOPER
+  ADMIN
+  MANAGER
+  STAFF
 }
 
 model Barn {
@@ -36,161 +44,50 @@ model LivestockType {
   id        String      @id @default(cuid())
   name      String      @unique
   livestock Livestock[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
 }
 
 model Livestock {
   id              String         @id @default(cuid())
-  isBatch         Boolean        @default(false)
   tagId           String?        @unique
+  isBatch         Boolean        @default(false)
   quantity        Int?
   livestockTypeId String
-  breed           String?
-  weight          Decimal        @db.Decimal(10, 2)
-  age             Int
-  cost            Decimal        @default(0) @db.Decimal(10, 2)
-  status          LivestockStatus
-  barnId          String
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
   livestockType   LivestockType  @relation(fields: [livestockTypeId], references: [id])
+  breed           String
+  weight          Decimal        @db.Decimal(10, 2)
+  age             Int // in months
+  cost            Decimal        @default(0) @db.Decimal(10, 2)
+  barnId          String
   barn            Barn           @relation(fields: [barnId], references: [id])
+  status          LivestockStatus @default(Available)
   purchase        Purchase?
   sale            Sale?
   vow             Vow?
-}
-
-model Purchase {
-  id              String         @id @default(cuid())
-  livestockId     String         @unique
-  supplier        String?
-  purchaseDate    DateTime
-  totalCost       Decimal        @db.Decimal(10, 2)
-  amountPaid      Decimal        @db.Decimal(10, 2)
-  remainingAmount Decimal        @db.Decimal(10, 2)
-  status          PurchaseStatus @default(Draft)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
-  livestock       Livestock      @relation(fields: [livestockId], references: [id], onDelete: Cascade)
-  payments        Payment[]
-}
-
-model Sale {
-  id              String       @id @default(cuid())
-  livestockId     String       @unique
-  customerName    String
-  saleDate        DateTime
-  settlementDate  DateTime?
-  type            SaleType
-  status          SaleStatus
-  pricePerKg      Decimal      @db.Decimal(10, 2)
-  initialWeight   Decimal?     @db.Decimal(10, 2)
-  finalWeight     Decimal?     @db.Decimal(10, 2)
-  totalPrice      Decimal      @db.Decimal(10, 2)
-  amountPaid      Decimal      @db.Decimal(10, 2)
-  remainingAmount Decimal      @db.Decimal(10, 2)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  livestock       Livestock    @relation(fields: [livestockId], references: [id], onDelete: Cascade)
-  payments        Payment[]
-}
-
-model Vow {
-  id          String    @id @default(cuid())
-  donorName   String
-  receiptId   String?
-  date        DateTime
-  livestockId String    @unique
-  notes       String?   @db.Text
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  livestock   Livestock @relation(fields: [livestockId], references: [id], onDelete: Cascade)
-}
-
-model Contribution {
-  id          String    @id @default(cuid())
-  donorName   String
-  description String    @db.Text
-  date        DateTime
-  totalAmount Decimal   @db.Decimal(10, 2)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  payments    Payment[]
-}
-
-model Expense {
-  id          String         @id @default(cuid())
-  date        DateTime
-  category    ExpenseCategory
-  amount      Decimal        @db.Decimal(10, 2)
-  description String         @db.Text
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  payments    Payment[]
-}
-
-model Wallet {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  balance   Decimal   @db.Decimal(12, 2)
-  icon      String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  payments  Payment[]
-}
-
-model Payment {
-  id              String        @id @default(cuid())
-  amount          Decimal       @db-Decimal(10, 2)
-  date            DateTime
-  type            PaymentType
-  description     String?
-  walletId        String
-  purchaseId      String?
-  saleId          String?
-  expenseId       String?
-  contributionId  String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  wallet          Wallet        @relation(fields: [walletId], references: [id])
-  purchase        Purchase?     @relation(fields: [purchaseId], references: [id])
-  sale            Sale?         @relation(fields: [saleId], references: [id])
-  expense         Expense?      @relation(fields: [expenseId], references: [id])
-  contribution    Contribution? @relation(fields: [contributionId], references: [id])
-
-  @@index([purchaseId])
-  @@index([saleId])
-  @@index([expenseId])
-  @@index([contributionId])
-}
-
-model Log {
-  id         String     @id @default(cuid())
-  userId     String
-  action     LogAction
-  entityType EntityType
-  entityId   String
-  details    String     @db.Text
-  createdAt  DateTime   @default(now())
-  user       User       @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-}
-
-enum Role {
-  DEVELOPER
-  ADMIN
-  MANAGER
-  STAFF
 }
 
 enum LivestockStatus {
   Available
   Sold
-  Quarantined
+  Quarantined // For newly purchased animals not yet confirmed
   Vowed
-  PendingSale
+  PendingSale // For animals in a deferred sale
+}
+
+model Purchase {
+  id              String      @id @default(cuid())
+  livestockId     String      @unique
+  livestock       Livestock   @relation(fields: [livestockId], references: [id], onDelete: Cascade)
+  supplier        String?
+  purchaseDate    DateTime
+  totalCost       Decimal     @db.Decimal(10, 2)
+  amountPaid      Decimal     @db.Decimal(10, 2)
+  remainingAmount Decimal     @db.Decimal(10, 2)
+  status          PurchaseStatus @default(Draft)
+  payments        Payment[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 enum PurchaseStatus {
@@ -199,16 +96,70 @@ enum PurchaseStatus {
   Cancelled
 }
 
-enum SaleStatus {
-  Draft
-  Pending // For deferred sales waiting for final weight
-  Completed
-  Cancelled
+model Sale {
+  id              String      @id @default(cuid())
+  livestockId     String      @unique
+  livestock       Livestock   @relation(fields: [livestockId], references: [id])
+  customerName    String
+  saleDate        DateTime
+  settlementDate  DateTime?
+  type            SaleType
+  pricePerKg      Decimal     @db.Decimal(10, 2)
+  initialWeight   Decimal?    @db.Decimal(10, 2)
+  finalWeight     Decimal?    @db.Decimal(10, 2)
+  totalPrice      Decimal     @db.Decimal(10, 2)
+  amountPaid      Decimal     @db.Decimal(10, 2)
+  remainingAmount Decimal     @db.Decimal(10, 2)
+  status          SaleStatus  @default(Draft)
+  payments        Payment[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 enum SaleType {
   Immediate
   Deferred
+}
+
+enum SaleStatus {
+  Draft
+  Pending // For deferred sales waiting for settlement
+  Completed
+  Cancelled
+}
+
+model Vow {
+  id          String   @id @default(cuid())
+  livestockId String   @unique
+  livestock   Livestock @relation(fields: [livestockId], references: [id], onDelete: Cascade)
+  donorName   String
+  receiptId   String?  @unique
+  date        DateTime
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Contribution {
+  id          String    @id @default(cuid())
+  donorName   String
+  description String
+  date        DateTime
+  totalAmount Decimal   @db.Decimal(10, 2)
+  payments    Payment[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Expense {
+  id          String         @id @default(cuid())
+  date        DateTime
+  category    ExpenseCategory
+  amount      Decimal        @db.Decimal(10, 2)
+  description String
+  payments    Payment[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }
 
 enum ExpenseCategory {
@@ -218,9 +169,55 @@ enum ExpenseCategory {
   Other
 }
 
+model Wallet {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  balance   Decimal   @default(0) @db.Decimal(12, 2)
+  icon      String    @default("wallet") // 'wallet' or 'cash'
+  payments  Payment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  amount         Decimal       @db.Decimal(10, 2)
+  walletId       String
+  wallet         Wallet        @relation(fields: [walletId], references: [id])
+  date           DateTime      @default(now())
+  type           PaymentType
+  description    String
+  purchaseId     String?
+  purchase       Purchase?     @relation(fields: [purchaseId], references: [id])
+  saleId         String?
+  sale           Sale?         @relation(fields: [saleId], references: [id])
+  expenseId      String?
+  expense        Expense?      @relation(fields: [expenseId], references: [id])
+  contributionId String?
+  contribution   Contribution? @relation(fields: [contributionId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([purchaseId])
+  @@index([saleId])
+  @@index([expenseId])
+  @@index([contributionId])
+}
+
 enum PaymentType {
   Income
   Expense
+}
+
+model Log {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id])
+  action     LogAction
+  entityType EntityType
+  entityId   String
+  details    String     @db.Text
+  createdAt  DateTime   @default(now())
 }
 
 enum LogAction {
