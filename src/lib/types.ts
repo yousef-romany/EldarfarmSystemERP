@@ -29,6 +29,9 @@ export type UserPermissions = {
   settings: Permission;
   reports: Permission;
   logs: Permission;
+  // Add other keys used in maps, even if they share a report permission, for type safety
+  'daily-report'?: Permission; 
+  'settlement'?: Permission;
 };
 
 export type User = {
