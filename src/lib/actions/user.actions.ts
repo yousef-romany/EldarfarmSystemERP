@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { z } from 'zod';
@@ -27,6 +26,15 @@ const updateUserPermissionsSchema = z.object({
   permissions: z.string(), // We'll receive it as a stringified JSON
 });
 
+const updatePasswordSchema = z.object({
+    currentPassword: z.string().min(1, "كلمة المرور الحالية مطلوبة"),
+    newPassword: z.string().min(6, "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل"),
+    confirmPassword: z.string()
+}).refine(data => data.newPassword === data.confirmPassword, {
+    message: "كلمتا المرور الجديدتان غير متطابقتين",
+    path: ["confirmPassword"],
+});
+
 
 type UserState = {
   errors?: z.ZodError<typeof createUserSchema>['formErrors']['fieldErrors'];
@@ -38,6 +46,11 @@ type UpdateUserState = {
   errors?: z.ZodError<typeof updateUserSchema>['formErrors']['fieldErrors'];
   message?: string | null;
   success?: boolean;
+}
+
+type UpdatePasswordState = {
+    message?: string | null;
+    success: boolean;
 }
 
 export async function createUser(prevState: UserState, formData: FormData): Promise<UserState> {
@@ -308,3 +321,52 @@ export async function deleteUser(userId: string) {
         return { message: 'فشل في حذف المستخدم.', success: false };
     }
 }
+
+
+export async function updateUserPassword(prevState: UpdatePasswordState, formData: FormData): Promise<UpdatePasswordState> {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.user) {
+        redirect('/login');
+    }
+
+    const validatedFields = updatePasswordSchema.safeParse(Object.fromEntries(formData));
+
+    if (!validatedFields.success) {
+        return {
+            message: validatedFields.error.flatten().fieldErrors.confirmPassword?.[0] || 'بيانات غير صالحة.',
+            success: false,
+        };
+    }
+    
+    const { currentPassword, newPassword } = validatedFields.data;
+
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }});
+
+    if (!user || user.password !== currentPassword) {
+        return { message: 'كلمة المرور الحالية غير صحيحة.', success: false };
+    }
+
+    try {
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { password: newPassword } // In a real app, this should be hashed!
+        });
+
+        await prisma.log.create({
+            data: {
+                userId: session.user.id,
+                action: 'UPDATE',
+                entityType: 'USER',
+                entityId: session.user.id,
+                details: `قام بتغيير كلمة المرور الخاصة به.`
+            }
+        });
+
+        return { message: 'تم تغيير كلمة المرور بنجاح!', success: true };
+
+    } catch(error) {
+        console.error('Error updating password:', error);
+        return { message: 'فشل في تحديث كلمة المرور.', success: false };
+    }
+}
+
