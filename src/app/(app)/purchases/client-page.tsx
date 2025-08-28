@@ -1,7 +1,6 @@
 
-
 'use client';
-import { useState, useEffect, useActionState } from 'react';
+import { useState, useEffect, useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import { PlusCircle, Trash2, MoreHorizontal, Pencil, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useSession } from '@/components/session-provider';
 import { Badge } from '@/components/ui/badge';
+import useSWR from 'swr';
+
 
 type LivestockWithDetails = Livestock & {
   livestockType: LivestockType;
@@ -39,6 +40,9 @@ type PaymentDetails = {
   amount: number;
 }
 
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+
 function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
@@ -48,9 +52,36 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
   );
 }
 
-export default function PurchasesPageClient({ barns, livestockTypes, wallets, purchases }: { barns: Barn[], livestockTypes: LivestockType[], wallets: (Omit<Wallet, 'balance'> & { balance: number })[], purchases: PurchaseWithDetails[] }) {
+export default function PurchasesPageClient({ barns, livestockTypes, wallets }: { barns: Barn[], livestockTypes: LivestockType[], wallets: (Omit<Wallet, 'balance'> & { balance: number })[] }) {
   const { toast } = useToast();
   const { user } = useSession();
+
+  // --- Data Fetching with SWR for real-time updates ---
+  const { data: purchases, error: purchasesError, mutate } = useSWR<PurchaseWithDetails[]>('/api/purchases', fetcher, {
+    refreshInterval: 10000, // Refresh every 10 seconds
+    revalidateOnFocus: true,
+  });
+  
+  const draftCount = useRef(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Initialize audio only on client
+    audioRef.current = new Audio('/notification.mp3');
+  }, []);
+
+  useEffect(() => {
+    if (purchases) {
+      const newDraftCount = purchases.filter(p => p.status === 'Draft').length;
+      if (newDraftCount > draftCount.current) {
+        // New draft arrived, play sound
+        audioRef.current?.play().catch(e => console.error("Error playing sound:", e));
+      }
+      draftCount.current = newDraftCount;
+    }
+  }, [purchases]);
+
+  
   const [createState, createFormAction] = useActionState(createPurchase, { message: null, errors: {}, success: false });
   
   // Use a different variable name for confirm action to avoid conflict
@@ -68,18 +99,20 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
     if (createState.success) {
       toast({ title: 'نجاح', description: createState.message });
       resetFormState();
+      mutate(); // Re-fetch data after creation
     } else if (createState.message && !createState.success) {
       toast({ title: 'خطأ', description: createState.message, variant: 'destructive' });
     }
-  }, [createState, toast]);
+  }, [createState, toast, mutate]);
 
   useEffect(() => {
     if (confirmPurchaseState.success) {
       toast({ title: 'نجاح', description: confirmPurchaseState.message });
+      mutate(); // Re-fetch data after confirmation
     } else if (confirmPurchaseState.message && !confirmPurchaseState.success) {
       toast({ title: 'خطأ', description: confirmPurchaseState.message, variant: 'destructive' });
     }
-  }, [confirmPurchaseState, toast]);
+  }, [confirmPurchaseState, toast, mutate]);
 
 
   const resetFormState = () => {
@@ -116,6 +149,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
         title: "نجاح",
         description: result.message,
       });
+       mutate(); // Re-fetch data after deletion
     } else {
       toast({
         title: "خطأ",
@@ -162,7 +196,9 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {purchases.map(p => (
+                  {purchasesError && <TableRow><TableCell colSpan={6} className='text-center text-destructive'>فشل في تحميل البيانات.</TableCell></TableRow>}
+                  {!purchases && !purchasesError && <TableRow><TableCell colSpan={6} className='text-center'>جاري التحميل...</TableCell></TableRow>}
+                  {purchases && purchases.map(p => (
                     <AlertDialog key={p.id}>
                       <TableRow className={p.status === 'Draft' ? 'bg-muted/50' : ''}>
                           <TableCell>{getStatusBadge(p.status)}</TableCell>
@@ -245,7 +281,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                       </TableRow>
                     </AlertDialog>
                   ))}
-                   {purchases.length === 0 && (
+                   {purchases && purchases.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center text-muted-foreground">
                           لم يتم تسجيل أي عمليات شراء بعد.

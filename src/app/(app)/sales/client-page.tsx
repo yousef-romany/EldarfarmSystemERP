@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PageHeader } from '@/components/page-header';
 import { format } from 'date-fns';
-import { useState, useEffect, useActionState } from 'react';
+import { useState, useEffect, useActionState, useRef } from 'react';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -23,6 +22,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/components/session-provider';
+import useSWR from 'swr';
 
 
 type SaleWithLivestock = Sale & {
@@ -38,6 +38,8 @@ type PaymentDetails = {
     amount: number;
 }
 
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
 
 function SubmitButton({ text, disabled, name, value, variant }: { text: string, disabled?: boolean, name?: string, value?: string, variant?: "default" | "secondary" }) {
   const { pending } = useFormStatus();
@@ -48,9 +50,34 @@ function SubmitButton({ text, disabled, name, value, variant }: { text: string, 
   );
 }
 
-export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLivestock[], wallets: Wallet[]}) {
+export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
   const { toast } = useToast();
   const { user } = useSession();
+
+  // --- Data Fetching with SWR for real-time updates ---
+  const { data: sales, error, mutate } = useSWR<SaleWithLivestock[]>('/api/sales', fetcher, {
+    refreshInterval: 10000, // Refresh every 10 seconds
+    revalidateOnFocus: true,
+  });
+
+  const draftCount = useRef(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Initialize audio only on client
+    audioRef.current = new Audio('/notification.mp3');
+  }, []);
+
+  useEffect(() => {
+    if (sales) {
+      const newDraftCount = sales.filter(p => p.status === 'Draft').length;
+      if (newDraftCount > draftCount.current && user?.permissions.sales.confirm) {
+        // New draft arrived, play sound for users who can confirm
+        audioRef.current?.play().catch(e => console.error("Error playing sound:", e));
+      }
+      draftCount.current = newDraftCount;
+    }
+  }, [sales, user]);
 
   // State for Deferred Sale Settlement
   const [isSettlementDialogOpen, setIsSettlementDialogOpen] = useState(false);
@@ -87,6 +114,7 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
     const result = await deleteSale(id);
     if (result.success) {
       toast({ title: 'نجاح', description: result.message });
+      mutate();
     } else {
       toast({ title: 'خطأ', description: result.message, variant: 'destructive' });
     }
@@ -96,18 +124,20 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
     if (settleState?.success) {
         toast({ title: 'نجاح', description: settleState.message });
         setIsSettlementDialogOpen(false);
+        mutate();
     } else if (settleState?.message && !settleState.success) {
         toast({ title: 'خطأ', description: settleState.message, variant: 'destructive' });
     }
-  }, [settleState, toast])
+  }, [settleState, toast, mutate])
 
   useEffect(() => {
     if (confirmState.success) {
       toast({ title: 'نجاح', description: confirmState.message });
+      mutate();
     } else if (confirmState.message && !confirmState.success) {
       toast({ title: 'خطأ', description: confirmState.message, variant: 'destructive' });
     }
-  }, [confirmState, toast]);
+  }, [confirmState, toast, mutate]);
   
 
   // Handlers for Deferred Sale Settlement
@@ -177,7 +207,9 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
                   </TableRow>
                   </TableHeader>
                   <TableBody>
-                  {sales.map((sale) => (
+                  {error && <TableRow><TableCell colSpan={6} className='text-center text-destructive'>فشل في تحميل البيانات.</TableCell></TableRow>}
+                  {!sales && !error && <TableRow><TableCell colSpan={6} className='text-center'>جاري التحميل...</TableCell></TableRow>}
+                  {sales && sales.map((sale) => (
                       <AlertDialog key={sale.id}>
                       <TableRow className={sale.status === 'Draft' ? 'bg-muted/50' : ''}>
                           <TableCell>{getStatusBadge(sale.status)}</TableCell>
@@ -210,7 +242,7 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
                                           </AlertDialogTrigger>
                                       )}
                                       {sale.status === 'Pending' && user?.permissions.deferredSales.edit && (
-                                          <DropdownMenuItem onClick={() => openSettlementDialog(sale)}>
+                                          <DropdownMenuItem onClick={() => openSettlementDialog(sale as Sale)}>
                                               <ArrowDownUp className="mr-2 h-4 w-4" />
                                               تحديث الوزن و إتمام البيع
                                           </DropdownMenuItem>
@@ -276,6 +308,7 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
                       </TableRow>
                       </AlertDialog>
                       ))}
+                      {sales && sales.length === 0 && <TableRow><TableCell colSpan={6} className='text-center'>لا توجد مبيعات مسجلة.</TableCell></TableRow>}
                   </TableBody>
               </Table>
           </CardContent>
