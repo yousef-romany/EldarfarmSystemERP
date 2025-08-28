@@ -14,7 +14,7 @@ export default async function ContributionsPage() {
     return (
         <>
             <PageHeader
-                title="سجل المساهمات النقدية"
+                title="سجل النذور النقدية"
             />
             <ContributionsClientPage contributions={contributions} />
         </>

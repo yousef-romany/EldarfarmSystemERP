@@ -26,7 +26,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending || disabled}>
-      {pending ? 'جاري التسجيل...' : 'تسجيل المساهمة'}
+      {pending ? 'جاري التسجيل...' : 'تسجيل النذر النقدي'}
     </Button>
   );
 }
@@ -72,11 +72,11 @@ export default function NewContributionPage({ wallets }: { wallets: Wallet[] }) 
 
   return (
     <>
-      <PageHeader title="تسجيل مساهمة جديدة" />
+      <PageHeader title="تسجيل نذر نقدي جديد" />
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardDescription>
-            استخدم هذا النموذج لتسجيل نذر نقدي أو أي مساهمة مالية أخرى.
+            استخدم هذا النموذج لتسجيل نذر نقدي أو أي تبرع مالي آخر.
           </CardDescription>
         </CardHeader>
         <CardContent>

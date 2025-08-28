@@ -90,12 +90,12 @@ export default function EditContributionPage({ contribution, wallets }: EditCont
                 <ChevronRight className="h-4 w-4" />
             </Link>
           </Button>
-          <PageHeader title={`تعديل المساهمة #${contribution.id.substring(0,8)}`} className='mb-0' />
+          <PageHeader title={`تعديل النذر النقدي #${contribution.id.substring(0,8)}`} className='mb-0' />
       </div>
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardDescription>
-            قم بتحديث بيانات المساهمة النقدية أدناه.
+            قم بتحديث بيانات النذر النقدي أدناه.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -43,14 +43,14 @@ export default function ContributionsClientPage({ contributions }: { contributio
     <Card>
       <CardHeader className='flex-row items-center justify-between'>
         <div>
-          <CardTitle>المساهمات المسجلة</CardTitle>
-          <CardDescription>قائمة بجميع المساهمات النقدية والنذور المسجلة.</CardDescription>
+          <CardTitle>سجل النذور النقدية</CardTitle>
+          <CardDescription>قائمة بجميع النذور النقدية المسجلة.</CardDescription>
         </div>
         {user?.permissions.contributions.add && (
           <Button asChild>
             <Link href="/contributions/new">
               <PlusCircle className="mr-2 h-4 w-4" />
-              إضافة مساهمة
+              إضافة نذر نقدي
             </Link>
           </Button>
         )}
@@ -114,7 +114,7 @@ export default function ContributionsClientPage({ contributions }: { contributio
                       <AlertDialogHeader>
                         <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
                         <AlertDialogDescription>
-                          سيتم حذف هذه المساهمة نهائيًا. سيؤثر هذا على أرصدة المحافظ. لا يمكن التراجع عن هذا الإجراء.
+                          سيتم حذف هذا النذر النقدي نهائيًا. سيؤثر هذا على أرصدة المحافظ. لا يمكن التراجع عن هذا الإجراء.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

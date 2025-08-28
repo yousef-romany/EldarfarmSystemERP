@@ -2,8 +2,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'إيصال مساهمة',
-  description: 'عرض وطباعة إيصال المساهمة النقدية',
+  title: 'إيصال نذر نقدي',
+  description: 'عرض وطباعة إيصال النذر النقدي',
 };
 
 export default function ReceiptLayout({

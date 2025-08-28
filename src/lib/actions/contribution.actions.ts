@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -35,7 +36,7 @@ export async function createContribution(prevState: ContributionState, formData:
 
   if (!session.user.permissions?.contributions?.add) {
     return {
-      message: 'ليس لديك الصلاحية لإضافة مساهمات.',
+      message: 'ليس لديك الصلاحية لإضافة نذور نقدية.',
       success: false,
     };
   }
@@ -62,7 +63,7 @@ export async function createContribution(prevState: ContributionState, formData:
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
   if (Math.abs(totalPaid - totalAmount) > 0.01) { // Use a tolerance for float comparison
-      return { message: 'مجموع الدفعات يجب أن يساوي المبلغ الإجمالي للمساهمة.', success: false };
+      return { message: 'مجموع الدفعات يجب أن يساوي المبلغ الإجمالي للنذر.', success: false };
   }
 
   try {
@@ -85,7 +86,7 @@ export async function createContribution(prevState: ContributionState, formData:
           contributionId: contribution.id,
           date: new Date(validatedFields.data.date),
           type: 'Income',
-          description: `مساهمة من ${donorName}: ${validatedFields.data.description}`
+          description: `نذر نقدي من ${donorName}: ${validatedFields.data.description}`
         }))
       });
 
@@ -104,7 +105,7 @@ export async function createContribution(prevState: ContributionState, formData:
           action: 'CREATE',
           entityType: 'CONTRIBUTION',
           entityId: contribution.id,
-          details: `تسجيل مساهمة جديدة من ${donorName} بقيمة ${totalAmount}.`
+          details: `تسجيل نذر نقدي جديد من ${donorName} بقيمة ${totalAmount}.`
         }
       });
     });
@@ -112,14 +113,14 @@ export async function createContribution(prevState: ContributionState, formData:
     revalidatePath('/contributions');
     revalidatePath('/daily-report');
     revalidatePath('/wallets');
-    return { message: 'تم تسجيل المساهمة بنجاح!', success: true };
+    return { message: 'تم تسجيل النذر النقدي بنجاح!', success: true };
 
   } catch (error) {
     console.error('Error creating contribution:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        return { message: `فشل في تسجيل المساهمة: ${error.message}`, success: false };
+        return { message: `فشل في تسجيل النذر النقدي: ${error.message}`, success: false };
     }
-    return { message: 'فشل في تسجيل المساهمة. حدث خطأ غير متوقع.', success: false };
+    return { message: 'فشل في تسجيل النذر النقدي. حدث خطأ غير متوقع.', success: false };
   }
 }
 
@@ -166,7 +167,7 @@ export async function getContributionById(id: string) {
 export async function updateContribution(contributionId: string, prevState: ContributionState, formData: FormData): Promise<ContributionState> {
     const session = await getSession();
     if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.contributions?.edit) {
-        return { message: "ليس لديك الصلاحية لتعديل المساهمات.", success: false };
+        return { message: "ليس لديك الصلاحية لتعديل النذور النقدية.", success: false };
     }
     
     const paymentsData = JSON.parse(formData.get('payments') as string || '[]');
@@ -217,7 +218,7 @@ export async function updateContribution(contributionId: string, prevState: Cont
                     contributionId: contributionId,
                     date: new Date(date),
                     type: 'Income',
-                    description: `(تعديل) مساهمة من ${donorName}: ${description}`
+                    description: `(تعديل) نذر نقدي من ${donorName}: ${description}`
                 }))
             });
 
@@ -247,7 +248,7 @@ export async function updateContribution(contributionId: string, prevState: Cont
                     action: 'UPDATE',
                     entityType: 'CONTRIBUTION',
                     entityId: contributionId,
-                    details: `تعديل بيانات المساهمة من ${donorName}.`
+                    details: `تعديل بيانات النذر النقدي من ${donorName}.`
                 }
             });
         });
@@ -256,10 +257,10 @@ export async function updateContribution(contributionId: string, prevState: Cont
         revalidatePath(`/contributions/edit/${contributionId}`);
         revalidatePath('/wallets');
         revalidatePath('/daily-report');
-        return { message: "تم تحديث المساهمة بنجاح!", success: true };
+        return { message: "تم تحديث النذر النقدي بنجاح!", success: true };
     } catch (error) {
         console.error("Error updating contribution:", error);
-        return { message: "فشل في تحديث المساهمة.", success: false };
+        return { message: "فشل في تحديث النذر النقدي.", success: false };
     }
 }
 
@@ -267,7 +268,7 @@ export async function updateContribution(contributionId: string, prevState: Cont
 export async function deleteContribution(id: string) {
     const session = await getSession();
     if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.contributions?.delete) {
-        return { message: 'ليس لديك الصلاحية لحذف المساهمات.', success: false };
+        return { message: 'ليس لديك الصلاحية لحذف النذور النقدية.', success: false };
     }
 
     try {
@@ -277,7 +278,7 @@ export async function deleteContribution(id: string) {
         });
 
         if (!contributionToDelete) {
-            throw new Error('المساهمة غير موجودة.');
+            throw new Error('النذر النقدي غير موجود.');
         }
 
         await prisma.$transaction(async (tx) => {
@@ -306,7 +307,7 @@ export async function deleteContribution(id: string) {
                     action: 'DELETE',
                     entityType: 'CONTRIBUTION',
                     entityId: id,
-                    details: `قام بحذف المساهمة من ${contributionToDelete.donorName} بقيمة ${contributionToDelete.totalAmount}.`
+                    details: `قام بحذف النذر النقدي من ${contributionToDelete.donorName} بقيمة ${contributionToDelete.totalAmount}.`
                 }
             });
         });
@@ -314,10 +315,10 @@ export async function deleteContribution(id: string) {
         revalidatePath('/contributions');
         revalidatePath('/wallets');
         revalidatePath('/daily-report');
-        return { message: 'تم حذف المساهمة بنجاح.', success: true };
+        return { message: 'تم حذف النذر النقدي بنجاح.', success: true };
 
     } catch (error) {
         console.error('Error deleting contribution:', error);
-        return { message: 'فشل في حذف المساهمة. قد تكون مرتبطة بسجلات أخرى.', success: false };
+        return { message: 'فشل في حذف النذر النقدي. قد تكون مرتبطة بسجلات أخرى.', success: false };
     }
 }

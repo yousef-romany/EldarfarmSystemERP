@@ -72,7 +72,7 @@ const ContributionReceiptPage = () => {
                             <Coins className="h-12 w-12 text-primary" />
                             <div>
                                 <h1 className="text-2xl font-bold">دير مار جرجس بالرزيقات</h1>
-                                <p className="text-muted-foreground">إيصال استلام مساهمة نقدية</p>
+                                <p className="text-muted-foreground">إيصال استلام نذر نقدي</p>
                             </div>
                         </div>
                         <div className="text-left">
@@ -82,12 +82,12 @@ const ContributionReceiptPage = () => {
                     </div>
                     <Separator className="my-6" />
                     <div>
-                        <h3 className="font-semibold mb-2">بيانات المساهم:</h3>
+                        <h3 className="font-semibold mb-2">بيانات الناذر:</h3>
                         <p>{contribution.donorName}</p>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0 mt-6">
-                    <h3 className="font-semibold text-lg mb-2">تفاصيل المساهمة</h3>
+                    <h3 className="font-semibold text-lg mb-2">تفاصيل النذر</h3>
                      <Table>
                         <TableHeader>
                             <TableRow>

@@ -73,7 +73,7 @@ export function SidebarNav() {
   const operationsItems = [
     { href: '/purchases', label: 'المشتريات', icon: ShoppingCart, permission: user?.permissions.purchases?.view },
     { href: '/vows', label: 'النذور الحية', icon: Gift, permission: user?.permissions.vows?.view },
-    { href: '/contributions', label: 'المساهمات النقدية', icon: Coins, permission: user?.permissions.contributions?.view },
+    { href: '/contributions', label: 'نذر حى نقدى', icon: Coins, permission: user?.permissions.contributions?.view },
     { href: '/expenses', label: 'المصروفات', icon: ClipboardList, permission: user?.permissions.expenses?.view },
     { href: '/wallets', label: 'المحافظ', icon: Wallet, permission: user?.permissions.wallets?.view },
   ];
