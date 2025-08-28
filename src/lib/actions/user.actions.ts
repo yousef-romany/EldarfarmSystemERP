@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { adminPermissions, defaultPermissions } from '@/lib/data';
+import { adminPermissions, managerPermissions, staffPermissions } from '@/lib/data';
 import { Prisma } from '@prisma/client';
 
 const UserRole = z.enum(['ADMIN', 'MANAGER', 'STAFF']);
@@ -66,7 +66,21 @@ export async function createUser(prevState: UserState, formData: FormData): Prom
   const { username, password, role } = validatedFields.data;
 
   // Assign permissions based on role
-  const permissions = role === 'ADMIN' ? adminPermissions : defaultPermissions;
+  let permissions;
+    switch (role) {
+        case 'ADMIN':
+            permissions = adminPermissions;
+            break;
+        case 'MANAGER':
+            permissions = managerPermissions;
+            break;
+        case 'STAFF':
+            permissions = staffPermissions;
+            break;
+        default:
+            permissions = staffPermissions;
+    }
+
 
   try {
     const user = await prisma.user.create({
@@ -124,6 +138,22 @@ export async function updateUser(userId: string, prevState: UpdateUserState, for
     }
     
     const { username, role } = validatedFields.data;
+    
+    // Assign permissions based on role
+    let permissions;
+    switch (role) {
+        case 'ADMIN':
+            permissions = adminPermissions;
+            break;
+        case 'MANAGER':
+            permissions = managerPermissions;
+            break;
+        case 'STAFF':
+            permissions = staffPermissions;
+            break;
+        default:
+            permissions = staffPermissions;
+    }
 
     try {
         const user = await prisma.user.update({
@@ -131,6 +161,7 @@ export async function updateUser(userId: string, prevState: UpdateUserState, for
             data: {
                 username,
                 role,
+                permissions: JSON.stringify(permissions),
             },
         });
 
@@ -140,7 +171,7 @@ export async function updateUser(userId: string, prevState: UpdateUserState, for
                 action: 'UPDATE',
                 entityType: 'USER',
                 entityId: user.id,
-                details: `قام بتحديث بيانات المستخدم: ${username}`
+                details: `قام بتحديث بيانات المستخدم: ${username} إلى دور ${role}`
             }
         });
 

@@ -3,22 +3,40 @@
 import type { UserPermissions } from './types';
 import type { Prisma } from '@prisma/client'
 
-export const defaultPermissions: UserPermissions = {
+export const staffPermissions: UserPermissions = {
   overview: { view: true, add: false, edit: false, delete: false, confirm: false },
   users: { view: false, add: false, edit: false, delete: false, confirm: false },
-  barns: { view: true, add: true, edit: true, delete: false, confirm: false },
-  livestockTypes: { view: true, add: true, edit: true, delete: false, confirm: false },
-  purchases: { view: true, add: true, edit: false, delete: false, confirm: false },
+  barns: { view: true, add: true, edit: false, delete: false, confirm: false },
+  livestockTypes: { view: true, add: true, edit: false, delete: false, confirm: false },
+  purchases: { view: true, add: true, edit: false, delete: false, confirm: false }, // Can create drafts
   sales: { view: true, add: false, edit: false, delete: false, confirm: false },
-  pos: { view: true, add: true, edit: false, delete: false, confirm: false },
-  deferredSales: { view: true, add: true, edit: false, delete: false, confirm: false },
-  vows: { view: true, add: true, edit: true, delete: false, confirm: false },
-  contributions: { view: true, add: true, edit: true, delete: false, confirm: false },
-  expenses: { view: true, add: true, edit: true, delete: false, confirm: false },
+  pos: { view: true, add: true, edit: false, delete: false, confirm: false }, // Can create drafts
+  deferredSales: { view: true, add: true, edit: false, delete: false, confirm: false }, // Can create drafts
+  vows: { view: true, add: true, edit: false, delete: false, confirm: false },
+  contributions: { view: true, add: true, edit: false, delete: false, confirm: false },
+  expenses: { view: true, add: true, edit: false, delete: false, confirm: false },
   wallets: { view: true, add: false, edit: false, delete: false, confirm: false },
   settings: { view: true, add: false, edit: false, delete: false, confirm: false },
   reports: { view: true, add: false, edit: false, delete: false, confirm: false },
 };
+
+export const managerPermissions: UserPermissions = {
+  overview: { view: true, add: false, edit: false, delete: false, confirm: false },
+  users: { view: true, add: true, edit: true, delete: false, confirm: false },
+  barns: { view: true, add: true, edit: true, delete: true, confirm: false },
+  livestockTypes: { view: true, add: true, edit: true, delete: true, confirm: false },
+  purchases: { view: true, add: true, edit: true, delete: true, confirm: true }, // Can confirm
+  sales: { view: true, add: true, edit: true, delete: true, confirm: true }, // Can confirm
+  pos: { view: true, add: true, edit: true, delete: true, confirm: true }, // Can confirm
+  deferredSales: { view: true, add: true, edit: true, delete: true, confirm: true }, // Can confirm
+  vows: { view: true, add: true, edit: true, delete: true, confirm: false },
+  contributions: { view: true, add: true, edit: true, delete: true, confirm: false },
+  expenses: { view: true, add: true, edit: true, delete: true, confirm: false },
+  wallets: { view: true, add: true, edit: true, delete: true, confirm: false },
+  settings: { view: true, add: false, edit: false, delete: false, confirm: false },
+  reports: { view: true, add: false, edit: false, delete: false, confirm: false },
+};
+
 
 export const adminPermissions: UserPermissions = {
   overview: { view: true, add: true, edit: true, delete: true, confirm: true },
