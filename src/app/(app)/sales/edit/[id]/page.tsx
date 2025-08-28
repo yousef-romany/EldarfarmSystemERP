@@ -1,4 +1,3 @@
-
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,16 +59,14 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
     const [totalPrice, setTotalPrice] = useState(sale.totalPrice);
     const [payments, setPayments] = useState<Partial<PaymentState[]>>(sale.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
     
-    // Use finalWeight for editing, which represents the current weight in the draft
-    const [finalWeight, setFinalWeight] = useState(sale.initialWeight || 0);
+    // Use initialWeight for editing drafts
+    const [weight, setWeight] = useState(sale.initialWeight || 0);
     const [pricePerKg, setPricePerKg] = useState(sale.pricePerKg || 0);
-
-    const isDeferred = sale.type === 'Deferred';
 
     // Recalculate total price if details change
     useEffect(() => {
-      setTotalPrice(finalWeight * pricePerKg);
-    }, [finalWeight, pricePerKg]);
+      setTotalPrice(weight * pricePerKg);
+    }, [weight, pricePerKg]);
 
     const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
     const remainingBalance = totalPrice - totalPaid;
@@ -124,7 +121,7 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
              <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p => p.walletId && p.amount))} />
              <input type="hidden" name="totalPrice" value={totalPrice} />
              <input type="hidden" name="pricePerKg" value={pricePerKg} />
-             <input type="hidden" name="finalWeight" value={finalWeight} />
+             <input type="hidden" name="initialWeight" value={weight} />
 
              <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -147,8 +144,8 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                 </CardHeader>
                 <CardContent className="grid md:grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="finalWeight">الوزن (كجم)</Label>
-                        <Input id="finalWeight" type="number" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} disabled={!canEdit}/>
+                        <Label htmlFor="initialWeight">الوزن (كجم)</Label>
+                        <Input id="initialWeight" type="number" value={weight} onChange={(e) => setWeight(parseFloat(e.target.value) || 0)} disabled={!canEdit}/>
                     </div>
                      <div className="grid gap-2">
                         <Label htmlFor="pricePerKg">سعر الكيلو (ج.م)</Label>

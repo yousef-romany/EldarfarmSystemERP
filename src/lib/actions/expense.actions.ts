@@ -1,4 +1,3 @@
-
 'use server';
 
 import { z } from 'zod';
@@ -283,18 +282,18 @@ export async function deleteExpense(id: string) {
     }
 
     try {
+        const expenseToDelete = await prisma.expense.findUnique({
+            where: { id },
+            include: { payments: true }
+        });
+
+        if (!expenseToDelete) {
+            throw new Error('المصروف غير موجود.');
+        }
+
         await prisma.$transaction(async (tx) => {
-            const expense = await tx.expense.findUnique({
-                where: { id },
-                include: { payments: true }
-            });
-
-            if (!expense) {
-                throw new Error('المصروف غير موجود.');
-            }
-
             // Reverse wallet transactions
-            for (const payment of expense.payments) {
+            for (const payment of expenseToDelete.payments) {
                 await tx.wallet.update({
                     where: { id: payment.walletId },
                     data: { balance: { increment: payment.amount } }
@@ -318,7 +317,7 @@ export async function deleteExpense(id: string) {
                     action: 'DELETE',
                     entityType: 'EXPENSE',
                     entityId: id,
-                    details: `قام بحذف المصروف: ${expense.description} بقيمة ${expense.amount}.`
+                    details: `قام بحذف المصروف: ${expenseToDelete.description} بقيمة ${expenseToDelete.amount}.`
                 }
             });
         });

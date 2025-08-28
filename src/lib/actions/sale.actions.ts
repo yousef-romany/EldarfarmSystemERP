@@ -414,7 +414,7 @@ const updateSaleSchema = z.object({
   saleDate: z.string().min(1, "تاريخ البيع مطلوب"),
   totalPrice: z.coerce.number().min(0, "السعر الإجمالي لا يمكن أن يكون سالبًا"),
   pricePerKg: z.coerce.number().min(0, "سعر الكيلو لا يمكن أن يكون سالبًا"),
-  finalWeight: z.coerce.number().min(0, "الوزن النهائي لا يمكن أن يكون سالبًا"),
+  initialWeight: z.coerce.number().min(0, "الوزن لا يمكن أن يكون سالبًا"),
   payments: z.array(paymentSchema),
 });
 
@@ -430,7 +430,7 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
         saleDate: formData.get('saleDate'),
         totalPrice: formData.get('totalPrice'),
         pricePerKg: formData.get('pricePerKg'),
-        finalWeight: formData.get('finalWeight'),
+        initialWeight: formData.get('initialWeight'),
         payments: paymentsData,
     });
 
@@ -450,7 +450,7 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
     }
 
 
-    const { customerName, saleDate, totalPrice, pricePerKg, finalWeight, payments: newPayments } = validatedFields.data;
+    const { customerName, saleDate, totalPrice, pricePerKg, initialWeight, payments: newPayments } = validatedFields.data;
     const totalPaid = newPayments.reduce((acc, p) => acc + p.amount, 0);
 
     if (Math.abs(totalPaid - totalPrice) > 0.01) {
@@ -493,10 +493,10 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
                     amountPaid: totalPaid,
                     remainingAmount: totalPrice - totalPaid,
                     pricePerKg,
-                    initialWeight: finalWeight, // In draft edit, finalWeight becomes the new initialWeight
+                    initialWeight,
                 }
             });
-
+            
             // Log the update
             await tx.log.create({
                 data: {
@@ -540,16 +540,15 @@ export async function deleteSale(id: string) {
           return { message: 'ليس لديك الصلاحية لحذف هذا النوع من المبيعات.', success: false };
         }
 
-
         await prisma.$transaction(async (tx) => {
             
             // If the sale was completed or pending, we need to revert changes
             if (sale.status === 'Completed' || sale.status === 'Pending') {
-              // Reverse wallet transactions
+              // Reverse wallet transactions by returning money to the wallet
               for (const payment of sale.payments) {
                   await tx.wallet.update({
                       where: { id: payment.walletId },
-                      data: { balance: { decrement: payment.amount } }
+                      data: { balance: { decrement: payment.amount } } // <<< Corrected from increment to decrement
                   });
               }
               

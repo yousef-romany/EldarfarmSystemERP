@@ -1,4 +1,3 @@
-
 'use server';
 
 import { z } from 'zod';
@@ -272,18 +271,18 @@ export async function deleteContribution(id: string) {
     }
 
     try {
+        const contributionToDelete = await prisma.contribution.findUnique({
+            where: { id },
+            include: { payments: true }
+        });
+
+        if (!contributionToDelete) {
+            throw new Error('المساهمة غير موجودة.');
+        }
+
         await prisma.$transaction(async (tx) => {
-            const contribution = await tx.contribution.findUnique({
-                where: { id },
-                include: { payments: true }
-            });
-
-            if (!contribution) {
-                throw new Error('المساهمة غير موجودة.');
-            }
-
             // Reverse wallet transactions
-            for (const payment of contribution.payments) {
+            for (const payment of contributionToDelete.payments) {
                 await tx.wallet.update({
                     where: { id: payment.walletId },
                     data: { balance: { decrement: payment.amount } }
@@ -307,7 +306,7 @@ export async function deleteContribution(id: string) {
                     action: 'DELETE',
                     entityType: 'CONTRIBUTION',
                     entityId: id,
-                    details: `قام بحذف المساهمة من ${contribution.donorName} بقيمة ${contribution.totalAmount}.`
+                    details: `قام بحذف المساهمة من ${contributionToDelete.donorName} بقيمة ${contributionToDelete.totalAmount}.`
                 }
             });
         });
