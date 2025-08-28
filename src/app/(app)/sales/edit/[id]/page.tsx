@@ -60,21 +60,16 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
     const [totalPrice, setTotalPrice] = useState(sale.totalPrice);
     const [payments, setPayments] = useState<Partial<PaymentState[]>>(sale.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
     
-    // State for deferred sale details
-    const [initialWeight] = useState(sale.initialWeight || 0);
-    const [finalWeight, setFinalWeight] = useState(sale.finalWeight || 0);
+    // Use finalWeight for editing, which represents the current weight in the draft
+    const [finalWeight, setFinalWeight] = useState(sale.initialWeight || 0);
     const [pricePerKg, setPricePerKg] = useState(sale.pricePerKg || 0);
 
     const isDeferred = sale.type === 'Deferred';
 
-    // Recalculate total price if it's a deferred sale and details change
+    // Recalculate total price if details change
     useEffect(() => {
-        if (isDeferred && sale.status !== 'Completed') {
-            setTotalPrice(initialWeight * pricePerKg);
-        } else if (isDeferred && sale.status === 'Completed') {
-            setTotalPrice(finalWeight * pricePerKg);
-        }
-    }, [initialWeight, finalWeight, pricePerKg, isDeferred, sale.status]);
+      setTotalPrice(finalWeight * pricePerKg);
+    }, [finalWeight, pricePerKg]);
 
     const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
     const remainingBalance = totalPrice - totalPaid;
@@ -103,6 +98,8 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
         newPayments[index] = payment;
         setPayments(newPayments);
     };
+    
+    const canEdit = sale.status === 'Draft';
 
 
   return (
@@ -113,18 +110,20 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                 <ChevronRight className="h-4 w-4" />
             </Link>
           </Button>
-          <PageHeader title={`تعديل عملية البيع #${sale.id.substring(0,8)}`} className='mb-0' />
+          <PageHeader title={`تعديل مسودة البيع #${sale.id.substring(0,8)}`} className='mb-0' />
       </div>
       <Card>
         <CardHeader>
           <CardDescription>
-            قم بتحديث بيانات عملية البيع أدناه.
-            {isDeferred && sale.status === 'Pending' && <span className='font-bold text-destructive'> (لم تتم التسوية بعد)</span>}
+            قم بتحديث بيانات مسودة البيع أدناه. لا يمكن تعديل العمليات بعد تأكيدها.
+            {!canEdit && <span className='font-bold text-destructive'> (تم تأكيد هذه العملية ولا يمكن تعديلها)</span>}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="grid gap-6" action={updateFormAction}>
              <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p => p.walletId && p.amount))} />
+             <input type="hidden" name="totalPrice" value={totalPrice} />
+             <input type="hidden" name="pricePerKg" value={pricePerKg} />
              <input type="hidden" name="finalWeight" value={finalWeight} />
 
              <div className="grid md:grid-cols-2 gap-4">
@@ -134,11 +133,11 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                 </div>
                  <div className="grid gap-2">
                     <Label htmlFor="customerName">اسم العميل</Label>
-                    <Input name="customerName" id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="اسم المشتري" />
+                    <Input name="customerName" id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="اسم المشتري" disabled={!canEdit} />
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor="saleDate">تاريخ البيع</Label>
-                    <Input name="saleDate" id="saleDate" type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
+                    <Input name="saleDate" id="saleDate" type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} disabled={!canEdit}/>
                 </div>
             </div>
 
@@ -147,25 +146,17 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                   <CardTitle className="text-lg">تفاصيل السعر والدفع</CardTitle>
                 </CardHeader>
                 <CardContent className="grid md:grid-cols-2 gap-4">
-                    {isDeferred && (
-                        <>
-                           <div className="grid gap-2">
-                                <Label htmlFor="initialWeight">الوزن المبدئي (كجم)</Label>
-                                <Input id="initialWeight" value={initialWeight} disabled />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="finalWeight">الوزن النهائي (كجم)</Label>
-                                <Input name="finalWeight" id="finalWeight" type="number" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} disabled={sale.status === 'Completed'} />
-                            </div>
-                        </>
-                    )}
+                    <div className="grid gap-2">
+                        <Label htmlFor="finalWeight">الوزن (كجم)</Label>
+                        <Input id="finalWeight" type="number" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} disabled={!canEdit}/>
+                    </div>
                      <div className="grid gap-2">
                         <Label htmlFor="pricePerKg">سعر الكيلو (ج.م)</Label>
-                        <Input name="pricePerKg" id="pricePerKg" type="number" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} />
+                        <Input id="pricePerKg" type="number" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} disabled={!canEdit}/>
                     </div>
-                    <div className="grid gap-2">
+                    <div className="grid gap-2 md:col-span-2">
                         <Label htmlFor="totalPrice">السعر الإجمالي (ج.م)</Label>
-                        <Input name="totalPrice" id="totalPrice" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} disabled={isDeferred} />
+                        <Input id="totalPrice" type="number" value={totalPrice} readOnly disabled={!canEdit}/>
                     </div>
                 </CardContent>
                  <CardContent className='space-y-4'>
@@ -175,7 +166,7 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                         <div key={payment?.id || index} className="flex items-end gap-2 p-2 border rounded-md">
                         <div className="grid gap-2 flex-1">
                             <Label htmlFor={`wallet-${index}`}>المحفظة / الحساب</Label>
-                            <Select value={payment?.walletId} onValueChange={(value) => handlePaymentChange(index, 'walletId', value)}>
+                            <Select value={payment?.walletId} onValueChange={(value) => handlePaymentChange(index, 'walletId', value)} disabled={!canEdit}>
                             <SelectTrigger id={`wallet-${index}`}>
                                 <SelectValue placeholder="اختر محفظة..." />
                             </SelectTrigger>
@@ -190,20 +181,21 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor={`amount-${index}`}>المبلغ</Label>
-                            <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
+                            <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} disabled={!canEdit}/>
                         </div>
                         <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemovePayment(index)}
+                            disabled={!canEdit}
                         >
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                         </div>
                     ))}
                     </div>
-                    <Button type="button" variant="outline" size="sm" onClick={handleAddPayment}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddPayment} disabled={!canEdit}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     إضافة دفعة أخرى
                     </Button>
@@ -238,7 +230,7 @@ export default function EditSalePage({ sale, wallets }: EditSalePageProps) {
                 <Button variant="outline" asChild type="button">
                     <Link href="/sales">إلغاء</Link>
                 </Button>
-                <SubmitButton disabled={remainingBalance !== 0} />
+                <SubmitButton disabled={!canEdit || remainingBalance !== 0} />
             </div>
           </form>
         </CardContent>

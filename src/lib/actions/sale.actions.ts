@@ -66,15 +66,12 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
   }
 
   const { livestockId, totalPrice, payments } = validatedFields.data;
-  const isDeferred = saleType === 'Deferred';
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
-  if (!isDeferred && Math.abs(totalPaid - totalPrice) > 0.01) {
-     return { message: 'في البيع الفوري، يجب أن يكون المبلغ المدفوع مساوياً للسعر الإجمالي.', success: false };
+  if (totalPaid === 0) {
+    return { message: 'يجب تسجيل دفعة واحدة على الأقل.', success: false };
   }
-   if (isDeferred && totalPaid === 0) {
-     return { message: 'في البيع الآجل، يجب دفع عربون.', success: false };
-  }
+
   if (totalPaid > totalPrice) {
     return { message: 'المبلغ المدفوع لا يمكن أن يكون أكبر من السعر الإجمالي.', success: false };
   }
@@ -86,25 +83,25 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     }
 
     await prisma.$transaction(async (tx) => {
-      // 1. Create Sale record
+      // 1. Create Sale record as Draft
       const sale = await tx.sale.create({
         data: {
           livestockId: validatedFields.data.livestockId,
           customerName: validatedFields.data.customerName,
           saleDate: new Date(validatedFields.data.saleDate),
           type: saleType,
-          status: isDeferred ? 'Pending' : 'Completed',
+          status: 'Draft', // <<< ALWAYS CREATE AS DRAFT
           pricePerKg: validatedFields.data.pricePerKg,
           initialWeight: validatedFields.data.initialWeight,
-          finalWeight: isDeferred ? null : validatedFields.data.initialWeight,
+          finalWeight: null,
           totalPrice: validatedFields.data.totalPrice,
           amountPaid: totalPaid,
           remainingAmount: totalPrice - totalPaid,
-          settlementDate: isDeferred ? null : new Date(),
+          settlementDate: null,
         }
       });
 
-      // 2. Create Payment records and link to sale
+      // 2. Create Payment records and link to sale draft
        if (payments.length > 0) {
         await tx.payment.createMany({
           data: payments.map(p => ({
@@ -113,62 +110,128 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
             saleId: sale.id,
             date: new Date(),
             type: 'Income',
-            description: `دفعة من بيع الحيوان/الدفعة رقم ${livestock.tagId || livestock.id}`
+            description: `[مسودة] دفعة من بيع الحيوان ${livestock.tagId || livestock.id}`
           }))
         });
       }
       
-      // 3. Update wallet balances
-      for (const payment of payments) {
-        await tx.wallet.update({
-          where: { id: payment.walletId },
-          data: { balance: { increment: payment.amount } },
-        });
-      }
+      // DO NOT update wallets, livestock status, or barn occupancy here.
 
-      // 4. Update Livestock status and barn occupancy
-      if (!livestock.isBatch) {
-        await tx.livestock.update({
-          where: { id: livestockId },
-          data: {
-            status: isDeferred ? 'PendingSale' : 'Sold',
-          }
-        });
-        if (!isDeferred) {
-           await tx.barn.update({
-              where: { id: livestock.barnId },
-              data: { currentOccupancy: { decrement: 1 } },
-          });
-        }
-      } else {
-        // TODO: Handle batch sale logic (e.g., decrementing quantity)
-      }
-
-
-      // 5. Create Log entry
+      // 3. Create Log entry for draft creation
       await tx.log.create({
         data: {
           userId: session.user.id,
           action: 'CREATE',
-          entityType: 'SALE',
+          entityType: 'SALE_DRAFT',
           entityId: sale.id,
-          details: `تسجيل عملية بيع ${isDeferred ? 'آجل' : 'فوري'} للحيوان ${livestock.tagId || livestock.id} للعميل ${validatedFields.data.customerName}.`
+          details: `تسجيل مسودة بيع ${saleType === 'Deferred' ? 'آجل' : 'فوري'} للعميل ${validatedFields.data.customerName}.`
         }
       });
     });
 
     revalidatePath('/sales', 'layout');
     revalidatePath('/dashboard');
-    return { message: `تم تسجيل عملية البيع ${isDeferred ? 'الآجل' : 'الفوري'} بنجاح!`, success: true };
+    return { message: `تم تسجيل مسودة البيع ${saleType === 'Deferred' ? 'الآجل' : 'الفوري'} بنجاح!`, success: true };
 
   } catch (error) {
-    console.error('Error creating sale:', error);
+    console.error('Error creating sale draft:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        return { message: `فشل في تسجيل البيع: ${error.message}`, success: false };
+        return { message: `فشل في تسجيل المسودة: ${error.message}`, success: false };
     }
-    return { message: 'فشل في تسجيل عملية البيع. حدث خطأ غير متوقع.', success: false };
+    return { message: 'فشل في تسجيل مسودة البيع. حدث خطأ غير متوقع.', success: false };
   }
 }
+
+type ConfirmSaleState = {
+  message?: string | null;
+  success?: boolean;
+}
+
+export async function confirmSale(prevState: ConfirmSaleState, formData: FormData): Promise<ConfirmSaleState> {
+  const session = await getSession();
+  if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.sales?.confirm) {
+    return { message: "ليس لديك الصلاحية لتأكيد المبيعات.", success: false };
+  }
+
+  const saleId = formData.get('saleId') as string;
+  if (!saleId) {
+    return { message: 'معرف البيع مطلوب.', success: false };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const sale = await tx.sale.findUnique({
+        where: { id: saleId },
+        include: { livestock: true, payments: true }
+      });
+
+      if (!sale || sale.status !== 'Draft') {
+        throw new Error("لا يمكن تأكيد هذه العملية.");
+      }
+
+      // Check wallet balances for all payments related to this sale
+      for (const payment of sale.payments) {
+        // This is an income, so no balance check is needed. We just increment.
+        await tx.wallet.update({
+          where: { id: payment.walletId },
+          data: { balance: { increment: payment.amount } }
+        });
+      }
+
+      const isDeferred = sale.type === 'Deferred';
+      const finalStatus = isDeferred ? 'Pending' : 'Completed';
+      
+      // Update livestock status
+      if (!sale.livestock.isBatch) {
+         await tx.livestock.update({
+          where: { id: sale.livestockId },
+          data: { status: isDeferred ? 'PendingSale' : 'Sold' }
+        });
+
+        // Decrement barn occupancy only for immediate, completed sales
+        if (!isDeferred) {
+           await tx.barn.update({
+              where: { id: sale.livestock.barnId },
+              data: { currentOccupancy: { decrement: 1 } },
+          });
+        }
+      }
+
+      // Update sale status to final state
+      await tx.sale.update({
+        where: { id: saleId },
+        data: { 
+          status: finalStatus,
+          // If it's an immediate sale, set settlement date and final weight now
+          settlementDate: isDeferred ? null : new Date(),
+          finalWeight: isDeferred ? null : sale.initialWeight,
+        }
+      });
+      
+      // Log the confirmation
+      await tx.log.create({
+        data: {
+          userId: session.user.id,
+          action: 'UPDATE',
+          entityType: 'SALE',
+          entityId: sale.id,
+          details: `تأكيد عملية البيع للعميل ${sale.customerName}.`
+        }
+      });
+    });
+
+    revalidatePath('/sales', 'layout');
+    revalidatePath('/dashboard');
+    revalidatePath('/wallets');
+    revalidatePath('/daily-report');
+    return { message: "تم تأكيد عملية البيع بنجاح!", success: true };
+
+  } catch(error: any) {
+    console.error("Error confirming sale:", error);
+    return { message: `فشل تأكيد العملية: ${error.message}`, success: false };
+  }
+}
+
 
 const settleSaleSchema = z.object({
   finalWeight: z.coerce.number().positive("الوزن النهائي يجب أن يكون أكبر من صفر"),
@@ -375,9 +438,13 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
         return { errors: validatedFields.error.flatten().fieldErrors, message: "بيانات غير صالحة.", success: false };
     }
     
-    const originalSale = await prisma.sale.findUnique({ where: { id: saleId } });
-    if (!originalSale) return { message: 'Sale not found', success: false };
-    const hasPermission = originalSale.type === 'Immediate' ? session.user.permissions?.pos?.edit : session.user.permissions?.deferredSales?.edit;
+    const originalSaleData = await prisma.sale.findUnique({ where: { id: saleId } });
+    if (!originalSaleData) return { message: 'Sale not found', success: false };
+    if (originalSaleData.status !== 'Draft') {
+        return { message: "لا يمكن تعديل عملية بيع تم تأكيدها.", success: false };
+    }
+
+    const hasPermission = originalSaleData.type === 'Immediate' ? session.user.permissions?.pos?.edit : session.user.permissions?.deferredSales?.edit;
      if (!hasPermission) {
         return { message: "ليس لديك الصلاحية لتعديل هذا النوع من المبيعات.", success: false };
     }
@@ -399,18 +466,12 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
 
             if (!originalSale) throw new Error("Sale not found");
 
-            // 1. Revert original payment amounts from wallets
-            for (const oldPayment of originalSale.payments) {
-                await tx.wallet.update({
-                    where: { id: oldPayment.walletId },
-                    data: { balance: { decrement: oldPayment.amount } }
-                });
-            }
-
-            // 2. Delete old payments
+            // No need to revert wallet balances as drafts don't affect them
+            
+            // Delete old payments
             await tx.payment.deleteMany({ where: { saleId: saleId } });
 
-            // 3. Create new payments
+            // Create new payments
             await tx.payment.createMany({
                 data: newPayments.map(p => ({
                     amount: p.amount,
@@ -418,20 +479,12 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
                     saleId: saleId,
                     date: new Date(saleDate),
                     type: 'Income',
-                    description: `(تعديل) دفعة من بيع للعميل ${customerName}`
+                    description: `[مسودة](تعديل) دفعة من بيع للعميل ${customerName}`
                 }))
             });
 
-            // 4. Apply new payment amounts to wallets
-            for (const newPayment of newPayments) {
-                await tx.wallet.update({
-                    where: { id: newPayment.walletId },
-                    data: { balance: { increment: newPayment.amount } }
-                });
-            }
-
-            // 5. Update the sale record itself
-            const updatedSale = await tx.sale.update({
+            // Update the sale record itself
+            await tx.sale.update({
                 where: { id: saleId },
                 data: {
                     customerName,
@@ -440,30 +493,28 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
                     amountPaid: totalPaid,
                     remainingAmount: totalPrice - totalPaid,
                     pricePerKg,
-                    finalWeight: originalSale.type === 'Deferred' ? finalWeight : originalSale.finalWeight,
+                    initialWeight: finalWeight, // In draft edit, finalWeight becomes the new initialWeight
                 }
             });
 
-            // 6. Log the update
+            // Log the update
             await tx.log.create({
                 data: {
                     userId: session.user.id,
                     action: 'UPDATE',
-                    entityType: 'SALE',
+                    entityType: 'SALE_DRAFT',
                     entityId: saleId,
-                    details: `تعديل بيانات عملية البيع للعميل ${customerName}.`
+                    details: `تعديل بيانات مسودة البيع للعميل ${customerName}.`
                 }
             });
         });
 
         revalidatePath('/sales', 'layout');
         revalidatePath(`/sales/edit/${saleId}`);
-        revalidatePath('/wallets');
-        revalidatePath('/daily-report');
-        return { message: "تم تحديث عملية البيع بنجاح!", success: true };
+        return { message: "تم تحديث مسودة البيع بنجاح!", success: true };
     } catch (error) {
         console.error("Error updating sale:", error);
-        return { message: "فشل في تحديث عملية البيع.", success: false };
+        return { message: "فشل في تحديث مسودة البيع.", success: false };
     }
 }
 
@@ -484,7 +535,7 @@ export async function deleteSale(id: string) {
             throw new Error('عملية البيع غير موجودة.');
         }
         
-        const hasPermission = sale.type === 'Immediate' ? session.user.permissions?.pos?.delete : session.user.permissions?.deferredSales?.delete;
+        const hasPermission = session.user.permissions?.sales?.delete;
         if (!hasPermission) {
           return { message: 'ليس لديك الصلاحية لحذف هذا النوع من المبيعات.', success: false };
         }
@@ -492,27 +543,31 @@ export async function deleteSale(id: string) {
 
         await prisma.$transaction(async (tx) => {
             
-            // Reverse wallet transactions
-            for (const payment of sale.payments) {
-                await tx.wallet.update({
-                    where: { id: payment.walletId },
-                    data: { balance: { decrement: payment.amount } }
-                });
-            }
-            
-            // Revert livestock status and update barn occupancy if not batch
-            if (!sale.livestock.isBatch) {
-               await tx.livestock.update({
-                 where: { id: sale.livestockId },
-                 data: { status: 'Available' }
-               });
-               // Only increment occupancy if the sale was completed
-               if (sale.status === 'Completed') {
-                  await tx.barn.update({
-                    where: { id: sale.livestock.barnId },
-                    data: { currentOccupancy: { increment: 1 } }
+            // If the sale was completed or pending, we need to revert changes
+            if (sale.status === 'Completed' || sale.status === 'Pending') {
+              // Reverse wallet transactions
+              for (const payment of sale.payments) {
+                  await tx.wallet.update({
+                      where: { id: payment.walletId },
+                      data: { balance: { decrement: payment.amount } }
                   });
-               }
+              }
+              
+              // Revert livestock status and update barn occupancy if not batch
+              if (!sale.livestock.isBatch) {
+                await tx.livestock.update({
+                  where: { id: sale.livestockId },
+                  data: { status: 'Available' }
+                });
+                
+                // Only increment occupancy if the sale was fully completed (not just pending)
+                if (sale.status === 'Completed') {
+                    await tx.barn.update({
+                      where: { id: sale.livestock.barnId },
+                      data: { currentOccupancy: { increment: 1 } }
+                    });
+                }
+              }
             }
 
 
@@ -533,7 +588,7 @@ export async function deleteSale(id: string) {
                     action: 'DELETE',
                     entityType: 'SALE',
                     entityId: id,
-                    details: `قام بحذف عملية البيع للعميل ${sale.customerName}.`
+                    details: `قام بحذف/إلغاء عملية البيع للعميل ${sale.customerName}.`
                 }
             });
         });

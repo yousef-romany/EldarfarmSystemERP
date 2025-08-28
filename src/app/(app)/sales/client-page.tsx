@@ -1,6 +1,6 @@
 
 'use client';
-import { MoreHorizontal, Trash2, Printer, Pencil, ArrowDownUp } from 'lucide-react';
+import { MoreHorizontal, Trash2, Printer, Pencil, ArrowDownUp, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,11 +17,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle } from 'lucide-react';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { settleSale, deleteSale } from '@/lib/actions/sale.actions';
+import { settleSale, deleteSale, confirmSale } from '@/lib/actions/sale.actions';
 import type { Livestock, Sale, Wallet } from '@prisma/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { useSession } from '@/components/session-provider';
 
 
 type SaleWithLivestock = Sale & {
@@ -49,6 +50,7 @@ function SubmitButton({ text, disabled, name, value, variant }: { text: string, 
 
 export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLivestock[], wallets: Wallet[]}) {
   const { toast } = useToast();
+  const { user } = useSession();
 
   // State for Deferred Sale Settlement
   const [isSettlementDialogOpen, setIsSettlementDialogOpen] = useState(false);
@@ -65,6 +67,10 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
   // Form state for settlement action
   const settleSaleWithId = settlementSale ? settleSale.bind(null, settlementSale.id) : async () => {};
   const [settleState, settleFormAction] = useActionState(settleSaleWithId, { message: null, errors: {}, success: false });
+
+  // Form state for confirmation action
+  const [confirmState, confirmFormAction] = useActionState(confirmSale, { message: null, success: false });
+
 
   const getAnimalTag = (sale: SaleWithLivestock) => {
     const { livestock } = sale;
@@ -94,6 +100,14 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
         toast({ title: 'خطأ', description: settleState.message, variant: 'destructive' });
     }
   }, [settleState, toast])
+
+  useEffect(() => {
+    if (confirmState.success) {
+      toast({ title: 'نجاح', description: confirmState.message });
+    } else if (confirmState.message && !confirmState.success) {
+      toast({ title: 'خطأ', description: confirmState.message, variant: 'destructive' });
+    }
+  }, [confirmState, toast]);
   
 
   // Handlers for Deferred Sale Settlement
@@ -130,10 +144,19 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
     setSettlementPayments(newPayments);
   };
 
+  const getStatusBadge = (status: Sale['status']) => {
+    switch (status) {
+      case 'Draft': return <Badge variant="secondary">مسودة</Badge>;
+      case 'Pending': return <Badge variant="outline">قيد التسوية</Badge>;
+      case 'Completed': return <Badge variant="default">مكتمل</Badge>;
+      case 'Cancelled': return <Badge variant="destructive">ملغاة</Badge>;
+      default: return <Badge>{status}</Badge>;
+    }
+  }
+
 
   return (
     <>
-      <PageHeader title="سجل المبيعات" />
       <Card>
           <CardHeader>
               <CardTitle>قائمة عمليات البيع</CardTitle>
@@ -143,11 +166,11 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
               <Table>
                   <TableHeader>
                   <TableRow>
+                      <TableHead>الحالة</TableHead>
                       <TableHead>العميل</TableHead>
                       <TableHead>الحيوان</TableHead>
                       <TableHead>تاريخ البيع</TableHead>
-                        <TableHead>النوع</TableHead>
-                      <TableHead>الحالة</TableHead>
+                      <TableHead>النوع</TableHead>
                       <TableHead>
                       <span className="sr-only">الإجراءات</span>
                       </TableHead>
@@ -156,7 +179,8 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
                   <TableBody>
                   {sales.map((sale) => (
                       <AlertDialog key={sale.id}>
-                      <TableRow>
+                      <TableRow className={sale.status === 'Draft' ? 'bg-muted/50' : ''}>
+                          <TableCell>{getStatusBadge(sale.status)}</TableCell>
                           <TableCell className="font-medium">{sale.customerName}</TableCell>
                           <TableCell>{getAnimalTag(sale)}</TableCell>
                           <TableCell>{format(new Date(sale.saleDate), 'yyyy-MM-dd')}</TableCell>
@@ -166,64 +190,91 @@ export default function SalesPageClient({ sales, wallets }: { sales: SaleWithLiv
                               </Badge>
                           </TableCell>
                           <TableCell>
-                          <Badge variant={sale.status === 'Completed' ? 'default' : 'secondary'}>
-                              {sale.status === 'Completed' ? 'مكتمل' : 'قيد الانتظار'}
-                          </Badge>
-                          </TableCell>
-                          <TableCell>
-                          <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                              <Button aria-haspopup="true" size="icon" variant="ghost">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">فتح القائمة</span>
-                              </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                                  {sale.status === 'Pending' && (
-                                      <DropdownMenuItem onClick={() => openSettlementDialog(sale)}>
-                                          <ArrowDownUp className="mr-2 h-4 w-4" />
-                                          تحديث الوزن و إتمام البيع
-                                      </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem asChild>
-                                      <Link href={`/sales/edit/${sale.id}`}>
-                                          <Pencil className="mr-2 h-4 w-4" />
-                                          تعديل
-                                      </Link>
+                            <form action={confirmFormAction}>
+                              <input type="hidden" name="saleId" value={sale.id} />
+                              <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                  <Button aria-haspopup="true" size="icon" variant="ghost">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                      <span className="sr-only">فتح القائمة</span>
+                                  </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                                      {sale.status === 'Draft' && user?.permissions.sales.confirm && (
+                                          <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem className="text-green-600" onSelect={(e) => e.preventDefault()}>
+                                              <CheckCircle className="mr-2 h-4 w-4" />
+                                              تأكيد العملية
+                                            </DropdownMenuItem>
+                                          </AlertDialogTrigger>
+                                      )}
+                                      {sale.status === 'Pending' && user?.permissions.deferredSales.edit && (
+                                          <DropdownMenuItem onClick={() => openSettlementDialog(sale)}>
+                                              <ArrowDownUp className="mr-2 h-4 w-4" />
+                                              تحديث الوزن و إتمام البيع
+                                          </DropdownMenuItem>
+                                      )}
+                                      {sale.status === 'Draft' && (
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/sales/edit/${sale.id}`}>
+                                                <Pencil className="mr-2 h-4 w-4" />
+                                                تعديل
+                                            </Link>
+                                        </DropdownMenuItem>
+                                      )}
+                                  <DropdownMenuItem onClick={() => handlePrint(sale.id)}>
+                                      <Printer className="mr-2 h-4 w-4" />
+                                      طباعة الفاتورة
                                   </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handlePrint(sale.id)}>
-                                  <Printer className="mr-2 h-4 w-4" />
-                                  طباعة الفاتورة
-                              </DropdownMenuItem>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  إلغاء العملية
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              </DropdownMenuContent>
-                          </DropdownMenu>
+                                  {user?.permissions.sales.delete && (
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        إلغاء العملية
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                  )}
+                                  </DropdownMenuContent>
+                              </DropdownMenu>
+                               <AlertDialogContent>
+                                {sale.status === 'Draft' ? (
+                                    <>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>تأكيد عملية البيع؟</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                            سيؤدي هذا الإجراء إلى إتمام عملية البيع، وخصم المبلغ من المحفظة، وتغيير حالة الحيوان. لا يمكن التراجع عن هذا الإجراء.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                            <Button type="submit">نعم، قم بالتأكيد</Button>
+                                        </AlertDialogFooter>
+                                    </>
+                                ) : (
+                                    <>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                          سيتم إلغاء هذه العملية نهائيًا. سيؤثر هذا على أرصدة المحافظ وحالة الحيوان. لا يمكن التراجع عن هذا الإجراء.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => handleDelete(sale.id)}
+                                            className="bg-destructive hover:bg-destructive/90"
+                                          >
+                                            نعم، قم بالحذف
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </>
+                                )}
+                              </AlertDialogContent>
+                              </form>
                           </TableCell>
                       </TableRow>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
-                              <AlertDialogDescription>
-                              سيتم إلغاء هذه العملية نهائيًا. سيؤثر هذا على أرصدة المحافظ وحالة الحيوان. لا يمكن التراجع عن هذا الإجراء.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                              <AlertDialogAction
-                              onClick={() => handleDelete(sale.id)}
-                              className="bg-destructive hover:bg-destructive/90"
-                              >
-                              نعم، قم بالحذف
-                              </AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                      </AlertDialog>
                       ))}
                   </TableBody>
               </Table>
