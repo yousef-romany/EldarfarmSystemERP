@@ -40,6 +40,10 @@ export default async function PurchasesPage() {
     payments: p.payments.map(payment => ({
       ...payment,
       amount: payment.amount.toNumber(),
+      wallet: {
+        ...payment.wallet,
+        balance: payment.wallet.balance.toNumber(),
+      }
     }))
   }));
 

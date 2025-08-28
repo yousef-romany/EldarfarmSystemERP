@@ -52,7 +52,10 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
   const { toast } = useToast();
   const { user } = useSession();
   const [createState, createFormAction] = useActionState(createPurchase, { message: null, errors: {}, success: false });
-  const [confirmState, confirmFormAction] = useActionState(confirmPurchase, { message: null, success: false });
+  
+  // Use a different variable name for confirm action to avoid conflict
+  const [confirmPurchaseState, confirmPurchaseAction] = useActionState(confirmPurchase, { message: null, success: false });
+
 
   const [registrationType, setRegistrationType] = useState('individual');
   const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);
@@ -71,19 +74,20 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
   }, [createState, toast]);
 
   useEffect(() => {
-    if (confirmState.success) {
-      toast({ title: 'نجاح', description: confirmState.message });
-    } else if (confirmState.message && !confirmState.success) {
-      toast({ title: 'خطأ', description: confirmState.message, variant: 'destructive' });
+    if (confirmPurchaseState.success) {
+      toast({ title: 'نجاح', description: confirmPurchaseState.message });
+    } else if (confirmPurchaseState.message && !confirmPurchaseState.success) {
+      toast({ title: 'خطأ', description: confirmPurchaseState.message, variant: 'destructive' });
     }
-  }, [confirmState, toast]);
+  }, [confirmPurchaseState, toast]);
+
 
   const resetFormState = () => {
     setRegistrationType('individual');
     setPayments([{}]);
     setTotalCost(0);
     // You might need to reset the form itself if it's not part of this component's state
-    const form = document.querySelector('form');
+    const form = document.getElementById('new-purchase-form') as HTMLFormElement;
     form?.reset();
   };
   
@@ -167,7 +171,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                           <TableCell>{p.supplier || 'غير محدد'}</TableCell>
                           <TableCell>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(p.totalCost as number)}</TableCell>
                           <TableCell>
-                             <form action={confirmFormAction}>
+                             <form>
                               <input type="hidden" name="purchaseId" value={p.id} />
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -186,7 +190,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                                       </DropdownMenuItem>
                                     </AlertDialogTrigger>
                                    )}
-                                  {user?.permissions.purchases.edit && (
+                                  {p.status === 'Draft' && user?.permissions.purchases.edit && (
                                     <DropdownMenuItem disabled>
                                       <Pencil className="mr-2 h-4 w-4" />
                                       تعديل (قريبًا)
@@ -203,7 +207,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                                 </DropdownMenuContent>
                               </DropdownMenu>
                               <AlertDialogContent>
-                                {p.status === 'Draft' ? (
+                                {p.status === 'Draft' && user?.permissions.purchases.confirm ? (
                                     <>
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>تأكيد عملية الشراء؟</AlertDialogTitle>
@@ -213,7 +217,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                             <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                            <Button type="submit" formAction={confirmFormAction}>نعم، قم بالتأكيد</Button>
+                                            <Button type="submit" formAction={confirmPurchaseAction}>نعم، قم بالتأكيد</Button>
                                         </AlertDialogFooter>
                                     </>
                                 ) : (
@@ -260,7 +264,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
               <CardDescription>املأ النموذج أدناه لحفظ عملية الشراء كمسودة. يجب على المدير تأكيدها لاحقًا.</CardDescription>
             </CardHeader>
             <CardContent>
-               <form className="grid gap-6" action={createFormAction}>
+               <form id="new-purchase-form" className="grid gap-6" action={createFormAction}>
                   <input type="hidden" name="isBatch" value={String(registrationType === 'batch')} />
                   <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p => p.walletId && p.amount))} />
 
@@ -376,7 +380,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets, pu
                  </Card>
 
                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" type="button">إلغاء</Button>
+                    <Button variant="outline" type="button" onClick={resetFormState}>إلغاء</Button>
                     <SubmitButton disabled={!totalCost || remainingBalance !== 0} />
                 </div>
                </form>
