@@ -31,13 +31,19 @@ export async function GET(request: Request) {
     // Fetch all wallets' current balances
     const wallets = await prisma.wallet.findMany();
     
-    // Fetch payments for the given day
+    // Fetch COMPLETED payments for the given day
     const payments = await prisma.payment.findMany({
       where: {
         date: {
           gte: startDate,
           lte: endDate,
         },
+        OR: [
+          { sale: { status: 'Completed' } },
+          { purchase: { status: 'Completed' } },
+          { expenseId: { not: null } },
+          { contributionId: { not: null } },
+        ]
       },
       include: {
         expense: true,

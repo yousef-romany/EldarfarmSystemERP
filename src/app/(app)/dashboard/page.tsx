@@ -1,4 +1,5 @@
 
+
 import { Suspense } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { prisma } from '@/lib/prisma';
@@ -18,7 +19,7 @@ export default async function DashboardPage() {
     prisma.barn.count(),
     prisma.livestock.aggregate({
       _sum: { cost: true },
-      where: { status: { in: ['Available', 'Vowed', 'PendingSale', 'Quarantined'] } }
+      where: { status: { not: 'Sold' } }
     }),
     prisma.livestock.groupBy({
       by: ['status'],

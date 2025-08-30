@@ -30,7 +30,7 @@ const purchaseSchema = z.object({
   payments: z.array(paymentSchema),
 });
 
-type PurchaseState = {
+export type PurchaseState = {
   errors?: z.ZodError<typeof purchaseSchema>['formErrors']['fieldErrors'];
   message?: string | null;
   success?: boolean;
@@ -84,36 +84,20 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
 
   try {
     await prisma.$transaction(async (tx) => {
-      // 1. Create Livestock but keep it quarantined as it's a draft
-      const livestock = await tx.livestock.create({
-        data: {
-          isBatch: livestockData.isBatch,
-          tagId: livestockData.tagId,
-          quantity: livestockData.quantity,
-          livestockTypeId: livestockData.livestockTypeId,
-          breed: livestockData.breed,
-          weight: livestockData.weight,
-          age: livestockData.age,
-          barnId: livestockData.barnId,
-          status: 'Quarantined', // Keep it in a non-available state
-          cost: totalCost,
-        }
-      });
-
-      // 2. Create Purchase record with Draft status
+      // 1. Create Purchase record with Draft status and store livestock data within it
       const purchase = await tx.purchase.create({
         data: {
-          livestockId: livestock.id,
           supplier: supplier,
           purchaseDate: new Date(purchaseDate),
           totalCost: totalCost,
           amountPaid: totalPaid,
           remainingAmount: totalCost - totalPaid,
-          status: 'Draft', // Set status to Draft
+          status: 'Draft',
+          livestockData: livestockData as any, // Store livestock data as JSON
         }
       });
       
-      // 3. Create Payment records but link them to the purchase draft
+      // 2. Create Payment records and link them to the purchase draft
       if (payments.length > 0) {
         await tx.payment.createMany({
           data: payments.map(p => ({
@@ -122,21 +106,21 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
             purchaseId: purchase.id,
             date: new Date(),
             type: 'Expense',
-            description: `[مسودة] دفعة لشراء ${livestock.tagId || livestock.id}`
+            description: `[مسودة] دفعة لشراء`
           }))
         });
       }
 
-      // DO NOT update wallet or barn occupancy yet. This happens on confirmation.
+      // DO NOT create livestock record, update wallet, or update barn occupancy yet.
 
-      // 4. Create Log entry for draft creation
+      // 3. Create Log entry for draft creation
       await tx.log.create({
         data: {
           userId: session.user!.id,
           action: 'CREATE',
           entityType: 'PURCHASE_DRAFT',
           entityId: purchase.id,
-          details: `إنشاء مسودة شراء للحيوان ${livestock.tagId || livestock.id} بتكلفة ${totalCost}.`
+          details: `إنشاء مسودة شراء بتكلفة ${totalCost}.`
         }
       });
     });
@@ -146,12 +130,6 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
 
   } catch (error) {
     console.error('Error creating purchase draft:', error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002' && (error.meta?.target as string[])?.includes('tagId')) {
-            return { message: `فشل في حفظ المسودة: الرقم التعريفي '${validatedFields.data.tagId}' مستخدم بالفعل.`, success: false };
-       }
-        return { message: `فشل في حفظ المسودة: ${error.message}`, success: false };
-    }
      if (error instanceof Prisma.PrismaClientValidationError) {
         return { message: `فشل في التحقق من صحة البيانات: ${error.message}`, success: false };
     }
@@ -183,18 +161,18 @@ export async function confirmPurchase(prevState: ConfirmState, formData: FormDat
         await prisma.$transaction(async (tx) => {
             const purchase = await tx.purchase.findUnique({
                 where: { id: purchaseId },
-                include: { livestock: true, payments: true }
+                include: { payments: true }
             });
 
             if (!purchase || purchase.status !== 'Draft') {
                 throw new Error("لا يمكن تأكيد هذه العملية. قد تكون مكتملة بالفعل أو ملغاة.");
             }
-
-            const { livestock, payments } = purchase;
-            const occupancyNeeded = livestock.quantity || 1;
+            
+            const livestockData = purchase.livestockData as any;
+            const occupancyNeeded = livestockData.quantity || 1;
 
             // 1. Check wallet balances
-            for (const payment of payments) {
+            for (const payment of purchase.payments) {
                 const wallet = await tx.wallet.findUnique({ where: { id: payment.walletId } });
                 if (!wallet || wallet.balance.toNumber() < payment.amount.toNumber()) {
                     throw new Error(`رصيد محفظة "${wallet?.name}" غير كافٍ لإتمام عملية الدفع.`);
@@ -202,35 +180,48 @@ export async function confirmPurchase(prevState: ConfirmState, formData: FormDat
             }
             
             // 2. Check barn capacity
-            const barn = await tx.barn.findUnique({ where: { id: livestock.barnId } });
+            const barn = await tx.barn.findUnique({ where: { id: livestockData.barnId } });
             if (!barn || barn.capacity - barn.currentOccupancy < occupancyNeeded) {
                 throw new Error('سعة العنبر المحددة غير كافية.');
             }
             
-            // 3. Update wallet balances by decrementing
-            for (const payment of payments) {
+             // 3. Create the actual livestock record
+            const livestock = await tx.livestock.create({
+              data: {
+                isBatch: livestockData.isBatch,
+                tagId: livestockData.tagId,
+                quantity: livestockData.quantity,
+                livestockTypeId: livestockData.livestockTypeId,
+                breed: livestockData.breed,
+                weight: livestockData.weight,
+                age: livestockData.age,
+                barnId: livestockData.barnId,
+                status: 'Available',
+                cost: purchase.totalCost,
+                purchaseId: purchase.id
+              }
+            });
+
+
+            // 4. Update wallet balances by decrementing
+            for (const payment of purchase.payments) {
                 await tx.wallet.update({
                     where: { id: payment.walletId },
                     data: { balance: { decrement: payment.amount } }
                 });
             }
             
-            // 4. Update barn occupancy
+            // 5. Update barn occupancy
             await tx.barn.update({
-                where: { id: livestock.barnId },
+                where: { id: livestockData.barnId },
                 data: { currentOccupancy: { increment: occupancyNeeded } }
             });
             
-            // 5. Update livestock status to 'Available'
-            await tx.livestock.update({
-                where: { id: livestock.id },
-                data: { status: 'Available' }
-            });
             
             // 6. Update purchase status to 'Completed'
             await tx.purchase.update({
                 where: { id: purchaseId },
-                data: { status: 'Completed' }
+                data: { status: 'Completed', livestockId: livestock.id }
             });
 
             // 7. Log the confirmation
@@ -284,12 +275,18 @@ export async function deletePurchase(id: string) {
                     });
                 }
 
-                // 2. Decrement barn occupancy
-                const occupancyToDecrement = purchase.livestock.quantity || 1;
-                await tx.barn.update({
-                    where: { id: purchase.livestock.barnId },
-                    data: { currentOccupancy: { decrement: occupancyToDecrement } }
-                });
+                // 2. Decrement barn occupancy if livestock exists
+                if (purchase.livestock) {
+                    const occupancyToDecrement = purchase.livestock.quantity || 1;
+                    await tx.barn.update({
+                        where: { id: purchase.livestock.barnId },
+                        data: { currentOccupancy: { decrement: occupancyToDecrement } }
+                    });
+                     // 5. Delete the livestock record
+                    await tx.livestock.delete({
+                        where: { id: purchase.livestockId! }
+                    });
+                }
             }
 
 
@@ -303,11 +300,6 @@ export async function deletePurchase(id: string) {
                 where: { id }
             });
 
-            // 5. Delete the livestock record
-            await tx.livestock.delete({
-                where: { id: purchase.livestockId }
-            });
-
             // 6. Log the deletion
             await tx.log.create({
                 data: {
@@ -315,7 +307,7 @@ export async function deletePurchase(id: string) {
                     action: 'DELETE',
                     entityType: 'PURCHASE',
                     entityId: id,
-                    details: `قام بحذف عملية الشراء للحيوان ${purchase.livestock.tagId || purchase.livestock.id}.`
+                    details: `قام بحذف عملية الشراء.`
                 }
             });
         });
@@ -364,11 +356,12 @@ export async function getPurchaseById(id: string) {
             totalCost: purchase.totalCost.toNumber(),
             amountPaid: purchase.amountPaid.toNumber(),
             remainingAmount: purchase.remainingAmount.toNumber(),
-            livestock: {
+            livestock: purchase.livestock ? {
                 ...purchase.livestock,
                 weight: purchase.livestock.weight.toNumber(),
                 cost: purchase.livestock.cost.toNumber(),
-            },
+            } : null,
+            livestockData: purchase.livestockData as any,
             payments: purchase.payments.map(p => ({
                 ...p,
                 amount: p.amount.toNumber(),
@@ -443,28 +436,12 @@ export async function updatePurchase(purchaseId: string, prevState: PurchaseStat
                         purchaseId: purchaseId,
                         date: new Date(),
                         type: 'Expense',
-                        description: `[مسودة](تعديل) دفعة لشراء ${livestockData.tagId || originalPurchase.livestockId}`
+                        description: `[مسودة](تعديل) دفعة لشراء`
                     }))
                 });
             }
 
-            // 3. Update livestock record
-            await tx.livestock.update({
-                where: { id: originalPurchase.livestockId },
-                data: {
-                    isBatch: livestockData.isBatch,
-                    tagId: livestockData.tagId,
-                    quantity: livestockData.quantity,
-                    livestockTypeId: livestockData.livestockTypeId,
-                    breed: livestockData.breed,
-                    weight: livestockData.weight,
-                    age: livestockData.age,
-                    barnId: livestockData.barnId,
-                    cost: totalCost,
-                }
-            });
-
-            // 4. Update Purchase record
+            // 3. Update Purchase record
             await tx.purchase.update({
                 where: { id: purchaseId },
                 data: {
@@ -473,17 +450,18 @@ export async function updatePurchase(purchaseId: string, prevState: PurchaseStat
                     totalCost: totalCost,
                     amountPaid: totalPaid,
                     remainingAmount: totalCost - totalPaid,
+                    livestockData: livestockData as any
                 }
             });
 
-            // 5. Log the update
+            // 4. Log the update
             await tx.log.create({
                 data: {
                     userId: session.user!.id,
                     action: 'UPDATE',
                     entityType: 'PURCHASE_DRAFT',
                     entityId: purchaseId,
-                    details: `تعديل مسودة الشراء للحيوان ${livestockData.tagId || originalPurchase.livestockId}.`
+                    details: `تعديل مسودة الشراء.`
                 }
             });
         });

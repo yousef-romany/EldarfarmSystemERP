@@ -39,7 +39,6 @@ export default async function BarnLivestockPage({ params }: { params: { id: stri
     switch (status) {
       case 'Available': return 'default';
       case 'Sold': return 'destructive';
-      case 'Quarantined': return 'secondary';
       case 'Vowed': return 'secondary';
       case 'PendingSale': return 'secondary';
       default: return 'outline';
@@ -50,7 +49,6 @@ export default async function BarnLivestockPage({ params }: { params: { id: stri
     switch (status) {
       case 'Available': return 'متاح';
       case 'Sold': return 'مباع';
-      case 'Quarantined': return 'في الحجر';
       case 'Vowed': return 'نذر';
       case 'PendingSale': return 'بيع آجل';
       default: return status;
@@ -141,5 +139,3 @@ export default async function BarnLivestockPage({ params }: { params: { id: stri
     </>
   );
 }
-
-    

@@ -58,7 +58,7 @@ export type Livestock = {
   weight: number; // in kg - for batches, this can be average weight
   age: number; // in months
   barnId: string;
-  status: 'Available' | 'Sold' | 'Quarantined' | 'Vowed' | 'PendingSale';
+  status: 'Available' | 'Sold' | 'Vowed' | 'PendingSale';
   isBatch?: boolean;
   quantity?: number;
 };
