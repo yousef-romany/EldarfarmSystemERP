@@ -234,7 +234,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                                   </DropdownMenuItem>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
-                                  <form action={confirmPurchaseAction}>
+                                  <form id={`confirm-form-${p.id}`} action={confirmPurchaseAction}>
                                     <input type="hidden" name="purchaseId" value={p.id} />
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>تأكيد عملية الشراء؟</AlertDialogTitle>
@@ -244,7 +244,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                      <Button type="submit">نعم، قم بالتأكيد</Button>
+                                      <Button type="submit" form={`confirm-form-${p.id}`}>نعم، قم بالتأكيد</Button>
                                     </AlertDialogFooter>
                                   </form>
                                 </AlertDialogContent>
