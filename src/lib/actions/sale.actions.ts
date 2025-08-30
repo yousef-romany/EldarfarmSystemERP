@@ -453,7 +453,7 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
     const { customerName, saleDate, totalPrice, pricePerKg, initialWeight, payments: newPayments } = validatedFields.data;
     const totalPaid = newPayments.reduce((acc, p) => acc + p.amount, 0);
 
-    if (Math.abs(totalPaid - totalPrice) > 0.01) {
+     if (Math.abs(totalPaid - totalPrice) > 0.01) {
         return { message: "مجموع الدفعات يجب أن يساوي السعر الإجمالي المحدث.", success: false };
     }
 
@@ -544,11 +544,11 @@ export async function deleteSale(id: string) {
             
             // If the sale was completed or pending, we need to revert changes
             if (sale.status === 'Completed' || sale.status === 'Pending') {
-              // Reverse wallet transactions by returning money to the wallet
+              // Revert wallet transactions by decrementing the balance
               for (const payment of sale.payments) {
                   await tx.wallet.update({
                       where: { id: payment.walletId },
-                      data: { balance: { decrement: payment.amount } } // <<< Corrected from increment to decrement
+                      data: { balance: { decrement: payment.amount } }
                   });
               }
               
@@ -579,6 +579,17 @@ export async function deleteSale(id: string) {
             await tx.sale.delete({
                 where: { id }
             });
+            
+            // If the sale was a draft, we also need to delete the quarantined animal.
+            if(sale.status === 'Draft' && !sale.livestock.purchaseId && !sale.livestock.vowId) {
+                // This condition is tricky, a sale draft doesn't create an animal.
+                // Assuming sale drafts are created from existing available animals, we just need to revert status
+                 await tx.livestock.update({
+                  where: { id: sale.livestockId },
+                  data: { status: 'Available' }
+                });
+            }
+
 
             // Log the deletion
             await tx.log.create({
