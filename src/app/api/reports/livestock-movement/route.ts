@@ -18,7 +18,10 @@ export async function GET(request: Request) {
 
     // Get livestock entries (Purchases and Vows)
     const purchases = await prisma.purchase.findMany({
-        where: { purchaseDate: { gte: startDate, lte: endDate } },
+        where: { 
+            purchaseDate: { gte: startDate, lte: endDate },
+            status: 'Completed' // Only count completed purchases
+        },
         include: { livestock: { include: { livestockType: true } } }
     });
 
@@ -47,11 +50,11 @@ export async function GET(request: Request) {
     ];
 
 
-    // Get livestock exits (Completed Sales)
+    // Get livestock exits (Completed Sales, based on SALE DATE)
     const sales = await prisma.sale.findMany({
         where: { 
             status: 'Completed',
-            settlementDate: { gte: startDate, lte: endDate }
+            saleDate: { gte: startDate, lte: endDate }
         },
         include: { livestock: { include: { livestockType: true } } }
     });

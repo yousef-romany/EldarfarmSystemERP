@@ -1,4 +1,6 @@
 
+'use server';
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -15,7 +17,16 @@ export async function GET(request: Request) {
     const targetDate = new Date(dateParam);
     const startDate = startOfDay(targetDate);
     const endDate = endOfDay(targetDate);
-    const cashWalletId = "w5"; // Define your cash wallet ID here, ideally from config
+    
+    // Find the cash wallet dynamically
+    const cashWallet = await prisma.wallet.findFirst({
+        where: { icon: 'cash' }
+    });
+
+    if (!cashWallet) {
+        return NextResponse.json({ error: 'Cash wallet not configured' }, { status: 500 });
+    }
+    const cashWalletId = cashWallet.id;
 
     // Fetch all wallets' current balances
     const wallets = await prisma.wallet.findMany();
@@ -48,7 +59,7 @@ export async function GET(request: Request) {
     const formattedInflows = inflows.map(p => {
         let type = 'غير معروف';
         if (p.saleId) type = 'بيع';
-        if (p.contributionId) type = 'مساهمة';
+        if (p.contributionId) type = 'نذر حى نقدى';
         return { type, description: p.description || '', amount: p.amount.toNumber() };
     });
 
