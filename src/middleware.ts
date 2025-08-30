@@ -11,6 +11,7 @@ const permissionMap: Record<string, keyof UserPermissions | null> = {
   '/users': 'users',
   '/barns': 'barns',
   '/livestock-types': 'livestockTypes',
+  '/opening-balance': 'barns', // Use 'barns' permission for opening balance page
   '/purchases': 'purchases',
   '/sales': 'sales',
   '/sales/pos': 'pos',

@@ -37,6 +37,7 @@ import {
   Repeat,
   List,
   Terminal,
+  PackagePlus,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -62,6 +63,7 @@ export function SidebarNav() {
     { href: '/users', label: 'المستخدمون', icon: Users, permission: user?.permissions.users?.view },
     { href: '/barns', label: 'العنابر', icon: Warehouse, permission: user?.permissions.barns?.view },
     { href: '/livestock-types', label: 'أنواع المواشي', icon: Box, permission: user?.permissions.livestockTypes?.view },
+    { href: '/opening-balance', label: 'رصيد افتتاحي للمواشي', icon: PackagePlus, permission: user?.permissions.barns?.add }, // Using barns.add as a proxy permission
   ];
   
   const salesItems = [
