@@ -168,21 +168,23 @@ export async function updateVow(vowId: string, prevState: VowState, formData: Fo
             if (!originalVow) throw new Error("Vow not found");
 
             const originalLivestock = originalVow.livestock;
+            const occupancyNeeded = livestockData.quantity || 1;
+            const originalOccupancy = originalLivestock.quantity || 1;
 
-            // Revert barn occupancy change if barn is different
-            if (originalLivestock.barnId !== barnId) {
+            // Revert barn occupancy change if barn or quantity is different
+            if (originalLivestock.barnId !== barnId || originalOccupancy !== occupancyNeeded) {
                  await tx.barn.update({
                     where: { id: originalLivestock.barnId },
-                    data: { currentOccupancy: { decrement: originalLivestock.quantity || 1 } }
+                    data: { currentOccupancy: { decrement: originalOccupancy } }
                 });
                  await tx.barn.update({
                     where: { id: barnId },
-                    data: { currentOccupancy: { increment: livestockData.quantity || 1 } }
+                    data: { currentOccupancy: { increment: occupancyNeeded } }
                 });
             }
 
             // Update livestock record
-            const updatedLivestock = await tx.livestock.update({
+            await tx.livestock.update({
                 where: { id: originalLivestock.id },
                 data: {
                     ...livestockData,
