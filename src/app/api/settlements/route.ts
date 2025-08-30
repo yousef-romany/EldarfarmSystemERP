@@ -1,7 +1,9 @@
 
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 import { getSession } from '@/lib/session';
+
+const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   const session = await getSession();
@@ -21,13 +23,13 @@ export async function GET(request: Request) {
 
     const serializedSettlements = settlements.map(s => ({
       ...s,
-      amount: s.amount.toNumber(),
+      amount: s.amount, // No need to call .toNumber() as it's a Float
       details: s.details, // Prisma JSON field is already serialized
     }));
 
     return NextResponse.json(serializedSettlements);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to fetch settlements:', error);
-    return NextResponse.json({ error: 'Failed to fetch settlements' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch settlements: ' + error.message }, { status: 500 });
   }
 }
