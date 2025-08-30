@@ -6,27 +6,21 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
-  id          String   @id @default(cuid())
-  username    String   @unique
-  password    String
-  role        UserRole
-  permissions Json
-  avatar      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  logs        Log[]
-}
-
-enum UserRole {
-  DEVELOPER
-  ADMIN
-  MANAGER
-  STAFF
+  id           String    @id @default(cuid())
+  username     String    @unique
+  password     String
+  role         UserRole
+  permissions  Json
+  avatar       String?
+  logs         Log[]
+  settlements  Settlement[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model Barn {
@@ -34,9 +28,9 @@ model Barn {
   name             String      @unique
   capacity         Int
   currentOccupancy Int         @default(0)
+  livestock        Livestock[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
-  livestock        Livestock[]
 }
 
 model LivestockType {
@@ -46,37 +40,70 @@ model LivestockType {
 }
 
 model Livestock {
-  id               String        @id @default(cuid())
-  tagId            String?       @unique
-  isBatch          Boolean       @default(false)
-  quantity         Int?
-  originalQuantity Int?
-  livestockTypeId  String
-  breed            String?
-  weight           Decimal       @db.Decimal(10, 2)
-  age              Int
-  cost             Decimal       @db.Decimal(10, 2) @default(0)
-  barnId           String
-  status           LivestockStatus
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  livestockType    LivestockType @relation(fields: [livestockTypeId], references: [id])
-  barn             Barn          @relation(fields: [barnId], references: [id])
-  vow              Vow?
-  purchase         Purchase?
-  sale             Sale?
+  id              String         @id @default(cuid())
+  isBatch         Boolean        @default(false)
+  tagId           String?        @unique
+  quantity        Int?
+  livestockTypeId String
+  breed           String?
+  weight          Float
+  age             Int
+  status          LivestockStatus @default(Available)
+  cost            Float          @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  barnId          String
+  barn            Barn           @relation(fields: [barnId], references: [id])
+  livestockType   LivestockType  @relation(fields: [livestockTypeId], references: [id])
+  
+  purchaseId      String?        @unique
+  purchase        Purchase?      @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
 
-  @@index([livestockTypeId])
-  @@index([barnId])
+  saleId          String?        @unique
+  sale            Sale?          
+
+  vowId           String?        @unique
+  vow             Vow?
 }
 
-enum LivestockStatus {
-  Available
-  Sold
-  Quarantined
-  Vowed
-  PendingSale // For deferred sales
-  Culled // For animals that died or were removed
+model Purchase {
+  id              String    @id @default(cuid())
+  supplier        String?
+  purchaseDate    DateTime
+  totalCost       Float
+  amountPaid      Float
+  remainingAmount Float
+  status          PurchaseStatus @default(Draft)
+  livestockData   Json // Store draft livestock details
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  livestockId     String?   @unique
+  livestock       Livestock?
+
+  payments        Payment[]
+}
+
+model Sale {
+  id              String      @id @default(cuid())
+  customerName    String
+  saleDate        DateTime
+  settlementDate  DateTime?
+  type            SaleType
+  status          SaleStatus  @default(Draft)
+  pricePerKg      Float
+  initialWeight   Float?
+  finalWeight     Float?
+  totalPrice      Float
+  amountPaid      Float
+  remainingAmount Float
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  livestockId     String      @unique
+  livestock       Livestock   @relation(fields: [livestockId], references: [id])
+  payments        Payment[]
 }
 
 model Vow {
@@ -84,10 +111,11 @@ model Vow {
   donorName   String
   receiptId   String?
   date        DateTime
-  livestockId String    @unique
-  notes       String?   @db.Text
+  notes       String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  livestockId String    @unique
   livestock   Livestock @relation(fields: [livestockId], references: [id], onDelete: Cascade)
 }
 
@@ -96,102 +124,56 @@ model Contribution {
   donorName   String
   description String
   date        DateTime
-  totalAmount Decimal   @db.Decimal(10, 2)
+  totalAmount Float
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   payments    Payment[]
 }
 
 model Expense {
-  id          String         @id @default(cuid())
+  id          String          @id @default(cuid())
   date        DateTime
   category    ExpenseCategory
-  amount      Decimal        @db.Decimal(10, 2)
+  amount      Float
   description String
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   payments    Payment[]
-}
-
-enum ExpenseCategory {
-  Feed
-  Vet
-  Maintenance
-  Other
-}
-
-model Purchase {
-  id              String         @id @default(cuid())
-  livestockId     String         @unique
-  supplier        String?
-  purchaseDate    DateTime
-  totalCost       Decimal        @db.Decimal(10, 2)
-  amountPaid      Decimal        @db.Decimal(10, 2)
-  remainingAmount Decimal        @db.Decimal(10, 2)
-  status          PurchaseStatus @default(Draft)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  livestock       Livestock      @relation(fields: [livestockId], references: [id], onDelete: Cascade)
-  payments        Payment[]
-}
-
-enum PurchaseStatus {
-  Draft
-  Completed
-  Cancelled
-}
-
-model Sale {
-  id              String      @id @default(cuid())
-  livestockId     String      @unique
-  customerName    String
-  saleDate        DateTime
-  type            SaleType
-  status          SaleStatus  @default(Draft)
-  pricePerKg      Decimal     @db.Decimal(10, 2)
-  totalPrice      Decimal     @db.Decimal(10, 2)
-  amountPaid      Decimal     @db.Decimal(10, 2)
-  remainingAmount Decimal     @db.Decimal(10, 2)
-  initialWeight   Decimal?    @db.Decimal(10, 2)
-  finalWeight     Decimal?    @db.Decimal(10, 2)
-  settlementDate  DateTime?
-  // Fields for batch sales
-  isBatchSale     Boolean     @default(false)
-  quantitySold    Int?
-
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedat
-  livestock       Livestock   @relation(fields: [livestockId], references: [id])
-  payments        Payment[]
-
-  @@index([livestockId])
-}
-
-enum SaleType {
-  Immediate // Point of Sale
-  Deferred // Sale with later settlement
-}
-
-enum SaleStatus {
-  Draft
-  Pending // For deferred sales awaiting settlement
-  Completed
-  Cancelled
 }
 
 model Wallet {
   id        String    @id @default(cuid())
   name      String    @unique
-  balance   Decimal   @db.Decimal(10, 2)
-  icon      String // cash, wallet
+  balance   Float     @default(0)
+  icon      String    @default("wallet") // 'wallet' or 'cash'
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   payments  Payment[]
 }
 
+model Settlement {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  settledById String
+  settledBy   User     @relation(fields: [settledById], references: [id])
+  amount      Float
+  details     Json // { walletName: string, balance: number }[]
+}
+
+model Log {
+  id         String     @id @default(cuid())
+  user       User       @relation(fields: [userId], references: [id])
+  userId     String
+  action     LogAction
+  entityType EntityType
+  entityId   String
+  details    String
+  createdAt  DateTime   @default(now())
+}
+
 model Payment {
   id             String        @id @default(cuid())
-  amount         Decimal       @db.Decimal(10, 2)
+  amount         Float
   date           DateTime
   type           PaymentType
   description    String
@@ -202,8 +184,79 @@ model Payment {
   purchaseId     String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
   wallet         Wallet        @relation(fields: [walletId], references: [id])
   expense        Expense?      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   sale           Sale?         @relation(fields: [saleId], references: [id], onDelete: Cascade)
   contribution   Contribution? @relation(fields: [contributionId], references: [id], onDelete: Cascade)
-  purchase       Purchase?     @relation(fields: [purchaseId], references
+  purchase       Purchase?     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+}
+
+
+enum UserRole {
+  DEVELOPER
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum LivestockStatus {
+  Available
+  Sold
+  Vowed
+  PendingSale // For deferred sales that are confirmed but not settled
+}
+
+enum PurchaseStatus {
+  Draft
+  Completed
+  Cancelled
+}
+
+enum SaleStatus {
+  Draft
+  Pending // For deferred sales waiting for settlement
+  Completed
+  Cancelled
+}
+
+enum SaleType {
+  Immediate
+  Deferred
+}
+
+enum ExpenseCategory {
+  Feed
+  Vet
+  Maintenance
+  Other
+}
+
+enum PaymentType {
+  Income
+  Expense
+}
+
+enum LogAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+}
+
+enum EntityType {
+  USER
+  BARN
+  LIVESTOCK_TYPE
+  LIVESTOCK
+  PURCHASE
+  PURCHASE_DRAFT
+  SALE
+  SALE_DRAFT
+  VOW
+  CONTRIBUTION
+  EXPENSE
+  WALLET
+  SETTLEMENT
+}

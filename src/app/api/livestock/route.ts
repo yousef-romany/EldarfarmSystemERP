@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   if (searchTerm) {
     where.tagId = {
       contains: searchTerm,
-      mode: 'insensitive',
+      // mode: 'insensitive', // This might not be supported on all DBs
     };
   }
 

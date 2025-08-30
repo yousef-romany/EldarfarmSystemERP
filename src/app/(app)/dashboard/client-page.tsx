@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { BarChart, Package, Users, Warehouse, DollarSign, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,6 +16,8 @@ import { PieChart, Pie, Cell } from "recharts"
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import useSWR from 'swr';
+import { useDebounce } from 'use-debounce';
+
 
 type DashboardStats = {
   livestockCount: number;
@@ -35,39 +37,52 @@ type LivestockWithDetails = Omit<Livestock, 'weight' | 'cost'> & {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function DashboardClientPage({ stats }: { stats: DashboardStats }) {
-  // SWR and state for the filterable list
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  
+  const [isPending, startTransition] = useTransition();
+
+  // Initialize state from URL params
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [typeFilter, setTypeFilter] = useState(searchParams.get('type') || 'all');
   const [barnFilter, setBarnFilter] = useState(searchParams.get('barn') || 'all');
   
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
+
   const { data: barns, error: barnsError } = useSWR<Barn[]>('/api/barns', fetcher);
   const { data: livestockTypes, error: typesError } = useSWR<LivestockType[]>('/api/livestock-types', fetcher);
   
-  const createQueryString = () => {
-    const params = new URLSearchParams();
-    if (searchTerm) params.set('search', searchTerm);
-    if (typeFilter !== 'all') params.set('type', typeFilter);
-    if (barnFilter !== 'all') params.set('barn', barnFilter);
-    return params.toString();
-  };
+  // SWR will re-fetch whenever the key (URL query string) changes
+  const queryString = new URLSearchParams({
+      search: debouncedSearchTerm,
+      type: typeFilter,
+      barn: barnFilter
+  }).toString();
+  
+  const { data: livestock, error: livestockError, isLoading } = useSWR<LivestockWithDetails[]>(`/api/livestock?${queryString}`, fetcher);
 
-  const { data: livestock, error: livestockError, isLoading } = useSWR<LivestockWithDetails[]>(`/api/livestock?${createQueryString()}`, fetcher);
-
-  const handleFilterChange = (type: 'search' | 'type' | 'barn', value: string) => {
-    // This function can be used to manually trigger a route change if needed,
-    // but the useEffect below handles it automatically (debounced).
-    const newParams = new URLSearchParams(searchParams.toString());
-    if (value && value !== 'all') {
-      newParams.set(type, value);
+  // Update URL params when filters change
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (debouncedSearchTerm) {
+      params.set('search', debouncedSearchTerm);
     } else {
-      newParams.delete(type);
+      params.delete('search');
     }
-    router.push(`${pathname}?${newParams.toString()}`);
-  };
+    if (typeFilter !== 'all') {
+      params.set('type', typeFilter);
+    } else {
+      params.delete('type');
+    }
+    if (barnFilter !== 'all') {
+      params.set('barn', barnFilter);
+    } else {
+      params.delete('barn');
+    }
+    startTransition(() => {
+        router.replace(`${pathname}?${params.toString()}`);
+    });
+  }, [debouncedSearchTerm, typeFilter, barnFilter, pathname, router]);
   
   // Helper functions for rendering
   const getStatusText = (status: string) => {
@@ -262,7 +277,7 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={7} className="text-center">جاري التحميل...</TableCell></TableRow>}
+              {(isLoading || isPending) && <TableRow><TableCell colSpan={7} className="text-center">جاري التحميل...</TableCell></TableRow>}
               {livestockError && <TableRow><TableCell colSpan={7} className="text-center text-destructive">فشل في تحميل البيانات.</TableCell></TableRow>}
               {livestock && livestock.map((animal) => (
                 <TableRow key={animal.id}>
@@ -279,7 +294,7 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
                   </TableCell>
                 </TableRow>
               ))}
-              {livestock?.length === 0 && !isLoading && (
+              {livestock?.length === 0 && !isLoading && !isPending && (
                  <TableRow><TableCell colSpan={7} className="text-center">لا توجد نتائج مطابقة للبحث.</TableCell></TableRow>
               )}
             </TableBody>
