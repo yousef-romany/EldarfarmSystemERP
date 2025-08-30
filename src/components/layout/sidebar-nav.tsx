@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -244,7 +243,7 @@ export function SidebarNav() {
           {user?.permissions.logs?.view && (
               <SidebarMenuItem>
               <Link href="/logs" className="w-full">
-                  <SidebarMenuButton tooltip="سجلات النظام">
+                  <SidebarMenuButton tooltip="سجلات النظام" isActive={pathname === '/logs'}>
                   <Terminal />
                   <span>سجلات النظام</span>
                   </SidebarMenuButton>
@@ -254,7 +253,7 @@ export function SidebarNav() {
           {user?.permissions.settings?.view && (
             <SidebarMenuItem>
               <Link href="/settings" className="w-full">
-                <SidebarMenuButton tooltip="الإعدادات">
+                <SidebarMenuButton tooltip="الإعدادات" isActive={pathname === '/settings'}>
                   <Settings />
                   <span>الإعدادات</span>
                 </SidebarMenuButton>
