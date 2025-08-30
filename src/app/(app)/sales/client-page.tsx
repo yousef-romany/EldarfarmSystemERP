@@ -104,8 +104,8 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
     return livestock.tagId || 'N/A';
   };
   
-  const handlePrint = (saleId: string) => {
-    const url = `/sales/invoice/${saleId}`;
+  const handlePrint = (saleId: string, type: 'invoice' | 'receipt') => {
+    const url = `/sales/${type}/${saleId}`;
     window.open(url, '_blank');
   };
   
@@ -252,9 +252,13 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
                                           </Link>
                                       </DropdownMenuItem>
                                     )}
-                                <DropdownMenuItem onClick={() => handlePrint(sale.id)}>
+                                <DropdownMenuItem onClick={() => handlePrint(sale.id, 'invoice')}>
                                     <Printer className="mr-2 h-4 w-4" />
-                                    طباعة الفاتورة
+                                    طباعة فاتورة (A4)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handlePrint(sale.id, 'receipt')}>
+                                    <Printer className="mr-2 h-4 w-4" />
+                                    طباعة إيصال (POS)
                                 </DropdownMenuItem>
                                 {user?.permissions.sales.delete && (
                                   <AlertDialogTrigger asChild>
@@ -431,7 +435,7 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
               </Card>
 
               <DialogFooter className="gap-2 sm:justify-between sticky bottom-0 bg-background pt-4">
-                <Button type="button" variant="outline" onClick={() => settlementSale && handlePrint(settlementSale!.id)}>
+                <Button type="button" variant="outline" onClick={() => settlementSale && handlePrint(settlementSale!.id, 'invoice')}>
                     <Printer className="mr-2 h-4 w-4" />
                     طباعة الفاتورة
                 </Button>
