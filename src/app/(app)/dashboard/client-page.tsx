@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -49,25 +48,27 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
   const { data: livestockTypes, error: typesError } = useSWR<LivestockType[]>('/api/livestock-types', fetcher);
   
   const createQueryString = () => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams();
     if (searchTerm) params.set('search', searchTerm);
     if (typeFilter !== 'all') params.set('type', typeFilter);
     if (barnFilter !== 'all') params.set('barn', barnFilter);
     return params.toString();
   };
-  
+
   const { data: livestock, error: livestockError, isLoading } = useSWR<LivestockWithDetails[]>(`/api/livestock?${createQueryString()}`, fetcher);
 
   const handleFilterChange = (type: 'search' | 'type' | 'barn', value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    // This function can be used to manually trigger a route change if needed,
+    // but the useEffect below handles it automatically (debounced).
+    const newParams = new URLSearchParams(searchParams.toString());
     if (value && value !== 'all') {
-      params.set(type, value);
+      newParams.set(type, value);
     } else {
-      params.delete(type);
+      newParams.delete(type);
     }
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${newParams.toString()}`);
   };
-
+  
   // Helper functions for rendering
   const getStatusText = (status: string) => {
     switch (status) {
@@ -219,11 +220,10 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
                 className="pl-8" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleFilterChange('search', searchTerm)}
               />
             </div>
             <div className="flex gap-4">
-              <Select value={typeFilter} onValueChange={(value) => { setTypeFilter(value); handleFilterChange('type', value); }}>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-full md:w-[180px]">
                   <SelectValue placeholder="فلترة بالنوع" />
                 </SelectTrigger>
@@ -232,7 +232,7 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
                   {livestockTypes?.map(type => <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={barnFilter} onValueChange={(value) => { setBarnFilter(value); handleFilterChange('barn', value); }}>
+              <Select value={barnFilter} onValueChange={setBarnFilter}>
                 <SelectTrigger className="w-full md:w-[180px]">
                   <SelectValue placeholder="فلترة بالعنبر" />
                 </SelectTrigger>

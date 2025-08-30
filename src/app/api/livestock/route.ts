@@ -8,7 +8,9 @@ export async function GET(request: Request) {
   const typeFilter = searchParams.get('type');
   const barnFilter = searchParams.get('barn');
 
-  const where: any = {};
+  const where: any = {
+    status: { not: 'Sold' } // Always exclude sold animals from the main list
+  };
 
   if (searchTerm) {
     where.tagId = {
@@ -26,7 +28,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const livestock = await prisma.livestock.findMany({
+    const livestockData = await prisma.livestock.findMany({
       where,
       include: {
         barn: true,
@@ -36,6 +38,14 @@ export async function GET(request: Request) {
         createdAt: 'desc',
       },
     });
+
+    // Serialize Decimal fields before sending the response
+    const livestock = livestockData.map(animal => ({
+      ...animal,
+      weight: animal.weight.toNumber(),
+      cost: animal.cost.toNumber(),
+    }));
+
     return NextResponse.json(livestock);
   } catch (error) {
     console.error('Failed to fetch livestock:', error);
