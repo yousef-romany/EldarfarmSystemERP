@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { z } from 'zod';
@@ -580,16 +581,13 @@ export async function deleteSale(id: string) {
                 where: { id }
             });
             
-            // If the sale was a draft, we also need to delete the quarantined animal.
-            if(sale.status === 'Draft' && !sale.livestock.purchaseId && !sale.livestock.vowId) {
-                // This condition is tricky, a sale draft doesn't create an animal.
-                // Assuming sale drafts are created from existing available animals, we just need to revert status
-                 await tx.livestock.update({
-                  where: { id: sale.livestockId },
-                  data: { status: 'Available' }
-                });
-            }
-
+            // If the sale was a draft, we also need to revert the animal status
+            // because createSale doesn't change it until confirmation
+            // But after confirmation, status becomes PendingSale or Sold
+            // So if we delete a draft, we don't need to do anything with the livestock
+            // Correction: No, the status *is* changed to PendingSale upon confirmation of deferred sale.
+            // So when deleting a *draft*, nothing happens to the animal. Correct.
+            // The logic above for 'Completed' or 'Pending' handles reverting status.
 
             // Log the deletion
             await tx.log.create({
