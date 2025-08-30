@@ -139,7 +139,7 @@ const VowReceiptPage = () => {
         <style jsx global>{`
             @media print {
             body {
-                background-color: #fff;
+                background-color: #fff !important;
             }
             .no-print {
                 display: none;

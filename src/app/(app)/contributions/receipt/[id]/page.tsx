@@ -71,7 +71,7 @@ const ContributionReceiptPage = () => {
                         <div className="flex items-center gap-3">
                             <Coins className="h-12 w-12 text-primary" />
                             <div>
-                                <h1 className="text-2xl font-bold">دير مار جرجس بالرزيقات</h1>
+                                <h1 className="text-2xl font-bold">مدير المواشي</h1>
                                 <p className="text-muted-foreground">إيصال استلام نذر نقدي</p>
                             </div>
                         </div>
@@ -139,7 +139,7 @@ const ContributionReceiptPage = () => {
         <style jsx global>{`
             @media print {
             body {
-                background-color: #fff;
+                background-color: #fff !important;
             }
             .no-print {
                 display: none;

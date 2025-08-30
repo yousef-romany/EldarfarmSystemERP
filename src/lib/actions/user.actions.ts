@@ -142,8 +142,8 @@ export async function updateUser(userId: string, prevState: UpdateUserState, for
     }
 
     const userToUpdate = await prisma.user.findUnique({ where: { id: userId } });
-    if (userToUpdate?.role === 'DEVELOPER') {
-        return { message: 'لا يمكن تعديل بيانات المطور.', success: false };
+    if (userToUpdate?.role === 'DEVELOPER' || userToUpdate?.role === 'ADMIN') {
+        return { message: 'لا يمكن تعديل بيانات المطور أو مدير آخر.', success: false };
     }
 
     const validatedFields = updateUserSchema.safeParse({
@@ -369,4 +369,3 @@ export async function updateUserPassword(prevState: UpdatePasswordState, formDat
         return { message: 'فشل في تحديث كلمة المرور.', success: false };
     }
 }
-
