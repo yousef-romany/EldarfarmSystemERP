@@ -74,7 +74,7 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
     };
   }
   
-  const { totalCost, payments, barnId, quantity, ...livestockData } = validatedFields.data;
+  const { totalCost, payments, purchaseDate, supplier, ...livestockData } = validatedFields.data;
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
   if (Math.abs(totalPaid - totalCost) > 0.01) {
@@ -86,8 +86,14 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
       // 1. Create Livestock but keep it quarantined as it's a draft
       const livestock = await tx.livestock.create({
         data: {
-          ...livestockData,
-          barnId: barnId,
+          isBatch: livestockData.isBatch,
+          tagId: livestockData.tagId,
+          quantity: livestockData.quantity,
+          livestockTypeId: livestockData.livestockTypeId,
+          breed: livestockData.breed,
+          weight: livestockData.weight,
+          age: livestockData.age,
+          barnId: livestockData.barnId,
           status: 'Quarantined', // Keep it in a non-available state
           cost: totalCost,
         }
@@ -97,8 +103,8 @@ export async function createPurchase(prevState: PurchaseState, formData: FormDat
       const purchase = await tx.purchase.create({
         data: {
           livestockId: livestock.id,
-          supplier: livestockData.supplier,
-          purchaseDate: new Date(livestockData.purchaseDate),
+          supplier: supplier,
+          purchaseDate: new Date(purchaseDate),
           totalCost: totalCost,
           amountPaid: totalPaid,
           remainingAmount: totalCost - totalPaid,
