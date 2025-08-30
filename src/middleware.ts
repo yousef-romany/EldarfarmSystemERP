@@ -29,6 +29,7 @@ const permissionMap: Record<string, keyof UserPermissions | null> = {
   '/reports/available': 'reports',
   '/reports/bookings': 'reports',
   '/reports/livestock-movement': 'reports',
+  '/settlement/history': 'reports',
 };
 
 

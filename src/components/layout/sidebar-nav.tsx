@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -37,6 +36,7 @@ import {
   List,
   Terminal,
   PackagePlus,
+  History,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -82,6 +82,7 @@ export function SidebarNav() {
   const financialReportsItems = [
     { href: '/daily-report', label: 'التقرير النقدي اليومي', icon: BookCheck, permission: user?.permissions.reports?.view },
     { href: '/settlement', label: 'تسوية اليومية', icon: ArchiveRestore, permission: user?.permissions.reports?.view },
+     { href: '/settlement/history', label: 'سجل التسويات', icon: History, permission: user?.permissions.reports?.view },
   ];
 
   const livestockReportsItems = [

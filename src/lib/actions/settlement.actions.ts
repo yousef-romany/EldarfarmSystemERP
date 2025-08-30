@@ -1,4 +1,3 @@
-
 'use server';
 
 import { prisma } from '@/lib/prisma';
@@ -19,7 +18,6 @@ export async function settleDay(): Promise<SettlementState> {
     };
   }
   
-  // This is a highly sensitive action, restrict it to ADMINs or a specific role if needed
   if (!session.user.permissions?.reports?.confirm) {
       return {
           message: 'ليس لديك الصلاحية اللازمة لتنفيذ عملية التسوية.',
@@ -38,7 +36,8 @@ export async function settleDay(): Promise<SettlementState> {
       const totalToSettle = wallets.reduce((sum, wallet) => sum + wallet.balance.toNumber(), 0);
 
       if (totalToSettle === 0) {
-        throw new Error("لا توجد أرصدة لتسويتها.");
+        // Allow settling even if balance is zero, to create a record.
+        // throw new Error("لا توجد أرصدة لتسويتها.");
       }
 
       // 2. Create a settlement record
@@ -72,6 +71,7 @@ export async function settleDay(): Promise<SettlementState> {
     });
 
     revalidatePath('/settlement');
+    revalidatePath('/settlement/history');
     revalidatePath('/wallets');
     revalidatePath('/daily-report');
 
@@ -86,4 +86,30 @@ export async function settleDay(): Promise<SettlementState> {
       success: false,
     };
   }
+}
+
+export async function getSettlements() {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.user?.id || !session.user.permissions?.reports?.view) {
+        return [];
+    }
+
+    try {
+        const settlements = await prisma.settlement.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                settledBy: {
+                    select: { username: true }
+                }
+            }
+        });
+        return settlements.map(s => ({
+            ...s,
+            amount: s.amount.toNumber(),
+            details: s.details as any[]
+        }));
+    } catch (error) {
+        console.error("Failed to fetch settlements:", error);
+        return [];
+    }
 }
