@@ -11,15 +11,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
+import { useToast } from '@/hooks/use-toast';
+import useSWR, { mutate } from 'swr';
+import { settleDay } from '@/lib/actions/settlement.actions';
 import type { Wallet } from '@prisma/client';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function SettlementPage() {
-  const router = useRouter();
+  const { toast } = useToast();
   const [date, setDate] = useState<Date>(new Date());
+  const [isSettling, setIsSettling] = useState(false);
   
   const { data: wallets, error, isLoading } = useSWR<Wallet[]>('/api/wallets', fetcher);
 
@@ -27,11 +29,29 @@ export default function SettlementPage() {
   
   const grandTotal = wallets?.reduce((acc, curr) => acc + curr.balance, 0) || 0;
 
-  const handlePrintAndSettle = () => {
-    // In a real app, we would call a server action here to perform the settlement.
-    // For now, it just opens the print report page.
-    const url = `/settlement/report?date=${format(date, 'yyyy-MM-dd')}`;
-    window.open(url, '_blank');
+  const handleSettleAndPrint = async () => {
+    setIsSettling(true);
+
+    const reportUrl = `/settlement/report?date=${format(date, 'yyyy-MM-dd')}`;
+    window.open(reportUrl, '_blank');
+
+    const result = await settleDay();
+
+    if (result.success) {
+      toast({
+        title: 'نجاح',
+        description: result.message,
+      });
+      // Re-fetch wallet data to show updated (zero) balances
+      mutate('/api/wallets'); 
+    } else {
+      toast({
+        title: 'خطأ',
+        description: result.message,
+        variant: 'destructive',
+      });
+    }
+    setIsSettling(false);
   };
   
   if (error) return <div>فشل في تحميل أرصدة المحافظ...</div>
@@ -67,14 +87,14 @@ export default function SettlementPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>المحفظة / الخزينة</TableHead>
-                <TableHead className="text-left">الرصيد الحالي</TableHead>
+                <TableHead className="text-center">الرصيد الحالي</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {wallets?.map(wallet => (
                 <TableRow key={wallet.id}>
                   <TableCell className="font-medium">{wallet.name}</TableCell>
-                  <TableCell className="text-left font-bold">{formatCurrency(wallet.balance)}</TableCell>
+                  <TableCell className="text-center font-bold">{formatCurrency(wallet.balance)}</TableCell>
                 </TableRow>
               ))}
                {!wallets || wallets.length === 0 && (
@@ -86,7 +106,7 @@ export default function SettlementPage() {
                )}
               <TableRow className="bg-muted font-bold text-lg">
                 <TableCell>الإجمالي الكلي</TableCell>
-                <TableCell className="text-left">{formatCurrency(grandTotal)}</TableCell>
+                <TableCell className="text-center">{formatCurrency(grandTotal)}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -97,28 +117,30 @@ export default function SettlementPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>إجراء نهائي</AlertTitle>
           <AlertDescription>
-            عملية التسوية تقوم بتصفير أرصدة جميع المحافظ. لا يمكن التراجع عن هذا الإجراء. (وظيفة التصفير قيد الإنشاء)
+            عملية التسوية تقوم بتصفير أرصدة جميع المحافظ وإنشاء سجل تسوية دائم. لا يمكن التراجع عن هذا الإجراء.
           </AlertDescription>
       </Alert>
       
       <div className="mt-6 flex justify-end">
           <AlertDialog>
               <AlertDialogTrigger asChild>
-                 <Button size="lg">
-                    <Printer className="mr-2 h-4 w-4" />
-                    طباعة تقرير التسوية
+                 <Button size="lg" disabled={isSettling || grandTotal === 0}>
+                    {isSettling ? 'جاري التسوية...' : 'بدء عملية التسوية والطباعة'}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                   <AlertDialogHeader>
                       <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
                       <AlertDialogDescription>
-                          سيتم فتح تقرير التسوية في صفحة جديدة للطباعة. بعد ذلك، يجب عليك تصفير الأرصدة يدويًا. هذا الإجراء لا يمكن التراجع عنه.
+                          سيتم فتح تقرير التسوية للطباعة، وبعد ذلك سيتم تصفير أرصدة جميع المحافظ بشكل نهائي.
+                          لا يمكن التراجع عن هذا الإجراء.
                       </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                       <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                      <AlertDialogAction onClick={handlePrintAndSettle}>نعم، اطبع التقرير</AlertDialogAction>
+                      <AlertDialogAction onClick={handleSettleAndPrint} disabled={isSettling}>
+                        {isSettling ? 'جاري التنفيذ...' : 'نعم، قم بالتسوية والطباعة'}
+                      </AlertDialogAction>
                   </AlertDialogFooter>
               </AlertDialogContent>
           </AlertDialog>

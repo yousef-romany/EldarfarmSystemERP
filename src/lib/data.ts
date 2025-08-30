@@ -38,7 +38,7 @@ export const adminPermissions: UserPermissions = {
   expenses: { view: true, add: true, edit: true, delete: true, confirm: true },
   wallets: { view: true, add: true, edit: true, delete: true, confirm: true },
   settings: { view: true, add: false, edit: false, delete: false, confirm: false },
-  reports: { view: true, add: false, edit: false, delete: false, confirm: false },
+  reports: { view: true, add: false, edit: false, delete: false, confirm: true }, // Added confirm for settlement
   logs: { view: false, add: false, edit: false, delete: false, confirm: false }, // Only developers can see logs
 };
 
@@ -56,7 +56,7 @@ export const managerPermissions: UserPermissions = {
   expenses: { view: true, add: true, edit: true, delete: true, confirm: false },
   wallets: { view: true, add: true, edit: true, delete: false, confirm: false },
   settings: { view: true, add: false, edit: false, delete: false, confirm: false },
-  reports: { view: true, add: false, edit: false, delete: false, confirm: false },
+  reports: { view: true, add: false, edit: false, delete: false, confirm: true }, // Added confirm for settlement
   logs: noPermissions,
 };
 

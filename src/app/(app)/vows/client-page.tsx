@@ -62,14 +62,6 @@ export default function VowsClientPage({ vows }: { vows: VowWithDetails[] }) {
               <CardTitle>النذور المسجلة</CardTitle>
               <CardDescription>قائمة بجميع الحيوانات والدفعات التي تم استلامها كنذور.</CardDescription>
             </div>
-            {user?.permissions.vows.add && (
-              <Button asChild>
-                  <Link href="/vows/new">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      إضافة نذر جديد
-                  </Link>
-              </Button>
-            )}
         </CardHeader>
         <CardContent>
           <Table>

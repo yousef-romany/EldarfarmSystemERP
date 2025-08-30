@@ -1,9 +1,17 @@
 
 import { prisma } from '@/lib/prisma';
 import ExpensesClientPage from './client-page';
+import { PageHeader } from '@/components/page-header';
+import { getSessionData } from '@/lib/session';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { PlusCircle } from 'lucide-react';
 
 
 export default async function ExpensesPage() {
+    const session = await getSessionData();
+    const user = session.user;
+
     const expensesData = await prisma.expense.findMany({
         orderBy: { date: 'desc' },
         include: {
@@ -43,11 +51,26 @@ export default async function ExpensesPage() {
     });
 
     return (
-        <ExpensesClientPage 
-            expenses={expenses} 
-            wallets={wallets}
-            totalExpenses={totalExpenses._sum.amount?.toNumber() || 0}
-        />
+        <>
+            <PageHeader
+                title="إدارة المصروفات"
+                action={
+                user?.permissions.expenses.add && (
+                    <Button asChild>
+                        <Link href="/expenses/new">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            إضافة مصروف
+                        </Link>
+                    </Button>
+                )
+                }
+            />
+            <ExpensesClientPage 
+                expenses={expenses} 
+                wallets={wallets}
+                totalExpenses={totalExpenses._sum.amount?.toNumber() || 0}
+            />
+        </>
     );
 }
 

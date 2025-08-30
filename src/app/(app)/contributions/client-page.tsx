@@ -41,19 +41,11 @@ export default function ContributionsClientPage({ contributions }: { contributio
 
   return (
     <Card>
-      <CardHeader className='flex-row items-center justify-between'>
+      <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>سجل النذور النقدية</CardTitle>
           <CardDescription>قائمة بجميع النذور النقدية المسجلة.</CardDescription>
         </div>
-        {user?.permissions.contributions.add && (
-          <Button asChild>
-            <Link href="/contributions/new">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              إضافة نذر نقدي
-            </Link>
-          </Button>
-        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -62,7 +54,7 @@ export default function ContributionsClientPage({ contributions }: { contributio
               <TableHead>المانح</TableHead>
               <TableHead>الوصف</TableHead>
               <TableHead>التاريخ</TableHead>
-              <TableHead className="text-left">المبلغ</TableHead>
+              <TableHead className="text-center">المبلغ</TableHead>
               <TableHead>
                 <span className="sr-only">الإجراءات</span>
               </TableHead>
@@ -75,7 +67,7 @@ export default function ContributionsClientPage({ contributions }: { contributio
                     <TableCell className="font-medium">{contribution.donorName}</TableCell>
                     <TableCell>{contribution.description}</TableCell>
                     <TableCell>{format(new Date(contribution.date), 'yyyy-MM-dd')}</TableCell>
-                    <TableCell className="text-left">{contribution.totalAmount.toLocaleString()} ج.م</TableCell>
+                    <TableCell className="text-center">{contribution.totalAmount.toLocaleString()} ج.م</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

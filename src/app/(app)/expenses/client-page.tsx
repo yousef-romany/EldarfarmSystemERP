@@ -156,17 +156,6 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
 
   return (
     <>
-      <PageHeader
-        title="إدارة المصروفات"
-        action={
-          user?.permissions.expenses.add && (
-            <Button onClick={handleOpenDialog}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              إضافة مصروف
-            </Button>
-          )
-        }
-      />
       <div className="grid gap-6 md:grid-cols-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -241,7 +230,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                 <TableHead>النوع</TableHead>
                 <TableHead>الوصف</TableHead>
                 <TableHead>مصدر الدفع</TableHead>
-                <TableHead className="text-left">المبلغ</TableHead>
+                <TableHead className="text-center">المبلغ</TableHead>
                 <TableHead><span className="sr-only">الإجراءات</span></TableHead>
               </TableRow>
             </TableHeader>
@@ -255,7 +244,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                   </TableCell>
                   <TableCell>{expense.description}</TableCell>
                    <TableCell>{expense.payments.map(p => p.wallet.name).join(', ')}</TableCell>
-                  <TableCell className="text-left font-medium">
+                  <TableCell className="text-center font-medium">
                     {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(expense.amount as number)}
                   </TableCell>
                    <TableCell>
