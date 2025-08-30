@@ -55,15 +55,15 @@ const SettlementReportPage = () => {
     }
   }, [data, isLoading, error]);
 
-  if (isLoading) return <div>جاري تحميل التقرير...</div>;
-  if (error) return <div>فشل في تحميل التقرير. يرجى التأكد من أنك متصل بالإنترنت وحاول مرة أخرى.</div>;
-  if (!data || !data.wallets) return <div>لا توجد بيانات لهذا اليوم.</div>;
+  if (isLoading) return <div className="p-4">جاري تحميل التقرير...</div>;
+  if (error) return <div className="p-4">فشل في تحميل التقرير. يرجى التأكد من أنك متصل بالإنترنت وحاول مرة أخرى.</div>;
+  if (!data || !data.wallets) return <div className="p-4">لا توجد بيانات لهذا اليوم.</div>;
   
   const cashWallet = data.wallets.find(w => w.id === data.cashWalletId);
   const totalBalance = data.wallets.reduce((acc, w) => acc + w.balance, 0);
 
   return (
-    <div className="bg-white min-h-screen p-8 font-body">
+    <div className="bg-white min-h-screen p-8 font-body printable-area">
         <div className="w-full max-w-4xl mx-auto space-y-4">
              <div className="flex justify-end gap-2 no-print">
                 <Button onClick={handlePrint}>
@@ -176,16 +176,26 @@ const SettlementReportPage = () => {
         </div>
         <style jsx global>{`
             @media print {
-              body {
-                  background-color: #fff !important;
-                  -webkit-print-color-adjust: exact;
+              body * {
+                visibility: hidden;
+              }
+              .printable-area, .printable-area * {
+                visibility: visible;
+              }
+              .printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
               }
               .no-print {
-                  display: none;
+                display: none !important;
               }
               .print-friendly {
-                  box-shadow: none;
-                  border: none;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
               }
               .break-inside-avoid {
                 page-break-inside: avoid;

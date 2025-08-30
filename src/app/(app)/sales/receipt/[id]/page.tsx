@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -36,8 +37,6 @@ const POSReceiptPage = () => {
   const [sale, setSale] = useState<SerializedSale | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const receiptRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (typeof id === 'string') {
         setIsLoading(true);
@@ -70,98 +69,106 @@ const POSReceiptPage = () => {
   const weight = sale.finalWeight || sale.initialWeight;
 
   return (
-    <div className="bg-gray-100 dark:bg-gray-800 min-h-screen p-4 flex justify-center font-mono">
-        <div className="w-full max-w-xs space-y-4">
-            <div className="flex justify-end gap-2 no-print">
+    <div className="bg-gray-100 dark:bg-gray-800 min-h-screen p-4 flex justify-center font-mono printable-area">
+        <div className="w-full max-w-xs space-y-4 no-print">
+            <div className="flex justify-end gap-2">
                 <Button onClick={handlePrint} size="sm">
                     <Printer className="mr-2 h-4 w-4" />
                     طباعة
                 </Button>
             </div>
+        </div>
 
-            <div ref={receiptRef} className="p-3 bg-white text-black shadow-md print-friendly">
-                <div className="text-center">
-                    <h2 className="text-lg font-bold">مدير المواشي</h2>
-                    <p className="text-xs">دير مار جرجس بالرزيقات</p>
-                    <p className="text-xs">{format(new Date(), "yyyy-MM-dd hh:mm a")}</p>
+        <div className="p-3 bg-white text-black shadow-md print-friendly w-full max-w-xs">
+            <div className="text-center">
+                <h2 className="text-lg font-bold">مدير المواشي</h2>
+                <p className="text-xs">دير مار جرجس بالرزيقات</p>
+                <p className="text-xs">{format(new Date(), "yyyy-MM-dd hh:mm a")}</p>
+            </div>
+
+            <Separator className="my-2 border-dashed border-black" />
+
+            <div className="text-xs space-y-1">
+                <p>العميل: {sale.customerName}</p>
+                <p>الفاتورة #: {sale.id.substring(0, 8)}</p>
+            </div>
+
+            <Separator className="my-2 border-dashed border-black" />
+
+            <table className="w-full text-xs">
+                <thead>
+                    <tr className="border-b border-dashed border-black">
+                        <th className="text-right pb-1">الصنف</th>
+                        <th className="text-center pb-1">الكمية</th>
+                        <th className="text-left pb-1">السعر</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td className="pt-1">{animal.livestockType.name} - {animal.breed}</td>
+                        <td className="text-center pt-1">1</td>
+                        <td className="text-left pt-1">{finalPrice.toFixed(2)}</td>
+                    </tr>
+                    <tr className="text-muted-foreground">
+                        <td colSpan={3} className="text-right text-xs">الرقم: {animal.tagId}, الوزن: {weight?.toFixed(2)} كجم @ {sale.pricePerKg.toFixed(2)}/كجم</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <Separator className="my-2 border-dashed border-black" />
+
+            <div className="text-xs space-y-1">
+                <div className="flex justify-between font-bold">
+                    <span>الإجمالي:</span>
+                    <span>{finalPrice.toFixed(2)} ج.م</span>
                 </div>
-
-                <Separator className="my-2 border-dashed border-black" />
-
-                <div className="text-xs space-y-1">
-                    <p>العميل: {sale.customerName}</p>
-                    <p>الفاتورة #: {sale.id.substring(0, 8)}</p>
+                 <div className="flex justify-between">
+                    <span>المدفوع:</span>
+                    <span>{totalPaid.toFixed(2)} ج.م</span>
                 </div>
-
-                <Separator className="my-2 border-dashed border-black" />
-
-                <table className="w-full text-xs">
-                    <thead>
-                        <tr className="border-b border-dashed border-black">
-                            <th className="text-right pb-1">الصنف</th>
-                            <th className="text-center pb-1">الكمية</th>
-                            <th className="text-left pb-1">السعر</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td className="pt-1">{animal.livestockType.name} - {animal.breed}</td>
-                            <td className="text-center pt-1">1</td>
-                            <td className="text-left pt-1">{finalPrice.toFixed(2)}</td>
-                        </tr>
-                        <tr className="text-muted-foreground">
-                            <td colSpan={3} className="text-right text-xs">الرقم: {animal.tagId}, الوزن: {weight?.toFixed(2)} كجم @ {sale.pricePerKg.toFixed(2)}/كجم</td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <Separator className="my-2 border-dashed border-black" />
-
-                <div className="text-xs space-y-1">
+                {remainingBalance > 0 && (
                     <div className="flex justify-between font-bold">
-                        <span>الإجمالي:</span>
-                        <span>{finalPrice.toFixed(2)} ج.م</span>
+                        <span>المتبقي:</span>
+                        <span>{remainingBalance.toFixed(2)} ج.م</span>
                     </div>
-                     <div className="flex justify-between">
-                        <span>المدفوع:</span>
-                        <span>{totalPaid.toFixed(2)} ج.م</span>
-                    </div>
-                    {remainingBalance > 0 && (
-                        <div className="flex justify-between font-bold">
-                            <span>المتبقي:</span>
-                            <span>{remainingBalance.toFixed(2)} ج.م</span>
-                        </div>
-                    )}
-                </div>
+                )}
+            </div>
 
-                <Separator className="my-2 border-dashed border-black" />
+            <Separator className="my-2 border-dashed border-black" />
 
-                <div className="text-center text-xs mt-3">
-                    <p>شكراً لتعاملكم معنا!</p>
-                </div>
+            <div className="text-center text-xs mt-3">
+                <p>شكراً لتعاملكم معنا!</p>
             </div>
         </div>
 
         <style jsx global>{`
             @media print {
-              @page {
-                size: 80mm auto; /* Adjust width as needed for your printer */
-                margin: 0;
+              body * {
+                visibility: hidden;
               }
-              body {
-                background-color: #fff !important;
-                -webkit-print-color-adjust: exact;
+              .printable-area, .printable-area * {
+                visibility: visible;
+              }
+              .printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
               }
               .no-print {
-                display: none;
+                display: none !important;
               }
               .print-friendly {
-                box-shadow: none;
-                border: none;
-                width: 100%;
-                max-width: 100%;
-                padding: 0;
-                margin: 0;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+              }
+              @page {
+                size: 80mm auto; /* Adjust width as needed for your printer */
+                margin: 2mm;
               }
             }
         `}</style>
