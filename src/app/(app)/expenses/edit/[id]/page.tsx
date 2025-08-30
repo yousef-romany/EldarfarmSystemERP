@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import EditExpensePageClient from './page.client';
 import { notFound } from 'next/navigation';
 import { getExpenseById } from '@/lib/actions/expense.actions';
+import EditExpenseForm from './page.client';
 
 export default async function EditExpensePage({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -33,9 +34,9 @@ export default async function EditExpensePage({ params }: { params: { id: string
   // Serialize Decimal fields for wallets before passing to the client component
   const wallets = walletsData.map(w => ({
     ...w,
-    balance: w.balance.toNumber(),
+    balance: w.balance,
   }));
 
 
-  return <EditExpensePageClient expense={expense} wallets={wallets} />;
+  return <EditExpenseForm expense={expense} wallets={wallets} />;
 }

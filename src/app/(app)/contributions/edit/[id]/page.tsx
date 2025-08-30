@@ -17,6 +17,9 @@ import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { updateContribution } from '@/lib/actions/contribution.actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getContributionById } from '@/lib/actions/contribution.actions';
+import { prisma } from '@/lib/prisma';
+import { notFound } from 'next/navigation';
 
 type ContributionWithDetails = Omit<Contribution, 'totalAmount'> & {
     totalAmount: number;
@@ -43,7 +46,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     )
 }
 
-export default function EditContributionPage({ contribution, wallets }: EditContributionPageProps) {
+function EditContributionForm({ contribution, wallets }: EditContributionPageProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [updateState, updateFormAction] = useActionState(updateContribution.bind(null, contribution.id), { message: null, errors: {}, success: false });
@@ -205,4 +208,20 @@ export default function EditContributionPage({ contribution, wallets }: EditCont
       </Card>
     </>
   );
+}
+
+
+export default async function EditContributionPageContainer({ params }: { params: { id: string } }) {
+  const { id } = params;
+  
+  const [contribution, wallets] = await Promise.all([
+    getContributionById(id),
+    prisma.wallet.findMany({ orderBy: { name: 'asc' } })
+  ]);
+
+  if (!contribution) {
+    notFound();
+  }
+
+  return <EditContributionForm contribution={contribution} wallets={wallets} />;
 }

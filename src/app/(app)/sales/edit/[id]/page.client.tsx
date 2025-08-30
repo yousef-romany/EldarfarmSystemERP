@@ -16,6 +16,9 @@ import type { Sale, Livestock, Wallet, Payment } from '@prisma/client';
 import { updateSale } from '@/lib/actions/sale.actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { getSaleById } from '@/lib/actions/sale.actions';
+import { prisma } from '@/lib/prisma';
+import { notFound } from 'next/navigation';
 
 
 type SaleWithDetails = Omit<Sale, 'pricePerKg' | 'totalPrice' | 'amountPaid' | 'remainingAmount' | 'initialWeight' | 'finalWeight' | 'payments' | 'livestock'> & {
@@ -49,7 +52,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     )
 }
 
-export default function EditSalePageClient({ sale, wallets }: EditSalePageProps) {
+function EditSaleForm({ sale, wallets }: EditSalePageProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [updateState, updateFormAction] = useActionState(updateSale.bind(null, sale.id), { message: null, errors: {}, success: false });
@@ -65,7 +68,9 @@ export default function EditSalePageClient({ sale, wallets }: EditSalePageProps)
 
     // Recalculate total price if details change
     useEffect(() => {
-      setTotalPrice(weight * pricePerKg);
+        if (weight > 0 && pricePerKg > 0) {
+            setTotalPrice(weight * pricePerKg);
+        }
     }, [weight, pricePerKg]);
 
     const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
@@ -119,7 +124,6 @@ export default function EditSalePageClient({ sale, wallets }: EditSalePageProps)
         <CardContent>
           <form className="grid gap-6" action={updateFormAction}>
              <input type="hidden" name="payments" value={JSON.stringify(payments.filter(p => p.walletId && p.amount))} />
-             <input type="hidden" name="totalPrice" value={totalPrice} />
              <input type="hidden" name="pricePerKg" value={pricePerKg} />
              <input type="hidden" name="initialWeight" value={weight} />
 
@@ -153,7 +157,7 @@ export default function EditSalePageClient({ sale, wallets }: EditSalePageProps)
                     </div>
                     <div className="grid gap-2 md:col-span-2">
                         <Label htmlFor="totalPrice">السعر الإجمالي (ج.م)</Label>
-                        <Input id="totalPrice" type="number" value={totalPrice} readOnly disabled={!canEdit}/>
+                        <Input id="totalPrice" name="totalPrice" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} disabled={!canEdit}/>
                     </div>
                 </CardContent>
                  <CardContent className='space-y-4'>
@@ -233,5 +237,25 @@ export default function EditSalePageClient({ sale, wallets }: EditSalePageProps)
         </CardContent>
       </Card>
     </>
+  );
+}
+
+export default async function EditSalePageContainer({ params }: { params: { id: string } }) {
+  const { id } = params;
+  
+  const [sale, wallets] = await Promise.all([
+    getSaleById(id),
+    prisma.wallet.findMany({ orderBy: { name: 'asc' } })
+  ]);
+
+  if (!sale) {
+    notFound();
+  }
+
+  return (
+    <EditSaleForm 
+      sale={sale} 
+      wallets={wallets} 
+    />
   );
 }

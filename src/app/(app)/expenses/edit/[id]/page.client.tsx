@@ -41,7 +41,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     )
 }
 
-export default function EditExpensePageClient({ expense, wallets }: EditExpensePageProps) {
+export default function EditExpenseForm({ expense, wallets }: EditExpensePageProps) {
     const router = useRouter();
     const { toast } = useToast();
     
