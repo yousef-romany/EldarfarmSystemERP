@@ -53,6 +53,15 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
   );
 }
 
+function ConfirmSubmitButton({ text, disabled }: { text: string; disabled?: boolean }) {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" name="confirm" value="true" disabled={pending || disabled}>
+             {pending ? 'جاري التأكيد...' : text}
+        </Button>
+    )
+}
+
 export default function PurchasesPageClient({ barns, livestockTypes, wallets }: { barns: Barn[], livestockTypes: LivestockType[], wallets: (Omit<Wallet, 'balance'> & { balance: number })[] }) {
   const { toast } = useToast();
   const { user } = useSession();
@@ -185,6 +194,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
               <CardDescription>عرض لجميع عمليات الشراء المسجلة، بما في ذلك المسودات.</CardDescription>
             </CardHeader>
             <CardContent>
+              <form action={confirmPurchaseAction}>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -208,7 +218,6 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                           <TableCell>{p.supplier || 'غير محدد'}</TableCell>
                           <TableCell>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(p.totalCost as number)}</TableCell>
                           <TableCell>
-                             <form action={confirmPurchaseAction}>
                               <input type="hidden" name="purchaseId" value={p.id} />
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -256,7 +265,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                             <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                            <Button type="submit">نعم، قم بالتأكيد</Button>
+                                            <Button type='submit' formAction={confirmPurchaseAction}>نعم، قم بالتأكيد</Button>
                                         </AlertDialogFooter>
                                     </>
                                 ) : (
@@ -279,7 +288,6 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                                     </>
                                 )}
                               </AlertDialogContent>
-                            </form>
                           </TableCell>
                       </TableRow>
                     </AlertDialog>
@@ -293,6 +301,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                     )}
                 </TableBody>
               </Table>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
