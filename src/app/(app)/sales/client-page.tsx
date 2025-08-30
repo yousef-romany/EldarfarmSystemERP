@@ -1,4 +1,3 @@
-
 'use client';
 import { MoreHorizontal, Trash2, Printer, Pencil, ArrowDownUp, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -222,90 +221,88 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
                               </Badge>
                           </TableCell>
                           <TableCell>
-                            <form action={confirmFormAction}>
-                              <input type="hidden" name="saleId" value={sale.id} />
-                              <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                  <Button aria-haspopup="true" size="icon" variant="ghost">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                      <span className="sr-only">فتح القائمة</span>
-                                  </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                                      {sale.status === 'Draft' && user?.permissions.sales.confirm && (
-                                          <AlertDialogTrigger asChild>
-                                            <DropdownMenuItem className="text-green-600" onSelect={(e) => e.preventDefault()}>
-                                              <CheckCircle className="mr-2 h-4 w-4" />
-                                              تأكيد العملية
-                                            </DropdownMenuItem>
-                                          </AlertDialogTrigger>
-                                      )}
-                                      {sale.status === 'Pending' && user?.permissions.deferredSales.edit && (
-                                          <DropdownMenuItem onClick={() => openSettlementDialog(sale as Sale)}>
-                                              <ArrowDownUp className="mr-2 h-4 w-4" />
-                                              تحديث الوزن و إتمام البيع
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">فتح القائمة</span>
+                                </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                                    {sale.status === 'Draft' && user?.permissions.sales.confirm && (
+                                        <AlertDialogTrigger asChild>
+                                          <DropdownMenuItem className="text-green-600" onSelect={(e) => e.preventDefault()}>
+                                            <CheckCircle className="mr-2 h-4 w-4" />
+                                            تأكيد العملية
                                           </DropdownMenuItem>
-                                      )}
-                                      {sale.status === 'Draft' && (
-                                        <DropdownMenuItem asChild>
-                                            <Link href={`/sales/edit/${sale.id}`}>
-                                                <Pencil className="mr-2 h-4 w-4" />
-                                                تعديل
-                                            </Link>
+                                        </AlertDialogTrigger>
+                                    )}
+                                    {sale.status === 'Pending' && user?.permissions.deferredSales.edit && (
+                                        <DropdownMenuItem onClick={() => openSettlementDialog(sale as Sale)}>
+                                            <ArrowDownUp className="mr-2 h-4 w-4" />
+                                            تحديث الوزن و إتمام البيع
                                         </DropdownMenuItem>
-                                      )}
-                                  <DropdownMenuItem onClick={() => handlePrint(sale.id)}>
-                                      <Printer className="mr-2 h-4 w-4" />
-                                      طباعة الفاتورة
-                                  </DropdownMenuItem>
-                                  {user?.permissions.sales.delete && (
-                                    <AlertDialogTrigger asChild>
-                                      <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        إلغاء العملية
+                                    )}
+                                    {sale.status === 'Draft' && (
+                                      <DropdownMenuItem asChild>
+                                          <Link href={`/sales/edit/${sale.id}`}>
+                                              <Pencil className="mr-2 h-4 w-4" />
+                                              تعديل
+                                          </Link>
                                       </DropdownMenuItem>
-                                    </AlertDialogTrigger>
-                                  )}
-                                  </DropdownMenuContent>
-                              </DropdownMenu>
-                               <AlertDialogContent>
-                                {sale.status === 'Draft' ? (
-                                    <>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>تأكيد عملية البيع؟</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                            سيؤدي هذا الإجراء إلى إتمام عملية البيع، وخصم المبلغ من المحفظة، وتغيير حالة الحيوان. لا يمكن التراجع عن هذا الإجراء.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                            <Button type="submit">نعم، قم بالتأكيد</Button>
-                                        </AlertDialogFooter>
-                                    </>
-                                ) : (
-                                    <>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                          سيتم إلغاء هذه العملية نهائيًا. سيؤثر هذا على أرصدة المحافظ وحالة الحيوان. لا يمكن التراجع عن هذا الإجراء.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => handleDelete(sale.id)}
-                                            className="bg-destructive hover:bg-destructive/90"
-                                          >
-                                            نعم، قم بالحذف
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </>
+                                    )}
+                                <DropdownMenuItem onClick={() => handlePrint(sale.id)}>
+                                    <Printer className="mr-2 h-4 w-4" />
+                                    طباعة الفاتورة
+                                </DropdownMenuItem>
+                                {user?.permissions.sales.delete && (
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      إلغاء العملية
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
                                 )}
-                              </AlertDialogContent>
-                              </form>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                       </TableRow>
+                       <AlertDialogContent>
+                        {sale.status === 'Draft' ? (
+                          <form id={`confirm-sale-form-${sale.id}`} action={confirmFormAction}>
+                            <input type="hidden" name="saleId" value={sale.id} />
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>تأكيد عملية البيع؟</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                سيؤدي هذا الإجراء إلى إتمام عملية البيع، وخصم المبلغ من المحفظة، وتغيير حالة الحيوان. لا يمكن التراجع عن هذا الإجراء.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                              <Button type="submit" form={`confirm-sale-form-${sale.id}`}>نعم، قم بالتأكيد</Button>
+                            </AlertDialogFooter>
+                          </form>
+                        ) : (
+                          <>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                سيتم إلغاء هذه العملية نهائيًا. سيؤثر هذا على أرصدة المحافظ وحالة الحيوان. لا يمكن التراجع عن هذا الإجراء.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(sale.id)}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                نعم، قم بالحذف
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </>
+                        )}
+                      </AlertDialogContent>
                       </AlertDialog>
                       ))}
                       {sales && sales.length === 0 && <TableRow><TableCell colSpan={6} className='text-center'>لا توجد مبيعات مسجلة.</TableCell></TableRow>}
