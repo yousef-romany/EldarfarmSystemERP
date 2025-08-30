@@ -21,6 +21,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useSession } from '@/components/session-provider';
 import { Badge } from '@/components/ui/badge';
 import useSWR from 'swr';
+import Link from 'next/link';
 
 
 type LivestockWithDetails = Livestock & {
@@ -207,7 +208,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                           <TableCell>{p.supplier || 'غير محدد'}</TableCell>
                           <TableCell>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(p.totalCost as number)}</TableCell>
                           <TableCell>
-                             <form>
+                             <form action={confirmPurchaseAction}>
                               <input type="hidden" name="purchaseId" value={p.id} />
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -227,9 +228,11 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                                     </AlertDialogTrigger>
                                    )}
                                   {p.status === 'Draft' && user?.permissions.purchases.edit && (
-                                    <DropdownMenuItem disabled>
-                                      <Pencil className="mr-2 h-4 w-4" />
-                                      تعديل (قريبًا)
+                                    <DropdownMenuItem asChild>
+                                      <Link href={`/purchases/edit/${p.id}`}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        تعديل
+                                      </Link>
                                     </DropdownMenuItem>
                                   )}
                                   {user?.permissions.purchases.delete && (
@@ -253,7 +256,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                             <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                                            <Button type="submit" formAction={confirmPurchaseAction}>نعم، قم بالتأكيد</Button>
+                                            <Button type="submit">نعم، قم بالتأكيد</Button>
                                         </AlertDialogFooter>
                                     </>
                                 ) : (

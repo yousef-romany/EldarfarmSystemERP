@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 
 const paymentSchema = z.object({
+  id: z.string().optional(),
   walletId: z.string().min(1, "يجب تحديد المحفظة"),
   amount: z.coerce.number().positive("المبلغ يجب أن يكون أكبر من صفر"),
 });
@@ -329,5 +330,169 @@ export async function deletePurchase(id: string) {
     } catch (error) {
         console.error('Error deleting purchase:', error);
         return { message: 'فشل في حذف عملية الشراء.', success: false };
+    }
+}
+
+export async function getPurchaseById(id: string) {
+    const session = await getSession();
+    if (!session.isLoggedIn) {
+        redirect('/');
+    }
+
+    try {
+        const purchase = await prisma.purchase.findUnique({
+            where: { id },
+            include: {
+                livestock: {
+                    include: {
+                        livestockType: true,
+                    }
+                },
+                payments: {
+                    include: {
+                        wallet: true
+                    }
+                }
+            }
+        });
+
+        if (!purchase) return null;
+
+        // Serialize Decimal fields before returning
+        return {
+            ...purchase,
+            totalCost: purchase.totalCost.toNumber(),
+            amountPaid: purchase.amountPaid.toNumber(),
+            remainingAmount: purchase.remainingAmount.toNumber(),
+            livestock: {
+                ...purchase.livestock,
+                weight: purchase.livestock.weight.toNumber(),
+                cost: purchase.livestock.cost.toNumber(),
+            },
+            payments: purchase.payments.map(p => ({
+                ...p,
+                amount: p.amount.toNumber(),
+                wallet: {
+                    ...p.wallet,
+                    balance: p.wallet.balance.toNumber()
+                }
+            }))
+        };
+
+    } catch (error) {
+        console.error("Failed to get purchase by ID:", error);
+        return null;
+    }
+}
+
+export async function updatePurchase(purchaseId: string, prevState: PurchaseState, formData: FormData): Promise<PurchaseState> {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.user?.id) {
+        redirect('/');
+    }
+    
+    if (!session.user.permissions?.purchases?.edit) {
+        return { message: 'ليس لديك الصلاحية لتعديل المشتريات.', success: false };
+    }
+
+    const originalPurchase = await prisma.purchase.findUnique({ where: { id: purchaseId } });
+    if (!originalPurchase || originalPurchase.status !== 'Draft') {
+        return { message: 'لا يمكن تعديل إلا مسودات المشتريات.', success: false };
+    }
+
+    const isBatch = formData.get('isBatch') === 'true';
+    const paymentsData = JSON.parse(formData.get('payments') as string || '[]');
+
+    const validatedFields = purchaseSchema.safeParse({
+        isBatch,
+        tagId: formData.get('tagId'),
+        quantity: formData.get('quantity'),
+        livestockTypeId: formData.get('livestockTypeId'),
+        breed: formData.get('breed'),
+        weight: formData.get('weight'),
+        age: formData.get('age'),
+        purchaseDate: formData.get('purchaseDate'),
+        barnId: formData.get('barnId'),
+        supplier: formData.get('supplier'),
+        totalCost: formData.get('totalCost'),
+        payments: paymentsData,
+    });
+    
+    if (!validatedFields.success) {
+        return { errors: validatedFields.error.flatten().fieldErrors, message: 'بيانات غير صالحة.', success: false };
+    }
+    
+    const { totalCost, payments, purchaseDate, supplier, ...livestockData } = validatedFields.data;
+    const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
+
+    if (Math.abs(totalPaid - totalCost) > 0.01) {
+        return { message: 'مجموع الدفعات يجب أن يساوي التكلفة الإجمالية.', success: false };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            // 1. Delete old payments associated with the purchase
+            await tx.payment.deleteMany({ where: { purchaseId: purchaseId } });
+
+            // 2. Create new payments
+            if (payments.length > 0) {
+                await tx.payment.createMany({
+                    data: payments.map(p => ({
+                        amount: p.amount,
+                        walletId: p.walletId,
+                        purchaseId: purchaseId,
+                        date: new Date(),
+                        type: 'Expense',
+                        description: `[مسودة](تعديل) دفعة لشراء ${livestockData.tagId || originalPurchase.livestockId}`
+                    }))
+                });
+            }
+
+            // 3. Update livestock record
+            await tx.livestock.update({
+                where: { id: originalPurchase.livestockId },
+                data: {
+                    isBatch: livestockData.isBatch,
+                    tagId: livestockData.tagId,
+                    quantity: livestockData.quantity,
+                    livestockTypeId: livestockData.livestockTypeId,
+                    breed: livestockData.breed,
+                    weight: livestockData.weight,
+                    age: livestockData.age,
+                    barnId: livestockData.barnId,
+                    cost: totalCost,
+                }
+            });
+
+            // 4. Update Purchase record
+            await tx.purchase.update({
+                where: { id: purchaseId },
+                data: {
+                    supplier: supplier,
+                    purchaseDate: new Date(purchaseDate),
+                    totalCost: totalCost,
+                    amountPaid: totalPaid,
+                    remainingAmount: totalCost - totalPaid,
+                }
+            });
+
+            // 5. Log the update
+            await tx.log.create({
+                data: {
+                    userId: session.user!.id,
+                    action: 'UPDATE',
+                    entityType: 'PURCHASE_DRAFT',
+                    entityId: purchaseId,
+                    details: `تعديل مسودة الشراء للحيوان ${livestockData.tagId || originalPurchase.livestockId}.`
+                }
+            });
+        });
+
+        revalidatePath('/purchases');
+        revalidatePath(`/purchases/edit/${purchaseId}`);
+        return { message: 'تم تحديث مسودة الشراء بنجاح!', success: true };
+    } catch (error) {
+        console.error('Error updating purchase draft:', error);
+        return { message: 'فشل في تحديث مسودة الشراء.', success: false };
     }
 }
