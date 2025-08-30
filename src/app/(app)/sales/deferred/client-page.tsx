@@ -170,7 +170,7 @@ export default function DeferredSaleClientPage({ availableLivestock, wallets }: 
                     </div>
                     <div className="grid gap-2">
                     <Label htmlFor="total-price-display">السعر الإجمالي المبدئي</Label>
-                    <Input id="total-price-display" type="number" value={totalPrice} readOnly />
+                    <Input id="total-price-display" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} required />
                     </div>
                 </div>
                 )}

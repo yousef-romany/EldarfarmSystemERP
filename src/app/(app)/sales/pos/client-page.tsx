@@ -88,7 +88,13 @@ export default function POSClientPage({ availableLivestock, wallets }: { availab
 
   useEffect(() => {
     if (selectedAnimal) {
-      setTotalPrice(currentWeight * pricePerKg);
+      const calculatedPrice = currentWeight * pricePerKg;
+      if (totalPrice !== calculatedPrice) {
+          // If total price was manually set, don't override it unless weight/pricePerKg changes
+          // This check is a bit tricky. The logic is: auto-calculate, but allow override.
+          // A simpler way is to just always calculate, and let the user override it in the input.
+      }
+      setTotalPrice(calculatedPrice);
     } else {
       setTotalPrice(0);
     }
@@ -171,7 +177,7 @@ export default function POSClientPage({ availableLivestock, wallets }: { availab
                           </div>
                           <div className="grid gap-2">
                           <Label htmlFor="total-price-display">السعر الإجمالي</Label>
-                          <Input id="total-price-display" type="number" value={totalPrice} readOnly />
+                          <Input id="total-price-display" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} />
                           </div>
                       </div>
                       )}
@@ -229,7 +235,7 @@ export default function POSClientPage({ availableLivestock, wallets }: { availab
                   </div>
               </CardContent>
               <CardContent>
-                   <SubmitButton text="إتمام البيع" disabled={!selectedAnimal || !pricePerKg || remainingBalance !== 0} />
+                   <SubmitButton text="إتمام البيع" disabled={!selectedAnimal || !totalPrice || remainingBalance !== 0} />
               </CardContent>
             </Card>
           </div>

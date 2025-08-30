@@ -383,7 +383,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
                             <Label htmlFor="totalCost">التكلفة الإجمالية</Label>
-                            <Input name="totalCost" id="totalCost" type="number" placeholder="التكلفة الإجمالية للشراء" required onChange={(e) => setTotalCost(parseFloat(e.target.value) || 0)}/>
+                            <Input name="totalCost" id="totalCost" type="number" placeholder="التكلفة الإجمالية للشراء" required value={totalCost} onChange={(e) => setTotalCost(parseFloat(e.target.value) || 0)}/>
                         </div>
                          <div className="space-y-3">
                             {payments.map((payment, index) => (
