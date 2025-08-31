@@ -6,192 +6,23 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id           String    @id @default(cuid())
-  username     String    @unique
-  password     String
-  role         UserRole
-  permissions  Json
-  avatar       String?
-  logs         Log[]
-  settlements  Settlement[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-}
-
-model Barn {
-  id               String      @id @default(cuid())
-  name             String      @unique
-  capacity         Int
-  currentOccupancy Int         @default(0)
-  livestock        Livestock[]
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-}
-
-model LivestockType {
-  id        String      @id @default(cuid())
-  name      String      @unique
-  livestock Livestock[]
-}
-
-model Livestock {
-  id              String         @id @default(cuid())
-  isBatch         Boolean        @default(false)
-  tagId           String?        @unique
-  quantity        Int?
-  livestockTypeId String
-  breed           String?
-  weight          Float
-  age             Int
-  status          LivestockStatus @default(Available)
-  cost            Float          @default(0)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
-  barnId          String
-  barn            Barn           @relation(fields: [barnId], references: [id])
-  livestockType   LivestockType  @relation(fields: [livestockTypeId], references: [id])
-  
-  purchaseId      String?        @unique
-  purchase        Purchase?      @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
-
-  saleId          String?        @unique
-  sale            Sale?          
-
-  vowId           String?        @unique
-  vow             Vow?
-}
-
-model Purchase {
-  id              String    @id @default(cuid())
-  supplier        String?
-  purchaseDate    DateTime
-  totalCost       Float
-  amountPaid      Float
-  remainingAmount Float
-  status          PurchaseStatus @default(Draft)
-  livestockData   Json // Store draft livestock details
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  livestockId     String?   @unique
-  livestock       Livestock?
-
-  payments        Payment[]
-}
-
-model Sale {
-  id              String      @id @default(cuid())
-  customerName    String
-  saleDate        DateTime
-  settlementDate  DateTime?
-  type            SaleType
-  status          SaleStatus  @default(Draft)
-  pricePerKg      Float
-  initialWeight   Float?
-  finalWeight     Float?
-  totalPrice      Float
-  amountPaid      Float
-  remainingAmount Float
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-
-  livestockId     String      @unique
-  livestock       Livestock   @relation(fields: [livestockId], references: [id])
-  payments        Payment[]
-}
-
-model Vow {
-  id          String    @id @default(cuid())
-  donorName   String
-  receiptId   String?
-  date        DateTime
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  livestockId String    @unique
-  livestock   Livestock @relation(fields: [livestockId], references: [id], onDelete: Cascade)
-}
-
-model Contribution {
-  id          String    @id @default(cuid())
-  donorName   String
-  description String
-  date        DateTime
-  totalAmount Float
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  payments    Payment[]
-}
-
-model Expense {
-  id          String          @id @default(cuid())
-  date        DateTime
-  category    ExpenseCategory
-  amount      Float
-  description String
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  payments    Payment[]
-}
-
-model Wallet {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  balance   Float     @default(0)
-  icon      String    @default("wallet") // 'wallet' or 'cash'
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  payments  Payment[]
-}
-
-model Settlement {
   id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  settledById String
-  settledBy   User     @relation(fields: [settledById], references: [id])
-  amount      Float
-  details     Json // { walletName: string, balance: number }[]
+  username    String   @unique
+  password    String
+  role        UserRole
+  permissions Json
+  avatar      String?
+  logs        Log[]
+  settlements Settlement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
-
-model Log {
-  id         String     @id @default(cuid())
-  user       User       @relation(fields: [userId], references: [id])
-  userId     String
-  action     LogAction
-  entityType EntityType
-  entityId   String
-  details    String
-  createdAt  DateTime   @default(now())
-}
-
-model Payment {
-  id             String        @id @default(cuid())
-  amount         Float
-  date           DateTime
-  type           PaymentType
-  description    String
-  walletId       String
-  expenseId      String?
-  saleId         String?
-  contributionId String?
-  purchaseId     String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  wallet         Wallet        @relation(fields: [walletId], references: [id])
-  expense        Expense?      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  sale           Sale?         @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  contribution   Contribution? @relation(fields: [contributionId], references: [id], onDelete: Cascade)
-  purchase       Purchase?     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-}
-
 
 enum UserRole {
   DEVELOPER
@@ -200,11 +31,71 @@ enum UserRole {
   STAFF
 }
 
+model Barn {
+  id               String      @id @default(cuid())
+  name             String      @unique
+  capacity         Int
+  currentOccupancy Int         @default(0)
+  livestock        Livestock[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LivestockType {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  livestock Livestock[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Livestock {
+  id              String        @id @default(cuid())
+  tagId           String?       @unique
+  isBatch         Boolean       @default(false)
+  quantity        Int?
+  livestockTypeId String
+  livestockType   LivestockType @relation(fields: [livestockTypeId], references: [id])
+  breed           String?
+  weight          Decimal
+  age             Int
+  cost            Decimal       @default(0)
+  status          LivestockStatus
+  barnId          String
+  barn            Barn          @relation(fields: [barnId], references: [id])
+  purchaseId      String?       @unique
+  purchase        Purchase?     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  vow             Vow?
+  sale            Sale?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum LivestockStatus {
   Available
   Sold
   Vowed
-  PendingSale // For deferred sales that are confirmed but not settled
+  PendingSale // For deferred sales
+}
+
+model Purchase {
+  id              String   @id @default(cuid())
+  supplier        String?
+  purchaseDate    DateTime
+  totalCost       Decimal
+  amountPaid      Decimal
+  remainingAmount Decimal
+  status          PurchaseStatus
+  livestockId     String?     @unique
+  livestock       Livestock?
+  livestockData   Json // Store details before livestock is created
+  payments        Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum PurchaseStatus {
@@ -213,16 +104,74 @@ enum PurchaseStatus {
   Cancelled
 }
 
-enum SaleStatus {
-  Draft
-  Pending // For deferred sales waiting for settlement
-  Completed
-  Cancelled
+model Sale {
+  id              String   @id @default(cuid())
+  livestockId     String   @unique
+  livestock       Livestock @relation(fields: [livestockId], references: [id])
+  customerName    String
+  saleDate        DateTime
+  type            SaleType
+  status          SaleStatus @default("Draft")
+  pricePerKg      Decimal
+  totalPrice      Decimal
+  amountPaid      Decimal
+  remainingAmount Decimal
+  initialWeight   Decimal?
+  finalWeight     Decimal?
+  settlementDate  DateTime?
+  payments        Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum SaleType {
   Immediate
   Deferred
+}
+
+enum SaleStatus {
+  Draft
+  Pending
+  Completed
+  Cancelled
+}
+
+model Vow {
+  id          String    @id @default(cuid())
+  donorName   String
+  receiptId   String?
+  date        DateTime
+  livestockId String    @unique
+  livestock   Livestock @relation(fields: [livestockId], references: [id], onDelete: Cascade)
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Contribution {
+  id          String    @id @default(cuid())
+  donorName   String
+  description String
+  date        DateTime
+  totalAmount Decimal
+  payments    Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Expense {
+  id          String         @id @default(cuid())
+  date        DateTime
+  category    ExpenseCategory
+  amount      Decimal
+  description String
+  payments    Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum ExpenseCategory {
@@ -232,9 +181,64 @@ enum ExpenseCategory {
   Other
 }
 
+model Wallet {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  balance  Decimal   @default(0)
+  icon     String    @default("wallet") // 'wallet' or 'cash'
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  walletId       String
+  wallet         Wallet        @relation(fields: [walletId], references: [id])
+  amount         Decimal
+  date           DateTime
+  type           PaymentType
+  description    String
+  purchaseId     String?
+  purchase       Purchase?     @relation(fields: [purchaseId], references: [id])
+  saleId         String?
+  sale           Sale?         @relation(fields: [saleId], references: [id])
+  expenseId      String?
+  expense        Expense?      @relation(fields: [expenseId], references: [id])
+  contributionId String?
+  contribution   Contribution? @relation(fields: [contributionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum PaymentType {
   Income
   Expense
+}
+
+model Settlement {
+  id          String   @id @default(cuid())
+  settledById String
+  settledBy   User     @relation(fields: [settledById], references: [id])
+  amount      Decimal
+  details     Json // { walletId: string, name: string, balance: number }[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Log {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id])
+  action     LogAction
+  entityType EntityType
+  entityId   String
+  details    String
+
+  createdAt DateTime @default(now())
 }
 
 enum LogAction {
