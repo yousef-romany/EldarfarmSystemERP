@@ -5,8 +5,7 @@ import { notFound } from 'next/navigation';
 import { getExpenseById } from '@/lib/actions/expense.actions';
 import EditExpenseForm from './page.client';
 
-export default async function EditExpensePage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function EditExpensePage({ params: { id } }: { params: { id: string } }) {
   
   const [expenseData, walletsData] = await Promise.all([
     getExpenseById(id),
