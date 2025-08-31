@@ -1,12 +1,11 @@
 
-'use server';
 import { getIronSession, IronSession, SessionOptions } from 'iron-session';
 import { cookies } from 'next/headers';
 import type { SessionUser } from './types';
 import { prisma } from './prisma';
 
 const sessionOptions: SessionOptions = {
-  password: process.env.SECRET_COOKIE_PASSWORD || 'complex_password_at_least_32_characters_long',
+  password: process.env.SECRET_COOKIE_PASSWORD as string,
   cookieName: 'mawashi-manager-session',
   cookieOptions: {
     // secure: process.env.NODE_ENV === 'production',
@@ -15,18 +14,18 @@ const sessionOptions: SessionOptions = {
 
 export interface SessionData {
   isLoggedIn?: boolean;
-  user?: Pick<SessionUser, 'id'>; // Store only the user ID
+  user?: SessionUser; 
 }
 
-// This is the primary function to get the session. It does NOT touch the database.
-// It can be safely used in middleware or simple server components.
+// Can be called from middleware or server components.
+// Does not access the database.
 export async function getSession(): Promise<IronSession<SessionData>> {
-  const session = await getIronSession<SessionData>(cookies(), sessionOptions);
-  return session;
+  return getIronSession<SessionData>(cookies(), sessionOptions);
 }
 
-// This function should be called from protected layouts/pages
-// to get the full, fresh user data from the database.
+
+// Should be called from protected pages/layouts to get full user data.
+// Accesses the database.
 export async function getFullSession(): Promise<{ isLoggedIn: boolean; user: SessionUser | null; }> {
   const session = await getSession();
   
@@ -39,9 +38,9 @@ export async function getFullSession(): Promise<{ isLoggedIn: boolean; user: Ses
     where: { id: session.user.id },
   });
 
+  // If user was deleted from DB but session cookie remains, treat as logged out.
+  // The session.destroy() call was moved to a dedicated server action to avoid cookie modification errors in Server Components.
   if (!user) {
-    // User was deleted, but session still exists. Destroy it.
-    await session.destroy();
     return { isLoggedIn: false, user: null };
   }
 
@@ -57,15 +56,16 @@ export async function getFullSession(): Promise<{ isLoggedIn: boolean; user: Ses
   };
 }
 
-// This is a simplified login action that stores only the ID in the session
-export async function loginAction(userId: string) {
+
+// Server Action to handle login
+export async function loginAction(user: SessionUser) {
     const session = await getSession();
     session.isLoggedIn = true;
-    session.user = { id: userId };
+    session.user = user;
     await session.save();
 }
 
-// This is a simplified logout action
+// Server Action to handle logout
 export async function logoutAction() {
     const session = await getSession();
     session.destroy();

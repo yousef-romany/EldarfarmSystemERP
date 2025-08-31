@@ -15,6 +15,8 @@ export default async function AppLayout({
   const session = await getFullSession();
 
   // This is a server-side check. If the session is invalid, redirect.
+  // This layout is for protected routes, so if isLoggedIn is false,
+  // we must redirect to the login page.
   if (!session.isLoggedIn) {
     redirect('/login');
   }

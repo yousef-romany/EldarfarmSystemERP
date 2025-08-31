@@ -61,7 +61,12 @@ export async function login(prevState: string | undefined, formData: FormData) {
   }
 
   // --- Store only user ID in session ---
-  await loginAction(user.id);
+  await loginAction({
+      id: user.id,
+      username: user.username,
+      role: user.role as any,
+      permissions: JSON.parse(user.permissions as string)
+  });
   
   // --- Smart Redirect Logic ---
   const userPermissions = JSON.parse(user.permissions as string) as UserPermissions;
