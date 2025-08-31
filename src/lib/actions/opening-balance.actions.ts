@@ -16,13 +16,22 @@ const openingBalanceSchema = z.object({
   // Livestock fields
   isBatch: z.boolean(),
   tagId: z.string().optional(),
-  quantity: z.coerce.number().optional(),
+  quantity: z.coerce.number().positive("الكمية يجب أن تكون رقمًا موجبًا").optional(),
   livestockTypeId: z.string().min(1, "يجب تحديد نوع الحيوان"),
   breed: z.string().optional(),
   weight: z.coerce.number().positive("الوزن يجب أن يكون رقمًا موجبًا"),
   age: z.coerce.number().positive("العمر يجب أن يكون رقمًا موجبًا"),
   barnId: z.string().min(1, "يجب تحديد العنبر"),
+}).refine(data => {
+    if (data.isBatch) {
+        return !!data.quantity && data.quantity > 0;
+    }
+    return true;
+}, {
+    message: "الكمية مطلوبة عند تسجيل دفعة",
+    path: ["quantity"],
 });
+
 
 type OpeningBalanceState = {
   errors?: z.ZodError<typeof openingBalanceSchema>['formErrors']['fieldErrors'];
