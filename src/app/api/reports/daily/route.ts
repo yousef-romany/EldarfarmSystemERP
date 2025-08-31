@@ -24,7 +24,14 @@ export async function GET(request: Request) {
     });
 
     if (!cashWallet) {
-       return NextResponse.json({ error: 'Cash wallet not configured' }, { status: 500 });
+       // Return a valid empty report structure instead of an error
+        const allWallets = await prisma.wallet.findMany();
+        return NextResponse.json({
+            wallets: allWallets.map(w => ({ ...w, balance: w.balance })),
+            cashWalletId: null,
+            cashFlow: { totalIn: 0, totalOut: 0, netChange: 0 },
+            transactions: { inflows: [], outflows: [] }
+        });
     }
 
     // Fetch all wallets' current balances
