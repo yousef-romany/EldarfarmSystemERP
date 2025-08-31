@@ -1,22 +1,21 @@
 
-
 import { prisma } from '@/lib/prisma';
 import SalesPageClient from './client-page';
 import { PageHeader } from '@/components/page-header';
-import { getSessionData } from '@/lib/session';
+import { getFullSession } from '@/lib/session';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 
 export default async function SalesPage() {
-  const session = await getSessionData();
+  const session = await getFullSession();
   const user = session.user;
 
   const walletsData = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
   
   const wallets = walletsData.map(w => ({
     ...w,
-    balance: w.balance.toNumber()
+    balance: w.balance
   }));
 
   return (

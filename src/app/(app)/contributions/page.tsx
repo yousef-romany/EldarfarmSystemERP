@@ -5,10 +5,10 @@ import { PageHeader } from '@/components/page-header';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import ContributionsClientPage from './client-page';
-import { getSessionData } from '@/lib/session';
+import { getFullSession } from '@/lib/session';
 
 export default async function ContributionsPage() {
-    const session = await getSessionData();
+    const session = await getFullSession();
     const user = session.user;
 
     const contributions = await prisma.contribution.findMany({

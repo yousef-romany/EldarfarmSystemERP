@@ -1,11 +1,10 @@
 
-
 import { prisma } from '@/lib/prisma';
 import UsersClientPage from './client-page';
-import { getSession } from '@/lib/session';
+import { getFullSession } from '@/lib/session';
 
 export default async function UsersPage() {
-  const session = await getSession();
+  const session = await getFullSession();
   
   const users = await prisma.user.findMany({
     where: {

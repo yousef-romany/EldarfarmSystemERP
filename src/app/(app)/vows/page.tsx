@@ -9,10 +9,10 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import VowsClientPage from './client-page';
-import { getSessionData } from '@/lib/session';
+import { getFullSession } from '@/lib/session';
 
 export default async function VowsPage() {
-    const session = await getSessionData();
+    const session = await getFullSession();
     const user = session.user;
 
     const vows = await prisma.vow.findMany({

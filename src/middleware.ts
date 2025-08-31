@@ -1,91 +1,45 @@
 
-
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getSession } from './lib/session';
-import type { UserPermissions } from './lib/types';
+import { getIronSession } from 'iron-session';
+import { cookies } from 'next/headers';
+import type { SessionData } from './lib/session';
 
-// Map pathnames to their required permission key
-const permissionMap: Record<string, keyof UserPermissions | null> = {
-  '/dashboard': 'overview',
-  '/users': 'users',
-  '/barns': 'barns',
-  '/livestock-types': 'livestockTypes',
-  '/opening-balance': 'barns', // Use 'barns' permission for opening balance page
-  '/purchases': 'purchases',
-  '/sales': 'sales',
-  '/sales/pos': 'pos',
-  '/sales/deferred': 'deferredSales',
-  '/vows': 'vows',
-  '/contributions': 'contributions',
-  '/expenses': 'expenses',
-  '/wallets': 'wallets',
-  '/settings': 'settings',
-  '/reports': 'reports',
-  '/daily-report': 'reports',
-  '/settlement': 'reports',
-  '/logs': 'logs',
-  // Add other specific report pages if necessary
-  '/reports/available': 'reports',
-  '/reports/bookings': 'reports',
-  '/reports/livestock-movement': 'reports',
-  '/settlement/history': 'reports',
+// Define session options directly here as they are needed for getIronSession
+const sessionOptions = {
+  password: process.env.SECRET_COOKIE_PASSWORD || 'complex_password_at_least_32_characters_long',
+  cookieName: 'mawashi-manager-session',
+  cookieOptions: {},
 };
-
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const session = await getSession();
+  
+  // Directly get the session without database lookups
+  const session = await getIronSession<SessionData>(cookies(), sessionOptions);
+  const isLoggedIn = session.isLoggedIn ?? false;
 
   const isPublicPath = path === '/login';
-  const isForbiddenPath = path === '/forbidden';
-  
-  // Allow API routes, Next.js internal routes, static files, and the forbidden page to pass through
-  if (
-    path.startsWith('/api') ||
-    path.startsWith('/_next') ||
-    path.startsWith('/static') ||
-    isForbiddenPath ||
-    /\.(.*)$/.test(path)
-  ) {
+
+  // Allow API routes, Next.js internal routes, and static files to pass through
+  if (path.startsWith('/api') || path.startsWith('/_next') || path.startsWith('/static') || /\.(.*)$/.test(path)) {
     return NextResponse.next();
   }
 
-
-  // If user is trying to access the root, redirect based on login status
-  if (path === '/') {
-    return NextResponse.redirect(new URL(session.isLoggedIn ? '/dashboard' : '/login', request.url));
-  }
-
-
-  // If user is not logged in and not on the public login page, redirect to login
-  if (!session.isLoggedIn && !isPublicPath) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  // If user is logged in and trying to access the login page, redirect to dashboard
-  if (session.isLoggedIn && isPublicPath) {
+  // Redirect logic
+  if (isPublicPath && isLoggedIn) {
+    // If logged in, redirect from login page to dashboard
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // If the user is logged in, check their permissions for the requested page
-  if (session.isLoggedIn) {
-    const userPermissions = session.user?.permissions;
-    
-    // Find the permission key for the current path (including nested paths)
-    // by checking which key in permissionMap is a prefix of the current path.
-    const matchedKey = Object.keys(permissionMap).find(key => path.startsWith(key));
-    
-    if (matchedKey) {
-        const requiredPermissionKey = permissionMap[matchedKey];
-        if (requiredPermissionKey && !userPermissions?.[requiredPermissionKey]?.view) {
-            // User does not have view permission, redirect to forbidden page
-            return NextResponse.redirect(new URL('/forbidden', request.url));
-        }
-    }
+  if (!isPublicPath && !isLoggedIn) {
+    // If not logged in and not on a public page, redirect to login
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
-
+  // If we are here, the user is either correctly on a public page
+  // or logged in and on a private page. We don't need to check permissions
+  // here anymore as it will be handled by the layout.
   return NextResponse.next();
 }
 

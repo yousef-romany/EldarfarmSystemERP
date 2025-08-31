@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import type { UserPermissions } from '../types';
+import type { UserPermissions, SessionUser } from '../types';
 
 // Define the order of pages to check for redirection after login.
 const orderedRedirects: (keyof UserPermissions)[] = [
@@ -64,13 +64,14 @@ export async function login(prevState: string | undefined, formData: FormData) {
 
   const userPermissions = JSON.parse(user.permissions as string) as UserPermissions;
 
-  // --- Store user data in session ---
+  // --- Store essential user data in session ---
   session.isLoggedIn = true;
+  // Store only the ID, as other data will be re-fetched for freshness
   session.user = {
       id: user.id,
       username: user.username,
+      role: user.role as SessionUser['role'],
       permissions: userPermissions,
-      role: user.role,
   };
   await session.save();
 

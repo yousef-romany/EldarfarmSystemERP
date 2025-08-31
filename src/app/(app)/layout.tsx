@@ -1,25 +1,26 @@
+
 import type { Metadata } from 'next';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { Header } from '@/components/layout/header';
-import { getSessionData } from '@/lib/session';
+import { getFullSession } from '@/lib/session';
 import SessionProvider from '@/components/session-provider';
+import { redirect } from 'next/navigation';
 
 export default async function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getSessionData();
+  const session = await getFullSession();
 
-  // Create a plain object to pass to the client component
-  const sessionValue = {
-    isLoggedIn: session.isLoggedIn,
-    user: session.user ?? null,
-  };
+  // This is a server-side check. If the session is invalid, redirect.
+  if (!session.isLoggedIn) {
+    redirect('/login');
+  }
 
   return (
-    <SessionProvider value={sessionValue}>
+    <SessionProvider value={session}>
       <SidebarProvider>
           <Sidebar side="right" collapsible="icon">
           <SidebarNav />
