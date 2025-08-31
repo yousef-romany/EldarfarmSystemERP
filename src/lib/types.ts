@@ -17,6 +17,7 @@ export type UserPermissions = {
   overview: Permission;
   users: Permission;
   barns: Permission;
+  livestock: Permission;
   livestockTypes: Permission;
   purchases: Permission;
   pos: Permission;

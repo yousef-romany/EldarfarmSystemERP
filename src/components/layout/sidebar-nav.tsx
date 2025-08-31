@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -37,6 +38,7 @@ import {
   Terminal,
   PackagePlus,
   History,
+  Sheep,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -61,8 +63,9 @@ export function SidebarNav() {
     { href: '/dashboard', label: 'نظرة عامة', icon: LayoutGrid, permission: user?.permissions.overview?.view },
     { href: '/users', label: 'المستخدمون', icon: Users, permission: user?.permissions.users?.view },
     { href: '/barns', label: 'العنابر', icon: Warehouse, permission: user?.permissions.barns?.view },
+    { href: '/livestock', label: 'إدارة المواشي', icon: Sheep, permission: user?.permissions.livestock?.view },
     { href: '/livestock-types', label: 'أنواع المواشي', icon: Box, permission: user?.permissions.livestockTypes?.view },
-    { href: '/opening-balance', label: 'رصيد افتتاحي للمواشي', icon: PackagePlus, permission: user?.permissions.barns?.add }, // Using barns.add as a proxy permission
+    { href: '/opening-balance', label: 'رصيد افتتاحي للمواشي', icon: PackagePlus, permission: user?.permissions.livestock?.add },
   ];
   
   const salesItems = [
@@ -124,7 +127,7 @@ export function SidebarNav() {
                       {managementItems.map((item) => item.permission && (
                           <SidebarMenuSubItem key={item.href}>
                               <Link href={item.href}>
-                                  <SidebarMenuSubButton asChild isActive={pathname === item.href} tooltip={item.label}>
+                                  <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.href)} tooltip={item.label}>
                                       <div>
                                           <item.icon />
                                           <span>{item.label}</span>

@@ -10,6 +10,7 @@ export const developerPermissions: UserPermissions = {
   overview: allPermissions,
   users: allPermissions,
   barns: allPermissions,
+  livestock: allPermissions,
   livestockTypes: allPermissions,
   purchases: allPermissions,
   sales: allPermissions,
@@ -28,6 +29,7 @@ export const adminPermissions: UserPermissions = {
   overview: { view: true, add: false, edit: false, delete: false, confirm: false },
   users: { view: true, add: true, edit: true, delete: true, confirm: false }, // Cannot delete developers
   barns: { view: true, add: true, edit: true, delete: true, confirm: true },
+  livestock: { view: true, add: true, edit: true, delete: true, confirm: false },
   livestockTypes: { view: true, add: true, edit: true, delete: true, confirm: true },
   purchases: { view: true, add: true, edit: true, delete: true, confirm: true },
   sales: { view: true, add: true, edit: true, delete: true, confirm: true },
@@ -46,6 +48,7 @@ export const managerPermissions: UserPermissions = {
   overview: { view: true, add: false, edit: false, delete: false, confirm: false },
   users: { view: true, add: true, edit: true, delete: false, confirm: false },
   barns: { view: true, add: true, edit: true, delete: true, confirm: false },
+  livestock: { view: true, add: true, edit: true, delete: true, confirm: false },
   livestockTypes: { view: true, add: true, edit: true, delete: true, confirm: false },
   purchases: { view: true, add: true, edit: true, delete: true, confirm: true },
   sales: { view: true, add: true, edit: true, delete: true, confirm: true },
@@ -54,7 +57,7 @@ export const managerPermissions: UserPermissions = {
   vows: { view: true, add: true, edit: true, delete: true, confirm: false },
   contributions: { view: true, add: true, edit: true, delete: true, confirm: false },
   expenses: { view: true, add: true, edit: true, delete: true, confirm: false },
-  wallets: { view: true, add: true, edit: true, delete: false, confirm: false },
+  wallets: { view: true, add: true, edit: false, delete: false, confirm: false },
   settings: { view: true, add: false, edit: false, delete: false, confirm: false },
   reports: { view: true, add: false, edit: false, delete: false, confirm: true }, // Added confirm for settlement
   logs: noPermissions,
@@ -64,6 +67,7 @@ export const staffPermissions: UserPermissions = {
   overview: { view: true, add: false, edit: false, delete: false, confirm: false },
   users: { view: false, add: false, edit: false, delete: false, confirm: false },
   barns: { view: true, add: true, edit: false, delete: false, confirm: false },
+  livestock: { view: true, add: false, edit: false, delete: false, confirm: false },
   livestockTypes: { view: true, add: true, edit: false, delete: false, confirm: false },
   purchases: { view: true, add: true, edit: false, delete: false, confirm: false }, // Can create drafts
   sales: { view: true, add: false, edit: false, delete: false, confirm: false },

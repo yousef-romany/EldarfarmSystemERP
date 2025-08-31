@@ -9,14 +9,13 @@ import { Prisma } from '@prisma/client';
 
 export default async function DashboardPage() {
   
-  // Calculate total value correctly, considering batches
   const livestockForValue = await prisma.livestock.findMany({
     where: { status: { not: 'Sold' } },
     select: { cost: true, isBatch: true, quantity: true }
   });
 
   const totalValue = livestockForValue.reduce((acc, item) => {
-    const itemCost = item.cost || 0;
+    const itemCost = item.cost;
     if (item.isBatch) {
       return acc + (itemCost * (item.quantity || 1));
     }
