@@ -1,4 +1,3 @@
-
 'use server';
 import { getIronSession, IronSession, SessionOptions } from 'iron-session';
 import { cookies } from 'next/headers';
@@ -23,8 +22,8 @@ export interface SessionData {
   user: SessionUser;
 }
 
-export async function getSession() {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+export async function getSession(): Promise<IronSession<SessionData>> {
+  const session = await getIronSession<SessionData>(cookies(), sessionOptions);
   
   // If the user is logged in, re-fetch their data from the database to ensure it's fresh
   // This is a robust way to ensure the session user data is never stale.
