@@ -6,30 +6,25 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const cookie = request.cookies.get('mawashi-manager-session');
 
-  // Allow API routes, Next.js internal routes, and static files to pass through
-  if (path.startsWith('/api') || path.startsWith('/_next') || path.startsWith('/static') || /\.(.*)$/.test(path)) {
+  const publicPaths = ['/login', '/forbidden'];
+  const isPublicPath = publicPaths.includes(path);
+  
+  // If user is trying to access a public page, let them through
+  if (isPublicPath) {
+    // If they are logged in and trying to access login, redirect to dashboard
+    if (cookie && path === '/login') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
     return NextResponse.next();
   }
 
-  const isPublicPath = path === '/login';
-
-  // If user is trying to access login page but has a session cookie, let them pass
-  // but they will be redirected by the page logic if the session is valid.
-  if (isPublicPath && cookie) {
-     return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-  
-  if (isPublicPath && !cookie) {
-      return NextResponse.next();
-  }
-
-  // If the path is not public and there is no cookie, redirect to login
-  if (!isPublicPath && !cookie) {
+  // If the path is protected and there is no cookie, redirect to login
+  if (!cookie) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
   
   // If we are here, the user is accessing a protected route and has a cookie.
-  // The actual session validation will happen in the AppLayout component.
+  // The actual session validation against the DB will happen in the AppLayout component.
   return NextResponse.next();
 }
 

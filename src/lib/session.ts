@@ -15,20 +15,23 @@ const sessionOptions: SessionOptions = {
 
 export interface SessionData {
   isLoggedIn?: boolean;
-  user?: SessionUser;
+  user?: Pick<SessionUser, 'id'>; // Store only the user ID
 }
 
+// This is the primary function to get the session. It does NOT touch the database.
+// It can be safely used in middleware or simple server components.
 export async function getSession(): Promise<IronSession<SessionData>> {
-  return getIronSession<SessionData>(cookies(), sessionOptions);
+  const session = await getIronSession<SessionData>(cookies(), sessionOptions);
+  return session;
 }
 
-// This function should be called from Server Components or Server Actions
-// to get the full, fresh user data.
-export async function getFullSession(): Promise<SessionData> {
+// This function should be called from protected layouts/pages
+// to get the full, fresh user data from the database.
+export async function getFullSession(): Promise<{ isLoggedIn: boolean; user: SessionUser | null; }> {
   const session = await getSession();
   
   if (!session.isLoggedIn || !session.user?.id) {
-    return { isLoggedIn: false };
+    return { isLoggedIn: false, user: null };
   }
 
   // Re-fetch user from DB to ensure data is fresh and permissions are up-to-date
@@ -38,8 +41,8 @@ export async function getFullSession(): Promise<SessionData> {
 
   if (!user) {
     // User was deleted, but session still exists. Destroy it.
-    session.destroy();
-    return { isLoggedIn: false };
+    await session.destroy();
+    return { isLoggedIn: false, user: null };
   }
 
   // Return fresh, complete user data
@@ -52,4 +55,18 @@ export async function getFullSession(): Promise<SessionData> {
       permissions: JSON.parse(user.permissions as string),
     },
   };
+}
+
+// This is a simplified login action that stores only the ID in the session
+export async function loginAction(userId: string) {
+    const session = await getSession();
+    session.isLoggedIn = true;
+    session.user = { id: userId };
+    await session.save();
+}
+
+// This is a simplified logout action
+export async function logoutAction() {
+    const session = await getSession();
+    session.destroy();
 }

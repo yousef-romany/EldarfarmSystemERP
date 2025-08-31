@@ -2,10 +2,10 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/session';
+import { getFullSession, loginAction, logoutAction } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import type { UserPermissions, SessionUser } from '../types';
+import type { UserPermissions } from '../types';
 
 // Define the order of pages to check for redirection after login.
 const orderedRedirects: (keyof UserPermissions)[] = [
@@ -49,8 +49,6 @@ const permissionToPathMap: Record<string, string> = {
 
 
 export async function login(prevState: string | undefined, formData: FormData) {
-  const session = await getSession();
-
   const { username, password } = Object.fromEntries(formData);
 
   // This is where you would validate the user's credentials
@@ -62,21 +60,11 @@ export async function login(prevState: string | undefined, formData: FormData) {
     return 'اسم المستخدم أو كلمة المرور غير صحيحة.';
   }
 
-  const userPermissions = JSON.parse(user.permissions as string) as UserPermissions;
-
-  // --- Store essential user data in session ---
-  session.isLoggedIn = true;
-  // Store only the ID, as other data will be re-fetched for freshness
-  session.user = {
-      id: user.id,
-      username: user.username,
-      role: user.role as SessionUser['role'],
-      permissions: userPermissions,
-  };
-  await session.save();
-
+  // --- Store only user ID in session ---
+  await loginAction(user.id);
+  
   // --- Smart Redirect Logic ---
-  // Find the first page the user has permission to view.
+  const userPermissions = JSON.parse(user.permissions as string) as UserPermissions;
   const redirectTo = orderedRedirects.find(key => userPermissions[key]?.view) || null;
   const targetPath = redirectTo ? permissionToPathMap[redirectTo] : '/forbidden';
 
@@ -85,8 +73,7 @@ export async function login(prevState: string | undefined, formData: FormData) {
 }
 
 export async function logout() {
-    const session = await getSession();
-    session.destroy();
+    await logoutAction();
     revalidatePath('/login'); // Clears the cache for the login page
     redirect('/login');
 }
