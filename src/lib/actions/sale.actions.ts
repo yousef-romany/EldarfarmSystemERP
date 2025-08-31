@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { z } from 'zod';
@@ -273,10 +272,10 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
       return { message: "لا يمكن تسوية هذه العملية.", success: false };
     }
 
-    const finalTotalPrice = finalWeight * sale.pricePerKg.toNumber();
+    const finalTotalPrice = finalWeight * sale.pricePerKg;
     const newPaymentsTotal = payments.reduce((acc, p) => acc + p.amount, 0);
-    const totalPaid = sale.amountPaid.toNumber() + newPaymentsTotal;
-    const remainingBalance = finalTotalPrice - sale.amountPaid.toNumber();
+    const totalPaid = sale.amountPaid + newPaymentsTotal;
+    const remainingBalance = finalTotalPrice - sale.amountPaid;
     
     if (Math.abs(newPaymentsTotal - remainingBalance) > 0.01) {
         return { message: `المبلغ المدفوع للتسوية (${newPaymentsTotal}) لا يطابق المبلغ المتبقي (${remainingBalance.toFixed(2)}).`, success: false };
@@ -383,23 +382,23 @@ export async function getSaleById(id: string) {
         // Serialize Decimal fields before returning
         return {
             ...sale,
-            pricePerKg: sale.pricePerKg.toNumber(),
-            totalPrice: sale.totalPrice.toNumber(),
-            amountPaid: sale.amountPaid.toNumber(),
-            remainingAmount: sale.remainingAmount.toNumber(),
-            initialWeight: sale.initialWeight?.toNumber() ?? null,
-            finalWeight: sale.finalWeight?.toNumber() ?? null,
+            pricePerKg: sale.pricePerKg,
+            totalPrice: sale.totalPrice,
+            amountPaid: sale.amountPaid,
+            remainingAmount: sale.remainingAmount,
+            initialWeight: sale.initialWeight ?? null,
+            finalWeight: sale.finalWeight ?? null,
             livestock: {
                 ...sale.livestock,
-                weight: sale.livestock.weight.toNumber(),
-                cost: sale.livestock.cost.toNumber(),
+                weight: sale.livestock.weight,
+                cost: sale.livestock.cost,
             },
             payments: sale.payments.map(p => ({
                 ...p,
-                amount: p.amount.toNumber(),
+                amount: p.amount,
                 wallet: {
                     ...p.wallet,
-                    balance: p.wallet.balance.toNumber()
+                    balance: p.wallet.balance
                 }
             }))
         };
@@ -584,7 +583,7 @@ export async function deleteSale(id: string) {
             // If the sale was a draft, we also need to revert the animal status
             // because createSale doesn't change it until confirmation
             // But after confirmation, status becomes PendingSale or Sold
-            // So if we delete a draft, we don't need to do anything with the livestock
+            // So if we delete a *draft*, we don't need to do anything with the livestock
             // Correction: No, the status *is* changed to PendingSale upon confirmation of deferred sale.
             // So when deleting a *draft*, nothing happens to the animal. Correct.
             // The logic above for 'Completed' or 'Pending' handles reverting status.
