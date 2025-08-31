@@ -1,10 +1,12 @@
 
+'use server';
 import { getIronSession, IronSession, SessionOptions } from 'iron-session';
 import { cookies } from 'next/headers';
 import type { SessionUser } from './types';
+import { prisma } from './prisma';
 
 
-export const sessionOptions: SessionOptions = {
+const sessionOptions: SessionOptions = {
   // TODO: Use a strong password from environment variables
   password: process.env.SECRET_COOKIE_PASSWORD || 'complex_password_at_least_32_characters_long',
   cookieName: 'mawashi-manager-session',
@@ -23,20 +25,29 @@ export interface SessionData {
 
 export async function getSession() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  // This is a workaround for a bug in iron-session where the session is not saved
-  // when the user is not logged in. This causes the session to be re-created on
-  // every request, which breaks the flash message system.
-  if (!session.isLoggedIn) {
-    session.isLoggedIn = false;
+  
+  // If the user is logged in, re-fetch their data from the database to ensure it's fresh
+  // This is a robust way to ensure the session user data is never stale.
+  if (session.isLoggedIn && session.user?.id) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    });
+    if (user) {
+      session.user = {
+        id: user.id,
+        username: user.username,
+        role: user.role as SessionUser['role'],
+        permissions: JSON.parse(user.permissions as string),
+      };
+    } else {
+      // If user not found in DB (e.g., deleted), destroy the session
+      session.destroy();
+    }
+  } else {
+     if (!session.isLoggedIn) {
+        session.isLoggedIn = false;
+    }
   }
-  return session;
-}
 
-export async function getSessionData(): Promise<SessionData> {
-    const session = await getSession();
-    // Ensure we always return an object that matches the SessionData interface, even if not logged in.
-    return {
-        isLoggedIn: session.isLoggedIn ?? false,
-        user: session.user,
-    };
+  return session;
 }
