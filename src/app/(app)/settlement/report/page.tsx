@@ -60,7 +60,7 @@ const SettlementReportPage = () => {
   if (!data || !data.wallets) return <div className="p-4">لا توجد بيانات لهذا اليوم.</div>;
   
   const cashWallet = data.wallets.find(w => w.id === data.cashWalletId);
-  const totalBalance = data.wallets.reduce((acc, w) => acc + w.balance, 0);
+  const totalBalance = data.wallets.reduce((acc, w) => acc + w, 0);
 
   return (
     <div className="bg-white min-h-screen p-8 font-body printable-area">
