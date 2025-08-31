@@ -40,14 +40,13 @@ export default function DailyReportPage() {
   const { data, error, isLoading } = useSWR<DailyReportData>(`/api/reports/daily?date=${dateString}`, fetcher);
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
-
-  const cashWallet = data?.wallets.find(w => w.id === data.cashWalletId);
-  const otherWallets = data?.wallets.filter(w => w.id !== data.cashWalletId) || [];
   
   if (error) return <div>فشل في تحميل البيانات...</div>
   if (isLoading) return <div>جاري تحميل التقرير...</div>
   if (!data) return <div>لا توجد بيانات لهذا اليوم.</div>
-  
+
+  const cashWallet = data.wallets.find(w => w.id === data.cashWalletId);
+  const otherWallets = data.wallets.filter(w => w.id !== data.cashWalletId) || [];
   const { cashFlow, transactions } = data;
 
 
