@@ -118,7 +118,7 @@ export default async function BarnLivestockPage({ params }: { params: { id: stri
                     </TableCell>
                     <TableCell>{getTypeText(animal as LivestockWithDetails)}</TableCell>
                     <TableCell>{animal.breed}</TableCell>
-                    <TableCell>{animal.weight.toNumber()} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
+                    <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
                     <TableCell>{animal.age}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(animal.status)}>{getStatusText(animal.status)}</Badge>

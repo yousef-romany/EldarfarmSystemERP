@@ -5,22 +5,33 @@ import { PageHeader } from '@/components/page-header';
 import { prisma } from '@/lib/prisma';
 import DashboardClientPage from './client-page';
 import type { LivestockStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 export default async function DashboardPage() {
   
+  // Calculate total value correctly, considering batches
+  const livestockForValue = await prisma.livestock.findMany({
+    where: { status: { not: 'Sold' } },
+    select: { cost: true, isBatch: true, quantity: true }
+  });
+
+  const totalValue = livestockForValue.reduce((acc, item) => {
+    const itemCost = item.cost || 0;
+    if (item.isBatch) {
+      return acc + (itemCost * (item.quantity || 1));
+    }
+    return acc + itemCost;
+  }, 0);
+
+
   const [
     livestockCount,
     barnCount,
-    totalValueResult,
     statusCountsResult,
     typeCountsResult,
   ] = await Promise.all([
     prisma.livestock.count({ where: { status: { not: 'Sold' } } }),
     prisma.barn.count(),
-    prisma.livestock.aggregate({
-      _sum: { cost: true },
-      where: { status: { not: 'Sold' } }
-    }),
     prisma.livestock.groupBy({
       by: ['status'],
       _count: { id: true },
@@ -53,7 +64,7 @@ export default async function DashboardPage() {
   const stats = {
     livestockCount,
     barnCount,
-    totalValue: totalValueResult._sum.cost ?? 0,
+    totalValue,
     statusCounts: formattedStatusCounts,
     typeCounts: formattedTypeCounts
   };
