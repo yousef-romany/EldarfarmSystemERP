@@ -53,7 +53,7 @@ export default async function DashboardPage() {
   const stats = {
     livestockCount,
     barnCount,
-    totalValue: totalValueResult._sum.cost?.toNumber() ?? 0,
+    totalValue: totalValueResult._sum.cost ? totalValueResult._sum.cost.toNumber() : 0,
     statusCounts: formattedStatusCounts,
     typeCounts: formattedTypeCounts
   };
