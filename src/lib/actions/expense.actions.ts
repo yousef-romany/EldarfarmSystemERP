@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -69,7 +70,7 @@ export async function createExpense(prevState: ExpenseState, formData: FormData)
     // Check if wallets have enough balance
     for (const payment of payments) {
         const wallet = await prisma.wallet.findUnique({ where: { id: payment.walletId } });
-        if (!wallet || wallet.balance.toNumber() < payment.amount) {
+        if (!wallet || wallet.balance < payment.amount) {
             return { message: `رصيد محفظة "${wallet?.name}" غير كافٍ.`, success: false };
         }
     }
@@ -153,13 +154,13 @@ export async function getExpenseById(id: string) {
 
         return {
             ...expense,
-            amount: expense.amount.toNumber(),
+            amount: expense.amount,
             payments: expense.payments.map(p => ({
                 ...p,
-                amount: p.amount.toNumber(),
+                amount: p.amount,
                 wallet: {
                     ...p.wallet,
-                    balance: p.wallet.balance.toNumber()
+                    balance: p.wallet.balance
                 }
             }))
         };
@@ -231,7 +232,7 @@ export async function updateExpense(expenseId: string, prevState: ExpenseState, 
             for (const newPayment of newPayments) {
                 // Check wallet balance before decrementing
                 const wallet = await tx.wallet.findUnique({ where: { id: newPayment.walletId } });
-                if (!wallet || wallet.balance.toNumber() < newPayment.amount) {
+                if (!wallet || wallet.balance < newPayment.amount) {
                     throw new Error(`رصيد محفظة "${wallet?.name}" غير كافٍ.`);
                 }
                 await tx.wallet.update({

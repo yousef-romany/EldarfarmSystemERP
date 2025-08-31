@@ -23,8 +23,8 @@ export async function GET(request: Request) {
 
     const serializedSettlements = settlements.map(s => ({
       ...s,
-      amount: s.amount, // No need to call .toNumber() as it's a Float
-      details: s.details, // Prisma JSON field is already serialized
+      amount: s.amount,
+      details: s.details, 
     }));
 
     return NextResponse.json(serializedSettlements);

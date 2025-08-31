@@ -16,13 +16,13 @@ export default async function DeferredSalePage() {
 
   const availableLivestock = availableLivestockData.map(l => ({
     ...l,
-    weight: l.weight.toNumber(),
-    cost: l.cost.toNumber(),
+    weight: l.weight,
+    cost: l.cost,
   }));
   
   const wallets = walletsData.map(w => ({
     ...w,
-    balance: w.balance.toNumber()
+    balance: w.balance
   }));
 
   return <DeferredSaleClientPage availableLivestock={availableLivestock} wallets={wallets} />;

@@ -174,7 +174,7 @@ export async function confirmPurchase(prevState: ConfirmState, formData: FormDat
             // 1. Check wallet balances
             for (const payment of purchase.payments) {
                 const wallet = await tx.wallet.findUnique({ where: { id: payment.walletId } });
-                if (!wallet || wallet.balance.toNumber() < payment.amount.toNumber()) {
+                if (!wallet || wallet.balance < payment.amount) {
                     throw new Error(`رصيد محفظة "${wallet?.name}" غير كافٍ لإتمام عملية الدفع.`);
                 }
             }
@@ -353,21 +353,21 @@ export async function getPurchaseById(id: string) {
         // Serialize Decimal fields before returning
         return {
             ...purchase,
-            totalCost: purchase.totalCost.toNumber(),
-            amountPaid: purchase.amountPaid.toNumber(),
-            remainingAmount: purchase.remainingAmount.toNumber(),
+            totalCost: purchase.totalCost,
+            amountPaid: purchase.amountPaid,
+            remainingAmount: purchase.remainingAmount,
             livestock: purchase.livestock ? {
                 ...purchase.livestock,
-                weight: purchase.livestock.weight.toNumber(),
-                cost: purchase.livestock.cost.toNumber(),
+                weight: purchase.livestock.weight,
+                cost: purchase.livestock.cost,
             } : null,
             livestockData: purchase.livestockData as any,
             payments: purchase.payments.map(p => ({
                 ...p,
-                amount: p.amount.toNumber(),
+                amount: p.amount,
                 wallet: {
                     ...p.wallet,
-                    balance: p.wallet.balance.toNumber()
+                    balance: p.wallet.balance
                 }
             }))
         };

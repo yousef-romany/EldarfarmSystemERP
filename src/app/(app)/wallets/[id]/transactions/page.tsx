@@ -43,7 +43,7 @@ export default async function WalletTransactionsPage({ params }: { params: { id:
                 <Badge>الإجمالي</Badge>
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(wallet.balance.toNumber())}</div>
+                <div className="text-2xl font-bold">{formatCurrency(wallet.balance)}</div>
             </CardContent>
         </Card>
       </div>
@@ -75,7 +75,7 @@ export default async function WalletTransactionsPage({ params }: { params: { id:
                       </Badge>
                     </TableCell>
                     <TableCell>{payment.description}</TableCell>
-                    <TableCell className="text-left font-medium">{formatCurrency(payment.amount.toNumber())}</TableCell>
+                    <TableCell className="text-left font-medium">{formatCurrency(payment.amount)}</TableCell>
                   </TableRow>
                 ))
               ) : (
@@ -92,5 +92,3 @@ export default async function WalletTransactionsPage({ params }: { params: { id:
     </>
   );
 }
-
-    

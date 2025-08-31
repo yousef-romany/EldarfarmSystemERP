@@ -147,13 +147,13 @@ export async function getContributionById(id: string) {
         // Serialize Decimal fields
         return {
           ...contribution,
-          totalAmount: contribution.totalAmount.toNumber(),
+          totalAmount: contribution.totalAmount,
           payments: contribution.payments.map(p => ({
             ...p,
-            amount: p.amount.toNumber(),
+            amount: p.amount,
             wallet: {
               ...p.wallet,
-              balance: p.wallet.balance.toNumber()
+              balance: p.wallet.balance
             }
           }))
         };

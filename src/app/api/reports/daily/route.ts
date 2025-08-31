@@ -58,26 +58,26 @@ export async function GET(request: Request) {
     const inflows = cashPayments.filter(p => p.type === 'Income');
     const outflows = cashPayments.filter(p => p.type === 'Expense');
 
-    const totalIn = inflows.reduce((sum, p) => sum + p.amount.toNumber(), 0);
-    const totalOut = outflows.reduce((sum, p) => sum + p.amount.toNumber(), 0);
+    const totalIn = inflows.reduce((sum, p) => sum + p.amount, 0);
+    const totalOut = outflows.reduce((sum, p) => sum + p.amount, 0);
     const netChange = totalIn - totalOut;
 
     const formattedInflows = inflows.map(p => {
         let type = 'غير معروف';
         if (p.saleId) type = 'بيع';
         if (p.contributionId) type = 'نذر حى نقدى';
-        return { type, description: p.description || '', amount: p.amount.toNumber() };
+        return { type, description: p.description || '', amount: p.amount };
     });
 
     const formattedOutflows = outflows.map(p => {
         let type = 'غير معروف';
         if (p.expenseId) type = 'مصروف';
         if (p.purchaseId) type = 'شراء';
-        return { type, description: p.description || '', amount: p.amount.toNumber() };
+        return { type, description: p.description || '', amount: p.amount };
     });
 
     const responseData = {
-      wallets: wallets.map(w => ({ ...w, balance: w.balance.toNumber() })),
+      wallets: wallets.map(w => ({ ...w, balance: w.balance })),
       cashWalletId,
       cashFlow: {
         totalIn,

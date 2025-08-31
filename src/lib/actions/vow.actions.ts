@@ -253,8 +253,8 @@ export async function getVowById(id: string) {
           ...vow,
           livestock: {
             ...vow.livestock,
-            weight: vow.livestock.weight.toNumber(),
-            cost: vow.livestock.cost.toNumber()
+            weight: vow.livestock.weight,
+            cost: vow.livestock.cost
           }
         }
     } catch (error) {

@@ -8,10 +8,10 @@ export async function GET(request: Request) {
       orderBy: { name: 'asc' },
     });
 
-    // Convert Decimal fields to number for JSON serialization
+    // Values are already numbers, no need for serialization
     const serializedWallets = wallets.map(w => ({
         ...w,
-        balance: w.balance.toNumber()
+        balance: w.balance
     }));
 
     return NextResponse.json(serializedWallets);

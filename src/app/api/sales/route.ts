@@ -19,15 +19,15 @@ export async function GET(request: Request) {
       }
     });
 
-    // Serialize decimal fields
+    // Values are already numbers, no need to convert
     const sales = salesData.map(s => ({
       ...s,
-      pricePerKg: s.pricePerKg.toNumber(),
-      totalPrice: s.totalPrice.toNumber(),
-      amountPaid: s.amountPaid.toNumber(),
-      remainingAmount: s.remainingAmount.toNumber(),
-      initialWeight: s.initialWeight?.toNumber() ?? 0,
-      finalWeight: s.finalWeight?.toNumber() ?? null,
+      pricePerKg: s.pricePerKg,
+      totalPrice: s.totalPrice,
+      amountPaid: s.amountPaid,
+      remainingAmount: s.remainingAmount,
+      initialWeight: s.initialWeight ?? 0,
+      finalWeight: s.finalWeight ?? null,
     }));
 
     return NextResponse.json(sales);

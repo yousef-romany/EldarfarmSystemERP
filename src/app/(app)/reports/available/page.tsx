@@ -29,7 +29,7 @@ export default async function AvailableLivestockReportPage() {
 
   const availableLivestock = availableLivestockData.map(animal => ({
     ...animal,
-    weight: animal.weight.toNumber(),
+    weight: animal.weight,
   }));
 
   const getTypeText = (animal: LivestockWithDetails) => {
@@ -109,5 +109,3 @@ export default async function AvailableLivestockReportPage() {
     </>
   );
 }
-
-

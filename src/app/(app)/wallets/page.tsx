@@ -11,7 +11,7 @@ export default async function WalletsPage() {
     // Serialize Decimal fields
     const wallets = walletsData.map(w => ({
       ...w,
-      balance: w.balance.toNumber()
+      balance: w.balance
     }));
 
   return (

@@ -39,11 +39,11 @@ export async function GET(request: Request) {
       },
     });
 
-    // Serialize Decimal fields before sending the response
+    // Values are already numbers from Prisma, no need to convert
     const livestock = livestockData.map(animal => ({
       ...animal,
-      weight: animal.weight.toNumber(),
-      cost: animal.cost.toNumber(),
+      weight: animal.weight,
+      cost: animal.cost,
     }));
 
     return NextResponse.json(livestock);

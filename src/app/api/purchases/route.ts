@@ -27,23 +27,23 @@ export async function GET(request: Request) {
       }
     });
 
-    // Serialize Decimal fields
+    // Values are already numbers, no need to convert
     const purchases = purchasesData.map(p => ({
       ...p,
-      totalCost: p.totalCost.toNumber(),
-      amountPaid: p.amountPaid.toNumber(),
-      remainingAmount: p.remainingAmount.toNumber(),
+      totalCost: p.totalCost,
+      amountPaid: p.amountPaid,
+      remainingAmount: p.remainingAmount,
       livestock: {
         ...p.livestock,
-        weight: p.livestock.weight.toNumber(),
-        cost: p.livestock.cost.toNumber(),
+        weight: p.livestock.weight,
+        cost: p.livestock.cost,
       },
       payments: p.payments.map(payment => ({
         ...payment,
-        amount: payment.amount.toNumber(),
+        amount: payment.amount,
         wallet: {
           ...payment.wallet,
-          balance: payment.wallet.balance.toNumber(),
+          balance: payment.wallet.balance,
         }
       }))
     }));
