@@ -1,45 +1,35 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getIronSession } from 'iron-session';
-import { cookies } from 'next/headers';
-import type { SessionData } from './lib/session';
 
-// Define session options directly here as they are needed for getIronSession
-const sessionOptions = {
-  password: process.env.SECRET_COOKIE_PASSWORD || 'complex_password_at_least_32_characters_long',
-  cookieName: 'mawashi-manager-session',
-  cookieOptions: {},
-};
-
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  
-  // Directly get the session without database lookups
-  const session = await getIronSession<SessionData>(cookies(), sessionOptions);
-  const isLoggedIn = session.isLoggedIn ?? false;
-
-  const isPublicPath = path === '/login';
+  const cookie = request.cookies.get('mawashi-manager-session');
 
   // Allow API routes, Next.js internal routes, and static files to pass through
   if (path.startsWith('/api') || path.startsWith('/_next') || path.startsWith('/static') || /\.(.*)$/.test(path)) {
     return NextResponse.next();
   }
 
-  // Redirect logic
-  if (isPublicPath && isLoggedIn) {
-    // If logged in, redirect from login page to dashboard
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  const isPublicPath = path === '/login';
+
+  // If user is trying to access login page but has a session cookie, let them pass
+  // but they will be redirected by the page logic if the session is valid.
+  if (isPublicPath && cookie) {
+     return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+  
+  if (isPublicPath && !cookie) {
+      return NextResponse.next();
   }
 
-  if (!isPublicPath && !isLoggedIn) {
-    // If not logged in and not on a public page, redirect to login
+  // If the path is not public and there is no cookie, redirect to login
+  if (!isPublicPath && !cookie) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
-
-  // If we are here, the user is either correctly on a public page
-  // or logged in and on a private page. We don't need to check permissions
-  // here anymore as it will be handled by the layout.
+  
+  // If we are here, the user is accessing a protected route and has a cookie.
+  // The actual session validation will happen in the AppLayout component.
   return NextResponse.next();
 }
 
