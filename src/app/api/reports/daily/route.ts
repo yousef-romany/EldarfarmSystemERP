@@ -23,11 +23,6 @@ export async function GET(request: Request) {
         where: { icon: 'cash' }
     });
 
-    if (!cashWallet) {
-        return NextResponse.json({ error: 'Cash wallet not configured' }, { status: 500 });
-    }
-    const cashWalletId = cashWallet.id;
-
     // Fetch all wallets' current balances
     const wallets = await prisma.wallet.findMany();
     
@@ -53,7 +48,7 @@ export async function GET(request: Request) {
       }
     });
 
-    const cashPayments = payments.filter(p => p.walletId === cashWalletId);
+    const cashPayments = cashWallet ? payments.filter(p => p.walletId === cashWallet.id) : [];
 
     const inflows = cashPayments.filter(p => p.type === 'Income');
     const outflows = cashPayments.filter(p => p.type === 'Expense');
@@ -78,7 +73,7 @@ export async function GET(request: Request) {
 
     const responseData = {
       wallets: wallets.map(w => ({ ...w, balance: w.balance })),
-      cashWalletId,
+      cashWalletId: cashWallet?.id || null,
       cashFlow: {
         totalIn,
         totalOut,
