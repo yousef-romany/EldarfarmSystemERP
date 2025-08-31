@@ -33,6 +33,11 @@ export async function GET(request: Request) {
           gte: startDate,
           lte: endDate,
         },
+        // This logic ensures that we get payments for:
+        // - Sales that are 'Completed'
+        // - Purchases that are 'Completed'
+        // - OR any Expense
+        // - OR any Contribution
         OR: [
           { sale: { status: 'Completed' } },
           { purchase: { status: 'Completed' } },
@@ -60,13 +65,13 @@ export async function GET(request: Request) {
     const formattedInflows = inflows.map(p => {
         let type = 'غير معروف';
         if (p.saleId) type = 'بيع';
-        if (p.contributionId) type = 'نذر حى نقدى';
+        if (p.contributionId) type = 'نذر نقدى';
         return { type, description: p.description || '', amount: p.amount };
     });
 
     const formattedOutflows = outflows.map(p => {
         let type = 'غير معروف';
-        if (p.expenseId) type = 'مصروف';
+        if (p.expenseId) type = p.expense?.category === 'Feed' ? 'علف' : (p.expense?.category === 'Vet' ? 'بيطري' : 'مصروف');
         if (p.purchaseId) type = 'شراء';
         return { type, description: p.description || '', amount: p.amount };
     });
