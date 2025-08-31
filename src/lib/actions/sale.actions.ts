@@ -280,6 +280,8 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
     if (Math.abs(newPaymentsTotal - remainingBalance) > 0.01) {
         return { message: `المبلغ المدفوع للتسوية (${newPaymentsTotal}) لا يطابق المبلغ المتبقي (${remainingBalance.toFixed(2)}).`, success: false };
     }
+    
+    const settlementDate = new Date();
 
     await prisma.$transaction(async (tx) => {
       // 1. Update Sale record
@@ -288,7 +290,7 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
         data: {
           status: 'Completed',
           finalWeight,
-          settlementDate: new Date(),
+          settlementDate,
           totalPrice: finalTotalPrice,
           amountPaid: totalPaid,
           remainingAmount: 0,
@@ -302,7 +304,7 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
             amount: p.amount,
             walletId: p.walletId,
             saleId: sale.id,
-            date: new Date(),
+            date: settlementDate, // Use settlement date for payment record
             type: 'Income',
             description: `تسوية بيع الحيوان ${sale.livestock.tagId || sale.livestock.id}`
           }))
@@ -386,8 +388,8 @@ export async function getSaleById(id: string) {
             totalPrice: sale.totalPrice,
             amountPaid: sale.amountPaid,
             remainingAmount: sale.remainingAmount,
-            initialWeight: sale.initialWeight ?? null,
-            finalWeight: sale.finalWeight ?? null,
+            initialWeight: sale.initialWeight,
+            finalWeight: sale.finalWeight,
             livestock: {
                 ...sale.livestock,
                 weight: sale.livestock.weight,
