@@ -13,7 +13,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { useState, useEffect, useActionState, useMemo } from 'react';
+import { useState, useEffect, useActionState, useMemo, useRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -50,6 +50,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
   const { user } = useSession();
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   
   // Form state
   const initialState: ExpenseState = { message: null, errors: {}, success: false };
@@ -58,8 +59,8 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
   const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);
   const [totalCost, setTotalCost] = useState<number>(0);
 
-  const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
-  const remainingBalance = totalCost - totalPaid;
+  const totalPaid = useMemo(() => payments.reduce((acc, p) => acc + (p?.amount || 0), 0), [payments]);
+  const remainingBalance = useMemo(() => totalCost - totalPaid, [totalCost, totalPaid]);
   
   // Filter states
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -83,7 +84,10 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
     if (createState.success) {
       toast({ title: 'نجاح', description: createState.message });
       setIsAddDialogOpen(false);
-      handleOpenDialog(); // Reset dialog state
+      // Reset form fields after successful submission
+      formRef.current?.reset();
+      setPayments([{}]);
+      setTotalCost(0);
     } else if (createState.message && !createState.success) {
       toast({ title: 'خطأ', description: createState.message, variant: 'destructive' });
     }
@@ -108,10 +112,6 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
     }
   }
   
-  const getWalletName = (payment?: { wallet: Wallet }) => {
-    return payment?.wallet.name || 'غير محدد';
-  }
-  
   const handleAddPayment = () => {
     setPayments([...payments, {}]);
   };
@@ -122,20 +122,13 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
     setPayments(newPayments);
   };
   
-  const handlePaymentChange = (index: number, field: keyof Omit<PaymentDetails, 'date'>, value: string | number) => {
-    const newPayments = [...payments.map(p => ({...p}))];
+  const handlePaymentChange = (index: number, field: keyof PaymentDetails, value: string | number) => {
+    const newPayments = [...payments.map(p => ({...p}))] as Partial<PaymentDetails>[];
     const payment = newPayments[index] || {};
     (payment as any)[field] = value;
     newPayments[index] = payment;
     setPayments(newPayments);
   };
-  
-  const handleOpenDialog = () => {
-      setPayments([{}]);
-      setTotalCost(0);
-      setIsAddDialogOpen(true);
-      // Reset form state if needed, though useFormState should handle this.
-  }
   
   const handleDelete = async (id: string) => {
     const result = await deleteExpense(id);
@@ -156,6 +149,17 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
 
   return (
     <>
+      <PageHeader
+        title="إدارة المصروفات"
+        action={
+          user?.permissions.expenses.add && (
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              إضافة مصروف
+            </Button>
+          )
+        }
+      />
       <div className="grid gap-6 md:grid-cols-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -311,7 +315,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
       {/* Add Expense Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-2xl">
-          <form action={createFormAction}>
+          <form ref={formRef} action={createFormAction}>
             <DialogHeader>
               <DialogTitle>إضافة مصروف جديد</DialogTitle>
               <DialogDescription>

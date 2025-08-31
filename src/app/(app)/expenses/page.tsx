@@ -3,10 +3,6 @@ import { prisma } from '@/lib/prisma';
 import ExpensesClientPage from './client-page';
 import { PageHeader } from '@/components/page-header';
 import { getFullSession } from '@/lib/session';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { PlusCircle } from 'lucide-react';
-
 
 export default async function ExpensesPage() {
     const session = await getFullSession();
@@ -23,7 +19,6 @@ export default async function ExpensesPage() {
         }
     });
 
-    // Serialize Decimal fields to numbers
     const expenses = expensesData.map(expense => ({
         ...expense,
         amount: expense.amount,
@@ -38,37 +33,25 @@ export default async function ExpensesPage() {
     }));
 
     const walletsData = await prisma.wallet.findMany({ orderBy: { name: 'asc' } });
-    // Serialize Decimal fields for wallets
     const wallets = walletsData.map(wallet => ({
         ...wallet,
         balance: wallet.balance
     }));
 
-    const totalExpenses = await prisma.expense.aggregate({
+    const totalExpensesResult = await prisma.expense.aggregate({
         _sum: {
             amount: true
         }
     });
 
+    const totalExpenses = totalExpensesResult._sum.amount ?? 0;
+
     return (
         <>
-            <PageHeader
-                title="إدارة المصروفات"
-                action={
-                user?.permissions.expenses.add && (
-                    <Button asChild>
-                        <Link href="/expenses/new">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            إضافة مصروف
-                        </Link>
-                    </Button>
-                )
-                }
-            />
             <ExpensesClientPage 
                 expenses={expenses} 
                 wallets={wallets}
-                totalExpenses={totalExpenses._sum.amount || 0}
+                totalExpenses={totalExpenses}
             />
         </>
     );
