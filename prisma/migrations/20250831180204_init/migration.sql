@@ -3,26 +3,13 @@ CREATE TABLE `User` (
     `id` VARCHAR(191) NOT NULL,
     `username` VARCHAR(191) NOT NULL,
     `password` VARCHAR(191) NOT NULL,
-    `role` VARCHAR(191) NOT NULL,
+    `role` ENUM('DEVELOPER', 'ADMIN', 'MANAGER', 'STAFF') NOT NULL,
+    `permissions` JSON NOT NULL,
     `avatar` VARCHAR(191) NULL,
-    `permissions` JSON NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `User_username_key`(`username`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Log` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `action` VARCHAR(191) NOT NULL,
-    `entityType` VARCHAR(191) NOT NULL,
-    `entityId` VARCHAR(191) NOT NULL,
-    `details` TEXT NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -35,6 +22,7 @@ CREATE TABLE `Barn` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
+    UNIQUE INDEX `Barn_name_key`(`name`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -55,29 +43,37 @@ CREATE TABLE `Livestock` (
     `quantity` INTEGER NULL,
     `livestockTypeId` VARCHAR(191) NOT NULL,
     `breed` VARCHAR(191) NULL,
-    `weight` DECIMAL(10, 2) NOT NULL,
+    `weight` DOUBLE NOT NULL,
     `age` INTEGER NOT NULL,
-    `barnId` VARCHAR(191) NOT NULL,
-    `status` VARCHAR(191) NOT NULL,
-    `cost` DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    `status` ENUM('Available', 'Sold', 'Vowed', 'PendingSale') NOT NULL DEFAULT 'Available',
+    `cost` DOUBLE NOT NULL DEFAULT 0,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `barnId` VARCHAR(191) NOT NULL,
+    `purchaseId` VARCHAR(191) NULL,
+    `saleId` VARCHAR(191) NULL,
+    `vowId` VARCHAR(191) NULL,
 
     UNIQUE INDEX `Livestock_tagId_key`(`tagId`),
+    UNIQUE INDEX `Livestock_purchaseId_key`(`purchaseId`),
+    UNIQUE INDEX `Livestock_saleId_key`(`saleId`),
+    UNIQUE INDEX `Livestock_vowId_key`(`vowId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `Purchase` (
     `id` VARCHAR(191) NOT NULL,
-    `livestockId` VARCHAR(191) NOT NULL,
     `supplier` VARCHAR(191) NULL,
     `purchaseDate` DATETIME(3) NOT NULL,
-    `totalCost` DECIMAL(10, 2) NOT NULL,
-    `amountPaid` DECIMAL(10, 2) NOT NULL,
-    `remainingAmount` DECIMAL(10, 2) NOT NULL,
+    `totalCost` DOUBLE NOT NULL,
+    `amountPaid` DOUBLE NOT NULL,
+    `remainingAmount` DOUBLE NOT NULL,
+    `status` ENUM('Draft', 'Completed', 'Cancelled') NOT NULL DEFAULT 'Draft',
+    `livestockData` JSON NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `livestockId` VARCHAR(191) NULL,
 
     UNIQUE INDEX `Purchase_livestockId_key`(`livestockId`),
     PRIMARY KEY (`id`)
@@ -86,20 +82,20 @@ CREATE TABLE `Purchase` (
 -- CreateTable
 CREATE TABLE `Sale` (
     `id` VARCHAR(191) NOT NULL,
-    `livestockId` VARCHAR(191) NOT NULL,
     `customerName` VARCHAR(191) NOT NULL,
     `saleDate` DATETIME(3) NOT NULL,
     `settlementDate` DATETIME(3) NULL,
-    `type` VARCHAR(191) NOT NULL,
-    `status` VARCHAR(191) NOT NULL,
-    `pricePerKg` DECIMAL(10, 2) NOT NULL,
-    `initialWeight` DECIMAL(10, 2) NULL,
-    `finalWeight` DECIMAL(10, 2) NULL,
-    `totalPrice` DECIMAL(10, 2) NOT NULL,
-    `amountPaid` DECIMAL(10, 2) NOT NULL,
-    `remainingAmount` DECIMAL(10, 2) NOT NULL,
+    `type` ENUM('Immediate', 'Deferred') NOT NULL,
+    `status` ENUM('Draft', 'Pending', 'Completed', 'Cancelled') NOT NULL DEFAULT 'Draft',
+    `pricePerKg` DOUBLE NOT NULL,
+    `initialWeight` DOUBLE NULL,
+    `finalWeight` DOUBLE NULL,
+    `totalPrice` DOUBLE NOT NULL,
+    `amountPaid` DOUBLE NOT NULL,
+    `remainingAmount` DOUBLE NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `livestockId` VARCHAR(191) NOT NULL,
 
     UNIQUE INDEX `Sale_livestockId_key`(`livestockId`),
     PRIMARY KEY (`id`)
@@ -111,25 +107,12 @@ CREATE TABLE `Vow` (
     `donorName` VARCHAR(191) NOT NULL,
     `receiptId` VARCHAR(191) NULL,
     `date` DATETIME(3) NOT NULL,
-    `livestockId` VARCHAR(191) NOT NULL,
-    `notes` TEXT NULL,
+    `notes` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `livestockId` VARCHAR(191) NOT NULL,
 
     UNIQUE INDEX `Vow_livestockId_key`(`livestockId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Expense` (
-    `id` VARCHAR(191) NOT NULL,
-    `date` DATETIME(3) NOT NULL,
-    `category` VARCHAR(191) NOT NULL,
-    `amount` DECIMAL(10, 2) NOT NULL,
-    `description` VARCHAR(191) NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -139,7 +122,20 @@ CREATE TABLE `Contribution` (
     `donorName` VARCHAR(191) NOT NULL,
     `description` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NOT NULL,
-    `totalAmount` DECIMAL(10, 2) NOT NULL,
+    `totalAmount` DOUBLE NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Expense` (
+    `id` VARCHAR(191) NOT NULL,
+    `date` DATETIME(3) NOT NULL,
+    `category` ENUM('Feed', 'Vet', 'Maintenance', 'Other') NOT NULL,
+    `amount` DOUBLE NOT NULL,
+    `description` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -150,8 +146,8 @@ CREATE TABLE `Contribution` (
 CREATE TABLE `Wallet` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
-    `balance` DECIMAL(15, 2) NOT NULL DEFAULT 0,
-    `icon` VARCHAR(191) NOT NULL,
+    `balance` DOUBLE NOT NULL DEFAULT 0,
+    `icon` VARCHAR(191) NOT NULL DEFAULT 'wallet',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -160,17 +156,41 @@ CREATE TABLE `Wallet` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `Settlement` (
+    `id` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `settledById` VARCHAR(191) NOT NULL,
+    `amount` DOUBLE NOT NULL,
+    `details` JSON NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Log` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `action` ENUM('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT') NOT NULL,
+    `entityType` ENUM('USER', 'BARN', 'LIVESTOCK_TYPE', 'LIVESTOCK', 'PURCHASE', 'PURCHASE_DRAFT', 'SALE', 'SALE_DRAFT', 'VOW', 'CONTRIBUTION', 'EXPENSE', 'WALLET', 'SETTLEMENT') NOT NULL,
+    `entityId` VARCHAR(191) NOT NULL,
+    `details` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Payment` (
     `id` VARCHAR(191) NOT NULL,
-    `walletId` VARCHAR(191) NOT NULL,
-    `amount` DECIMAL(10, 2) NOT NULL,
+    `amount` DOUBLE NOT NULL,
     `date` DATETIME(3) NOT NULL,
-    `type` VARCHAR(191) NOT NULL,
+    `type` ENUM('Income', 'Expense') NOT NULL,
     `description` VARCHAR(191) NOT NULL,
-    `purchaseId` VARCHAR(191) NULL,
-    `saleId` VARCHAR(191) NULL,
+    `walletId` VARCHAR(191) NOT NULL,
     `expenseId` VARCHAR(191) NULL,
+    `saleId` VARCHAR(191) NULL,
     `contributionId` VARCHAR(191) NULL,
+    `purchaseId` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -178,16 +198,13 @@ CREATE TABLE `Payment` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
-ALTER TABLE `Log` ADD CONSTRAINT `Log_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Livestock` ADD CONSTRAINT `Livestock_barnId_fkey` FOREIGN KEY (`barnId`) REFERENCES `Barn`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Livestock` ADD CONSTRAINT `Livestock_livestockTypeId_fkey` FOREIGN KEY (`livestockTypeId`) REFERENCES `LivestockType`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Livestock` ADD CONSTRAINT `Livestock_barnId_fkey` FOREIGN KEY (`barnId`) REFERENCES `Barn`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Purchase` ADD CONSTRAINT `Purchase_livestockId_fkey` FOREIGN KEY (`livestockId`) REFERENCES `Livestock`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Livestock` ADD CONSTRAINT `Livestock_purchaseId_fkey` FOREIGN KEY (`purchaseId`) REFERENCES `Purchase`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Sale` ADD CONSTRAINT `Sale_livestockId_fkey` FOREIGN KEY (`livestockId`) REFERENCES `Livestock`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -196,16 +213,22 @@ ALTER TABLE `Sale` ADD CONSTRAINT `Sale_livestockId_fkey` FOREIGN KEY (`livestoc
 ALTER TABLE `Vow` ADD CONSTRAINT `Vow_livestockId_fkey` FOREIGN KEY (`livestockId`) REFERENCES `Livestock`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Settlement` ADD CONSTRAINT `Settlement_settledById_fkey` FOREIGN KEY (`settledById`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Log` ADD CONSTRAINT `Log_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Payment` ADD CONSTRAINT `Payment_walletId_fkey` FOREIGN KEY (`walletId`) REFERENCES `Wallet`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Payment` ADD CONSTRAINT `Payment_purchaseId_fkey` FOREIGN KEY (`purchaseId`) REFERENCES `Purchase`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Payment` ADD CONSTRAINT `Payment_expenseId_fkey` FOREIGN KEY (`expenseId`) REFERENCES `Expense`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Payment` ADD CONSTRAINT `Payment_saleId_fkey` FOREIGN KEY (`saleId`) REFERENCES `Sale`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Payment` ADD CONSTRAINT `Payment_saleId_fkey` FOREIGN KEY (`saleId`) REFERENCES `Sale`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Payment` ADD CONSTRAINT `Payment_expenseId_fkey` FOREIGN KEY (`expenseId`) REFERENCES `Expense`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Payment` ADD CONSTRAINT `Payment_contributionId_fkey` FOREIGN KEY (`contributionId`) REFERENCES `Contribution`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Payment` ADD CONSTRAINT `Payment_contributionId_fkey` FOREIGN KEY (`contributionId`) REFERENCES `Contribution`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `Payment` ADD CONSTRAINT `Payment_purchaseId_fkey` FOREIGN KEY (`purchaseId`) REFERENCES `Purchase`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
