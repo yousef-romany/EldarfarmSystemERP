@@ -23,6 +23,10 @@ export async function GET(request: Request) {
         where: { icon: 'cash' }
     });
 
+    if (!cashWallet) {
+       return NextResponse.json({ error: 'Cash wallet not configured' }, { status: 500 });
+    }
+
     // Fetch all wallets' current balances
     const wallets = await prisma.wallet.findMany();
     
@@ -53,7 +57,7 @@ export async function GET(request: Request) {
       }
     });
 
-    const cashPayments = cashWallet ? payments.filter(p => p.walletId === cashWallet.id) : [];
+    const cashPayments = payments.filter(p => p.walletId === cashWallet.id);
 
     const inflows = cashPayments.filter(p => p.type === 'Income');
     const outflows = cashPayments.filter(p => p.type === 'Expense');
@@ -64,16 +68,30 @@ export async function GET(request: Request) {
 
     const formattedInflows = inflows.map(p => {
         let type = 'غير معروف';
-        if (p.saleId) type = 'بيع';
-        if (p.contributionId) type = 'نذر نقدى';
-        return { type, description: p.description || '', amount: p.amount };
+        let description = p.description || '';
+        if (p.saleId && p.sale) {
+          type = 'بيع';
+          description = `بيع لـ ${p.sale.customerName}`;
+        }
+        if (p.contributionId && p.contribution) {
+          type = 'نذر نقدى';
+          description = `نذر من ${p.contribution.donorName}`;
+        }
+        return { type, description, amount: p.amount };
     });
 
     const formattedOutflows = outflows.map(p => {
         let type = 'غير معروف';
-        if (p.expenseId) type = p.expense?.category === 'Feed' ? 'علف' : (p.expense?.category === 'Vet' ? 'بيطري' : 'مصروف');
-        if (p.purchaseId) type = 'شراء';
-        return { type, description: p.description || '', amount: p.amount };
+        let description = p.description || '';
+         if (p.expenseId && p.expense) {
+            type = 'مصروف';
+            description = p.expense.description;
+        }
+        if (p.purchaseId && p.purchase) {
+          type = 'شراء';
+          description = `شراء من ${p.purchase.supplier || 'مورد غير محدد'}`;
+        }
+        return { type, description, amount: p.amount };
     });
 
     const responseData = {
@@ -96,3 +114,5 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Failed to generate daily report' }, { status: 500 });
   }
 }
+
+    

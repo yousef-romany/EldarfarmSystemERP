@@ -613,3 +613,5 @@ export async function deleteSale(id: string) {
         return { message: 'فشل في حذف عملية البيع.', success: false };
     }
 }
+
+    
