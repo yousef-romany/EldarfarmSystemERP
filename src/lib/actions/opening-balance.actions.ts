@@ -11,14 +11,14 @@ import { Prisma } from '@prisma/client';
 const openingBalanceSchema = z.object({
   entryDate: z.string().min(1, "تاريخ الإدخال مطلوب"),
   estimatedCost: z.coerce.number().min(0, "التكلفة التقديرية يجب أن تكون رقمًا موجبًا أو صفر"),
-  notes: z.string().optional(),
+  notes: z.string().nullish().transform(val => val ?? ''),
   
   // Livestock fields
   isBatch: z.boolean(),
-  tagId: z.string().optional(),
+  tagId: z.string().nullish().transform(val => val ?? ''),
   quantity: z.coerce.number().positive("الكمية يجب أن تكون رقمًا موجبًا").optional(),
   livestockTypeId: z.string().min(1, "يجب تحديد نوع الحيوان"),
-  breed: z.string().optional(),
+  breed: z.string().nullish().transform(val => val ?? ''),
   weight: z.coerce.number().positive("الوزن يجب أن يكون رقمًا موجبًا"),
   age: z.coerce.number().positive("العمر يجب أن يكون رقمًا موجبًا"),
   barnId: z.string().min(1, "يجب تحديد العنبر"),
@@ -104,7 +104,7 @@ export async function createOpeningBalanceLivestock(prevState: OpeningBalanceSta
       // 3. Create Log entry
       await tx.log.create({
         data: {
-          userId: session.user.id,
+          userId: session.user!.id,
           action: 'CREATE',
           entityType: 'LIVESTOCK',
           entityId: livestock.id,
