@@ -18,7 +18,7 @@ export const sessionOptions: SessionOptions = {
 // Define the shape of the session data
 export interface SessionData {
   isLoggedIn: boolean;
-  user?: SessionUser;
+  user: SessionUser;
 }
 
 export async function getSession() {
@@ -32,7 +32,11 @@ export async function getSession() {
   return session;
 }
 
-export async function getSessionData() {
+export async function getSessionData(): Promise<SessionData> {
     const session = await getSession();
-    return session;
+    // Ensure we always return an object that matches the SessionData interface, even if not logged in.
+    return {
+        isLoggedIn: session.isLoggedIn ?? false,
+        user: session.user,
+    };
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SessionData } from '@/lib/session';
@@ -5,10 +6,12 @@ import { SessionUser } from '@/lib/types';
 import { createContext, useContext } from 'react';
 
 type SessionContextType = {
+  isLoggedIn: boolean;
   user: SessionUser | null;
 };
 
 const SessionContext = createContext<SessionContextType>({
+  isLoggedIn: false,
   user: null,
 });
 
@@ -24,6 +27,7 @@ export default function SessionProvider({
   return (
     <SessionContext.Provider
       value={{
+        isLoggedIn: value.isLoggedIn,
         user: value.user ?? null,
       }}
     >

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -26,7 +27,7 @@ const orderedRedirects: (keyof UserPermissions)[] = [
 ];
 
 // Map the permission keys to actual URL paths.
-const permissionToPathMap: Record<keyof UserPermissions, string> = {
+const permissionToPathMap: Record<string, string> = {
   overview: '/dashboard',
   users: '/users',
   barns: '/barns',
@@ -68,7 +69,8 @@ export async function login(prevState: string | undefined, formData: FormData) {
   session.user = {
       id: user.id,
       username: user.username,
-      permissions: userPermissions
+      permissions: userPermissions,
+      role: user.role,
   };
   await session.save();
 

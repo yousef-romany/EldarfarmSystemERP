@@ -124,5 +124,6 @@ export type Contribution = {
 export type SessionUser = {
   id: string;
   username: string;
+  role: 'DEVELOPER' | 'ADMIN' | 'MANAGER' | 'STAFF';
   permissions: UserPermissions;
 }
