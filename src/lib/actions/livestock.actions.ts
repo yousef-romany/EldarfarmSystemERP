@@ -147,13 +147,21 @@ export async function deleteLivestock(livestockId: string) {
     }
 
     try {
-        const livestockToDelete = await prisma.livestock.findUnique({ where: { id: livestockId } });
+        const livestockToDelete = await prisma.livestock.findUnique({
+            where: { id: livestockId },
+            include: { vow: true, purchase: true }
+        });
         if (!livestockToDelete) {
             return { message: 'الماشية غير موجودة.', success: false };
         }
-
+        
+        // This action should not be possible anymore from the UI, but as a safeguard:
+        if (livestockToDelete.vow || livestockToDelete.purchase) {
+            return { message: 'لا يمكن حذف الماشية مباشرة. يرجى حذف النذر أو عملية الشراء المرتبطة بها.', success: false };
+        }
+        
         if (livestockToDelete.status !== 'Available') {
-            return { message: 'لا يمكن حذف إلا المواشي المتاحة فقط.', success: false };
+            return { message: 'لا يمكن حذف إلا المواشي المتاحة فقط والتي ليس لها سجل مرتبط.', success: false };
         }
 
         await prisma.$transaction(async (tx) => {
@@ -174,7 +182,7 @@ export async function deleteLivestock(livestockId: string) {
                     action: 'DELETE',
                     entityType: 'LIVESTOCK',
                     entityId: livestockToDelete.id,
-                    details: `حذف الماشية: ${livestockToDelete.tagId || `دفعة (${livestockToDelete.quantity})`}`
+                    details: `حذف الماشية (رصيد افتتاحي): ${livestockToDelete.tagId || `دفعة (${livestockToDelete.quantity})`}`
                 }
             });
         });
@@ -185,6 +193,9 @@ export async function deleteLivestock(livestockId: string) {
         return { message: 'تم حذف الماشية بنجاح.', success: true };
     } catch (error: any) {
         console.error('Error deleting livestock:', error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+             return { message: 'فشل الحذف. هذا الحيوان مرتبط بعملية بيع. يرجى إلغاء البيع أولاً.', success: false };
+        }
         return { message: error.message || 'فشل في حذف الماشية.', success: false };
     }
 }

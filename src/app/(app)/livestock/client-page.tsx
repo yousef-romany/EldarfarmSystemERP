@@ -72,7 +72,7 @@ export default function LivestockClientPage({ initialLivestock }: LivestockClien
       <CardHeader>
         <CardTitle>قائمة جميع المواشي الحية</CardTitle>
         <CardDescription>
-          عرض وتعديل وحذف جميع المواشي المسجلة في النظام والتي لم يتم بيعها بعد.
+          عرض وتعديل جميع المواشي المسجلة في النظام والتي لم يتم بيعها بعد.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -99,7 +99,7 @@ export default function LivestockClientPage({ initialLivestock }: LivestockClien
                         </TableCell>
                         <TableCell>{getTypeText(animal)}</TableCell>
                         <TableCell>{animal.breed}</TableCell>
-                        <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
+                        <TableCell>{animal.weight.toNumber()} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
                         <TableCell>{animal.age}</TableCell>
                         <TableCell>{animal.barn.name}</TableCell>
                         <TableCell>
@@ -121,13 +121,6 @@ export default function LivestockClientPage({ initialLivestock }: LivestockClien
                                             <Pencil className="mr-2 h-4 w-4" /> تعديل
                                         </Link>
                                     </DropdownMenuItem>
-                                )}
-                                {user?.permissions.livestock.delete && animal.status === 'Available' && (
-                                    <AlertDialogTrigger asChild>
-                                        <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                                            <Trash2 className="mr-2 h-4 w-4" /> حذف
-                                        </DropdownMenuItem>
-                                    </AlertDialogTrigger>
                                 )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
