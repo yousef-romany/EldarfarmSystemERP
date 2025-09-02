@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { z } from 'zod';
@@ -89,42 +90,10 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
 
 
     await prisma.$transaction(async (tx) => {
-      let finalLivestockId = livestockId;
-
-      if (livestock.isBatch) {
-        // Create a new sold livestock record
-        const soldAnimal = await tx.livestock.create({
-          data: {
-            livestockTypeId: livestock.livestockTypeId,
-            breed: livestock.breed,
-            age: livestock.age,
-            weight: livestock.weight, // Using average weight from batch
-            cost: livestock.cost, // Using average cost
-            status: 'Sold',
-            isBatch: false,
-            quantity: quantitySold, // Storing how many were sold in this instance
-            barnId: livestock.barnId,
-            // No tagId unless one is generated/provided
-          }
-        });
-        finalLivestockId = soldAnimal.id;
-
-        // Decrement quantity from the original batch
-        await tx.livestock.update({
-          where: { id: livestockId },
-          data: {
-            quantity: {
-              decrement: quantitySold
-            }
-          }
-        });
-      }
-
-
       // 1. Create Sale record as Draft
       const sale = await tx.sale.create({
         data: {
-          livestockId: finalLivestockId, // Link to the sold animal record
+          livestockId: livestockId,
           customerName: validatedFields.data.customerName,
           saleDate: new Date(validatedFields.data.saleDate),
           type: saleType,
@@ -136,6 +105,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
           amountPaid: totalPaid,
           remainingAmount: totalPrice - totalPaid,
           settlementDate: null,
+          quantitySold: livestock.isBatch ? quantitySold : 1,
         }
       });
 
@@ -148,7 +118,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
             saleId: sale.id,
             date: new Date(saleDate), // Use the sale date for payment records
             type: 'Income',
-            description: `[مسودة] دفعة من بيع الحيوان ${livestock.tagId || `دفعة (${quantitySold} رأس)`}`
+            description: `[مسودة] دفعة من بيع ${livestock.tagId || `دفعة (${quantitySold} رأس)`}`
           }))
         });
       }
@@ -207,9 +177,8 @@ export async function confirmSale(prevState: ConfirmSaleState, formData: FormDat
         throw new Error("لا يمكن تأكيد هذه العملية.");
       }
 
-      // Check wallet balances for all payments related to this sale
+      // Increment wallet balances for all payments related to this sale
       for (const payment of sale.payments) {
-        // This is an income, so no balance check is needed. We just increment.
         await tx.wallet.update({
           where: { id: payment.walletId },
           data: { balance: { increment: payment.amount } }
@@ -219,42 +188,38 @@ export async function confirmSale(prevState: ConfirmSaleState, formData: FormDat
       const isDeferred = sale.type === 'Deferred';
       const finalStatus = isDeferred ? 'Pending' : 'Completed';
       
-      // For immediate sales of individual animals, update status and occupancy
-      if (!isDeferred && !sale.livestock.isBatch) {
-         await tx.livestock.update({
+      if (sale.livestock.isBatch) {
+        // This is a sale from a batch
+        await tx.livestock.update({
           where: { id: sale.livestockId },
-          data: { status: 'Sold' }
+          data: { quantity: { decrement: sale.quantitySold } }
         });
         await tx.barn.update({
+          where: { id: sale.livestock.barnId },
+          data: { currentOccupancy: { decrement: sale.quantitySold } }
+        });
+
+      } else {
+        // This is a sale of an individual animal
+        await tx.livestock.update({
+          where: { id: sale.livestockId },
+          data: { status: isDeferred ? 'PendingSale' : 'Sold' }
+        });
+
+        // Only decrement occupancy for immediate sales of individual animals
+        if (!isDeferred) {
+          await tx.barn.update({
             where: { id: sale.livestock.barnId },
             data: { currentOccupancy: { decrement: 1 } },
-        });
-      }
-
-      // For immediate sales of batches, the sold animal is already created with 'Sold' status
-      // and the original batch quantity is already decremented. We just need to update barn occupancy.
-      if (!isDeferred && sale.livestock.isBatch) {
-           await tx.barn.update({
-              where: { id: sale.livestock.barnId },
-              data: { currentOccupancy: { decrement: sale.livestock.quantity || 1 } },
           });
+        }
       }
-      
-      // For deferred sales, just mark the animal as pending
-      if (isDeferred) {
-          await tx.livestock.update({
-            where: { id: sale.livestockId },
-            data: { status: 'PendingSale' }
-          });
-      }
-
 
       // Update sale status to final state
       await tx.sale.update({
         where: { id: saleId },
         data: { 
           status: finalStatus,
-          // If it's an immediate sale, set settlement date and final weight now
           settlementDate: isDeferred ? null : new Date(),
           finalWeight: isDeferred ? null : sale.initialWeight,
         }
@@ -606,8 +571,20 @@ export async function deleteSale(id: string) {
                   });
               }
               
-              // Revert livestock status and update barn occupancy if not batch
-              if (!sale.livestock.isBatch) {
+              if (sale.livestock.isBatch) {
+                // If it was a batch sale, increment the quantity back
+                await tx.livestock.update({
+                    where: { id: sale.livestockId },
+                    data: { quantity: { increment: sale.quantitySold } }
+                });
+                // Increment barn occupancy by the quantity sold
+                 await tx.barn.update({
+                    where: { id: sale.livestock.barnId },
+                    data: { currentOccupancy: { increment: sale.quantitySold } }
+                });
+
+              } else {
+                 // Revert individual livestock status
                 await tx.livestock.update({
                   where: { id: sale.livestockId },
                   data: { status: 'Available' }
@@ -628,41 +605,12 @@ export async function deleteSale(id: string) {
             await tx.payment.deleteMany({
                 where: { saleId: id }
             });
-            
-            // If a new livestock record was created for a batch sale, delete it.
-            if (sale.livestock.purchaseId === null && sale.livestock.vowId === null) {
-                // Heuristic: If the animal isn't from a purchase or vow, it was likely created for a batch sale.
-                // A better way would be a flag on the livestock model.
-                const originalBatch = await tx.livestock.findFirst({
-                    where: {
-                        isBatch: true,
-                        livestockTypeId: sale.livestock.livestockTypeId,
-                        breed: sale.livestock.breed,
-                    }
-                });
-                if (originalBatch) {
-                    await tx.livestock.update({
-                        where: {id: originalBatch.id},
-                        data: { quantity: {increment: sale.livestock.quantity || 1}}
-                    })
-                }
-                await tx.livestock.delete({ where: { id: sale.livestockId } });
-            }
-
 
             // Delete the sale itself
             await tx.sale.delete({
                 where: { id }
             });
             
-            // If the sale was a draft, we also need to revert the animal status
-            // because createSale doesn't change it until confirmation
-            // But after confirmation, status becomes PendingSale or Sold
-            // So if we delete a *draft*, we don't need to do anything with the livestock
-            // Correction: No, the status *is* changed to PendingSale upon confirmation of deferred sale.
-            // So when deleting a *draft*, nothing happens to the animal. Correct.
-            // The logic above for 'Completed' or 'Pending' handles reverting status.
-
             // Log the deletion
             await tx.log.create({
                 data: {
@@ -686,3 +634,5 @@ export async function deleteSale(id: string) {
         return { message: 'فشل في حذف عملية البيع.', success: false };
     }
 }
+
+    
