@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { Printer, FileText } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import useSWR from 'swr';
+import useSWR from 'useSWR';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -19,8 +19,7 @@ interface DailyReportData {
     balance: number;
     icon: string;
   }[];
-  cashWalletId: string;
-  cashFlow: {
+  financialSummary: {
     totalIn: number;
     totalOut: number;
     netChange: number;
@@ -59,8 +58,7 @@ const SettlementReportPage = () => {
   if (error) return <div className="p-4">فشل في تحميل التقرير. يرجى التأكد من أنك متصل بالإنترنت وحاول مرة أخرى.</div>;
   if (!data || !data.wallets) return <div className="p-4">لا توجد بيانات لهذا اليوم.</div>;
   
-  const cashWallet = data.wallets.find(w => w.id === data.cashWalletId);
-  const totalBalance = data.wallets.reduce((acc, w) => acc + w, 0);
+  const totalBalance = data.wallets.reduce((acc, w) => acc + w.balance, 0);
 
   return (
     <div className="bg-white min-h-screen p-8 font-body printable-area">
@@ -87,14 +85,13 @@ const SettlementReportPage = () => {
                     </div>
                 </CardHeader>
                 <CardContent className="p-0 mt-8">
-                  {cashWallet && (
-                    <div className='mb-8 break-inside-avoid'>
+                  <div className='mb-8 break-inside-avoid'>
                       <CardHeader className='p-0 mb-4'>
-                          <CardTitle className='text-xl border-b pb-2 mb-2'>تقرير الخزينة: {cashWallet.name}</CardTitle>
+                          <CardTitle className='text-xl border-b pb-2 mb-2'>تقرير الحركات المالية لليوم</CardTitle>
                       </CardHeader>
                       <div className="grid grid-cols-2 gap-8">
                           <div>
-                              <h4 className="font-bold mb-2 text-green-600">المقبوضات النقدية</h4>
+                              <h4 className="font-bold mb-2 text-green-600">المقبوضات</h4>
                               <Table>
                                   <TableHeader><TableRow><TableHead>المصدر</TableHead><TableHead className='text-right'>المبلغ</TableHead></TableRow></TableHeader>
                                   <TableBody>
@@ -106,7 +103,7 @@ const SettlementReportPage = () => {
                               </Table>
                           </div>
                            <div>
-                              <h4 className="font-bold mb-2 text-red-600">المدفوعات النقدية</h4>
+                              <h4 className="font-bold mb-2 text-red-600">المدفوعات</h4>
                                <Table>
                                   <TableHeader><TableRow><TableHead>المصدر</TableHead><TableHead className='text-right'>المبلغ</TableHead></TableRow></TableHeader>
                                   <TableBody>
@@ -121,21 +118,20 @@ const SettlementReportPage = () => {
                       <CardFooter className='p-0 mt-4 flex flex-col items-end space-y-2'>
                           <Separator className="my-2" />
                           <div className="flex justify-between w-full font-semibold">
-                              <span>إجمالي المقبوضات النقدية:</span>
-                              <span className="text-green-600">{formatCurrency(data.cashFlow.totalIn)}</span>
+                              <span>إجمالي المقبوضات:</span>
+                              <span className="text-green-600">{formatCurrency(data.financialSummary.totalIn)}</span>
                           </div>
                           <div className="flex justify-between w-full font-semibold">
-                              <span>إجمالي المدفوعات النقدية:</span>
-                              <span className="text-red-600">{formatCurrency(data.cashFlow.totalOut)}</span>
+                              <span>إجمالي المدفوعات:</span>
+                              <span className="text-red-600">{formatCurrency(data.financialSummary.totalOut)}</span>
                           </div>
                            <Separator className="my-2" />
                            <div className="flex justify-between w-full font-bold text-lg">
-                              <span>الرصيد النهائي للخزينة:</span>
-                              <span>{formatCurrency(cashWallet.balance)}</span>
+                              <span>صافي الحركة لليوم:</span>
+                              <span>{formatCurrency(data.financialSummary.netChange)}</span>
                           </div>
                       </CardFooter>
                     </div>
-                  )}
                   <div className='break-before-page'></div>
                   <CardHeader className='p-0 mb-4 mt-8'>
                       <CardTitle className='text-xl border-b pb-2 mb-2'>ملخص الأرصدة النهائية</CardTitle>
