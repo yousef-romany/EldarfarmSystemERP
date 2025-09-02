@@ -47,6 +47,7 @@ export default function POSClientPage({ availableLivestock, wallets }: { availab
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [customerName, setCustomerName] = useState('');
+  const [quantitySold, setQuantitySold] = useState<number>(1);
 
   const totalPaid = payments.reduce((acc, p) => acc + (p?.amount || 0), 0);
   const remainingBalance = totalPrice - totalPaid;
@@ -61,6 +62,7 @@ export default function POSClientPage({ availableLivestock, wallets }: { availab
       setTotalPrice(0);
       setPayments([{}]);
       setCustomerName('');
+      setQuantitySold(1);
       // Optionally redirect to invoice or sales list
       router.push('/sales');
     } else if (createState.message && !createState.success) {
@@ -88,17 +90,12 @@ export default function POSClientPage({ availableLivestock, wallets }: { availab
 
   useEffect(() => {
     if (selectedAnimal) {
-      const calculatedPrice = currentWeight * pricePerKg;
-      if (totalPrice !== calculatedPrice) {
-          // If total price was manually set, don't override it unless weight/pricePerKg changes
-          // This check is a bit tricky. The logic is: auto-calculate, but allow override.
-          // A simpler way is to just always calculate, and let the user override it in the input.
-      }
+      const calculatedPrice = currentWeight * pricePerKg * (selectedAnimal.isBatch ? quantitySold : 1);
       setTotalPrice(calculatedPrice);
     } else {
       setTotalPrice(0);
     }
-  }, [selectedAnimal, currentWeight, pricePerKg]);
+  }, [selectedAnimal, currentWeight, pricePerKg, quantitySold]);
 
   const handleAnimalSelect = (animalId: string) => {
     const animal = availableLivestock.find(a => a.id === animalId);
@@ -108,7 +105,15 @@ export default function POSClientPage({ availableLivestock, wallets }: { availab
     } else {
       setCurrentWeight(0);
     }
+    setQuantitySold(1);
     setComboboxOpen(false);
+  };
+
+  const getAnimalLabel = (animal: Livestock) => {
+    if (animal.isBatch) {
+      return `دفعة - ${animal.breed} (متاح: ${animal.quantity})`;
+    }
+    return `${animal.tagId} - ${animal.breed} - ${animal.weight} كجم`;
   };
 
   return (
@@ -129,28 +134,29 @@ export default function POSClientPage({ availableLivestock, wallets }: { availab
                       <input type="hidden" name="initialWeight" value={currentWeight} />
                       <input type="hidden" name="pricePerKg" value={pricePerKg} />
                       <input type="hidden" name="totalPrice" value={totalPrice} />
+                      <input type="hidden" name="quantitySold" value={selectedAnimal?.isBatch ? quantitySold : 1} />
                       <input type="hidden" name="saleDate" value={format(new Date(), 'yyyy-MM-dd')} />
 
                       <div className="grid md:grid-cols-2 gap-4">
                           <div className="grid gap-2">
-                              <Label htmlFor="animal-select">اختر الحيوان</Label>
+                              <Label htmlFor="animal-select">اختر الحيوان أو الدفعة</Label>
                               <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
                                   <PopoverTrigger asChild>
                                       <Button variant="outline" role="combobox" aria-expanded={comboboxOpen} className="w-full justify-between">
-                                          {selectedAnimal ? `${selectedAnimal.tagId} - ${selectedAnimal.weight} كجم` : "اختر حيوانًا..."}
+                                          {selectedAnimal ? getAnimalLabel(selectedAnimal) : "اختر..."}
                                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                       </Button>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                       <Command>
-                                          <CommandInput placeholder="ابحث بالرقم التعريفي..." />
+                                          <CommandInput placeholder="ابحث بالرقم التعريفي أو السلالة..." />
                                           <CommandList>
                                               <CommandEmpty>لم يتم العثور على حيوان.</CommandEmpty>
                                               <CommandGroup>
                                                   {availableLivestock.map((animal) => (
                                                       <CommandItem key={animal.id} value={animal.id} onSelect={() => handleAnimalSelect(animal.id)}>
                                                           <Check className={cn("mr-2 h-4 w-4", selectedAnimal?.id === animal.id ? "opacity-100" : "opacity-0")} />
-                                                          {animal.tagId} - {animal.breed} - {animal.weight} كجم
+                                                          {getAnimalLabel(animal)}
                                                       </CommandItem>
                                                   ))}
                                               </CommandGroup>
@@ -167,15 +173,21 @@ export default function POSClientPage({ availableLivestock, wallets }: { availab
 
                       {selectedAnimal && (
                       <div className='grid md:grid-cols-3 gap-4'>
+                          {selectedAnimal.isBatch && (
+                             <div className="grid gap-2">
+                                <Label htmlFor="quantity-sold">الكمية المباعة</Label>
+                                <Input id="quantity-sold" type="number" value={quantitySold} onChange={(e) => setQuantitySold(Math.min(parseInt(e.target.value) || 1, selectedAnimal.quantity || 1))} />
+                             </div>
+                          )}
                           <div className="grid gap-2">
-                          <Label htmlFor="current-weight">الوزن الحالي (كجم)</Label>
+                          <Label htmlFor="current-weight">الوزن (كجم)</Label>
                           <Input id="current-weight" type="number" value={currentWeight} onChange={(e) => setCurrentWeight(parseFloat(e.target.value) || 0)} />
                           </div>
                           <div className="grid gap-2">
                           <Label htmlFor="price-per-kg">سعر الكيلو (ج.م)</Label>
                           <Input id="price-per-kg" type="number" placeholder="أدخل سعر الكيلو" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} />
                           </div>
-                          <div className="grid gap-2">
+                          <div className={cn("grid gap-2", selectedAnimal.isBatch ? 'md:col-span-3' : '')}>
                           <Label htmlFor="total-price-display">السعر الإجمالي</Label>
                           <Input id="total-price-display" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} />
                           </div>

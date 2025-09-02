@@ -7,9 +7,12 @@ export default async function POSPage() {
     prisma.livestock.findMany({
       where: {
         status: { in: ['Available', 'Vowed'] },
-        isBatch: false, // POS is usually for individual animals
+        OR: [
+          { isBatch: false },
+          { quantity: { gt: 0 } }
+        ]
       },
-      orderBy: { tagId: 'asc' },
+      orderBy: { createdAt: 'desc' },
     }),
     prisma.wallet.findMany({ orderBy: { name: 'asc' } }),
   ]);
@@ -27,3 +30,4 @@ export default async function POSPage() {
 
   return <POSClientPage availableLivestock={availableLivestock} wallets={wallets} />;
 }
+

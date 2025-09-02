@@ -23,6 +23,7 @@ const saleSchema = z.object({
   totalPrice: z.coerce.number().positive("السعر الإجمالي يجب أن يكون أكبر من صفر"),
   saleType: z.enum(['Immediate', 'Deferred']),
   payments: z.array(paymentSchema),
+  quantitySold: z.coerce.number().optional().default(1),
 });
 
 type SaleState = {
@@ -55,6 +56,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     totalPrice: formData.get('totalPrice'),
     saleType: saleType,
     payments: paymentsData,
+    quantitySold: formData.get('quantitySold'),
   });
 
   if (!validatedFields.success) {
@@ -65,7 +67,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     };
   }
 
-  const { livestockId, totalPrice, payments, saleDate } = validatedFields.data;
+  const { livestockId, totalPrice, payments, saleDate, quantitySold } = validatedFields.data;
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
   if (totalPaid === 0) {
@@ -81,12 +83,48 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     if (!livestock || livestock.status === 'Sold' || livestock.status === 'PendingSale') {
         return { message: 'الحيوان المحدد غير متاح للبيع.', success: false };
     }
+    if (livestock.isBatch && (livestock.quantity || 0) < quantitySold) {
+        return { message: `الكمية المطلوبة (${quantitySold}) أكبر من الكمية المتاحة في الدفعة (${livestock.quantity}).`, success: false };
+    }
+
 
     await prisma.$transaction(async (tx) => {
+      let finalLivestockId = livestockId;
+
+      if (livestock.isBatch) {
+        // Create a new sold livestock record
+        const soldAnimal = await tx.livestock.create({
+          data: {
+            livestockTypeId: livestock.livestockTypeId,
+            breed: livestock.breed,
+            age: livestock.age,
+            weight: livestock.weight, // Using average weight from batch
+            cost: livestock.cost, // Using average cost
+            status: 'Sold',
+            isBatch: false,
+            quantity: quantitySold, // Storing how many were sold in this instance
+            barnId: livestock.barnId,
+            // No tagId unless one is generated/provided
+          }
+        });
+        finalLivestockId = soldAnimal.id;
+
+        // Decrement quantity from the original batch
+        await tx.livestock.update({
+          where: { id: livestockId },
+          data: {
+            quantity: {
+              decrement: quantitySold
+            }
+          }
+        });
+      }
+
+
       // 1. Create Sale record as Draft
       const sale = await tx.sale.create({
         data: {
-          livestockId: validatedFields.data.livestockId,
+          livestockId: finalLivestockId, // Link to the sold animal record
           customerName: validatedFields.data.customerName,
           saleDate: new Date(validatedFields.data.saleDate),
           type: saleType,
@@ -110,7 +148,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
             saleId: sale.id,
             date: new Date(saleDate), // Use the sale date for payment records
             type: 'Income',
-            description: `[مسودة] دفعة من بيع الحيوان ${livestock.tagId || livestock.id}`
+            description: `[مسودة] دفعة من بيع الحيوان ${livestock.tagId || `دفعة (${quantitySold} رأس)`}`
           }))
         });
       }
@@ -181,21 +219,35 @@ export async function confirmSale(prevState: ConfirmSaleState, formData: FormDat
       const isDeferred = sale.type === 'Deferred';
       const finalStatus = isDeferred ? 'Pending' : 'Completed';
       
-      // Update livestock status
-      if (!sale.livestock.isBatch) {
+      // For immediate sales of individual animals, update status and occupancy
+      if (!isDeferred && !sale.livestock.isBatch) {
          await tx.livestock.update({
           where: { id: sale.livestockId },
-          data: { status: isDeferred ? 'PendingSale' : 'Sold' }
+          data: { status: 'Sold' }
         });
+        await tx.barn.update({
+            where: { id: sale.livestock.barnId },
+            data: { currentOccupancy: { decrement: 1 } },
+        });
+      }
 
-        // Decrement barn occupancy only for immediate, completed sales
-        if (!isDeferred) {
+      // For immediate sales of batches, the sold animal is already created with 'Sold' status
+      // and the original batch quantity is already decremented. We just need to update barn occupancy.
+      if (!isDeferred && sale.livestock.isBatch) {
            await tx.barn.update({
               where: { id: sale.livestock.barnId },
-              data: { currentOccupancy: { decrement: 1 } },
+              data: { currentOccupancy: { decrement: sale.livestock.quantity || 1 } },
           });
-        }
       }
+      
+      // For deferred sales, just mark the animal as pending
+      if (isDeferred) {
+          await tx.livestock.update({
+            where: { id: sale.livestockId },
+            data: { status: 'PendingSale' }
+          });
+      }
+
 
       // Update sale status to final state
       await tx.sale.update({
@@ -576,6 +628,27 @@ export async function deleteSale(id: string) {
             await tx.payment.deleteMany({
                 where: { saleId: id }
             });
+            
+            // If a new livestock record was created for a batch sale, delete it.
+            if (sale.livestock.purchaseId === null && sale.livestock.vowId === null) {
+                // Heuristic: If the animal isn't from a purchase or vow, it was likely created for a batch sale.
+                // A better way would be a flag on the livestock model.
+                const originalBatch = await tx.livestock.findFirst({
+                    where: {
+                        isBatch: true,
+                        livestockTypeId: sale.livestock.livestockTypeId,
+                        breed: sale.livestock.breed,
+                    }
+                });
+                if (originalBatch) {
+                    await tx.livestock.update({
+                        where: {id: originalBatch.id},
+                        data: { quantity: {increment: sale.livestock.quantity || 1}}
+                    })
+                }
+                await tx.livestock.delete({ where: { id: sale.livestockId } });
+            }
+
 
             // Delete the sale itself
             await tx.sale.delete({
@@ -613,5 +686,3 @@ export async function deleteSale(id: string) {
         return { message: 'فشل في حذف عملية البيع.', success: false };
     }
 }
-
-    
