@@ -23,38 +23,17 @@ export async function GET(request: Request) {
         where: { icon: 'cash' }
     });
 
-    if (!cashWallet) {
-       // Return a valid empty report structure instead of an error
-        const allWallets = await prisma.wallet.findMany();
-        return NextResponse.json({
-            wallets: allWallets.map(w => ({ ...w, balance: w.balance })),
-            cashWalletId: null,
-            cashFlow: { totalIn: 0, totalOut: 0, netChange: 0 },
-            transactions: { inflows: [], outflows: [] }
-        });
-    }
-
     // Fetch all wallets' current balances
     const wallets = await prisma.wallet.findMany();
     
-    // Fetch COMPLETED payments for the given day
+    // Fetch ALL payments for the given day, regardless of the related record's status.
+    // The payment record itself is the source of truth for when money moved.
     const payments = await prisma.payment.findMany({
       where: {
         date: {
           gte: startDate,
           lte: endDate,
         },
-        // This logic ensures that we get payments for:
-        // - Sales that are 'Completed'
-        // - Purchases that are 'Completed'
-        // - OR any Expense
-        // - OR any Contribution
-        OR: [
-          { sale: { status: 'Completed' } },
-          { purchase: { status: 'Completed' } },
-          { expenseId: { not: null } },
-          { contributionId: { not: null } },
-        ]
       },
       include: {
         expense: true,
@@ -63,6 +42,16 @@ export async function GET(request: Request) {
         purchase: true
       }
     });
+
+    // Handle case where there is no cash wallet defined
+    if (!cashWallet) {
+        return NextResponse.json({
+            wallets: wallets.map(w => ({ ...w, balance: w.balance })),
+            cashWalletId: null,
+            cashFlow: { totalIn: 0, totalOut: 0, netChange: 0 },
+            transactions: { inflows: [], outflows: [] }
+        });
+    }
 
     const cashPayments = payments.filter(p => p.walletId === cashWallet.id);
 
@@ -121,5 +110,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Failed to generate daily report' }, { status: 500 });
   }
 }
-
-    
