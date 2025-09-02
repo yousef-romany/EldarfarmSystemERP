@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,9 +17,6 @@ import type { Sale, Livestock, Wallet, Payment } from '@prisma/client';
 import { updateSale } from '@/lib/actions/sale.actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
-import { getSaleById } from '@/lib/actions/sale.actions';
-import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
 
 
 type SaleWithDetails = Omit<Sale, 'pricePerKg' | 'totalPrice' | 'amountPaid' | 'remainingAmount' | 'initialWeight' | 'finalWeight' | 'payments' | 'livestock'> & {
@@ -52,7 +50,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     )
 }
 
-function EditSaleForm({ sale, wallets }: EditSalePageProps) {
+export default function EditSalePageClient({ sale, wallets }: EditSalePageProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [updateState, updateFormAction] = useActionState(updateSale.bind(null, sale.id), { message: null, errors: {}, success: false });
@@ -237,25 +235,5 @@ function EditSaleForm({ sale, wallets }: EditSalePageProps) {
         </CardContent>
       </Card>
     </>
-  );
-}
-
-export default async function EditSalePageContainer({ params }: { params: { id: string } }) {
-  const { id } = params;
-  
-  const [sale, wallets] = await Promise.all([
-    getSaleById(id),
-    prisma.wallet.findMany({ orderBy: { name: 'asc' } })
-  ]);
-
-  if (!sale) {
-    notFound();
-  }
-
-  return (
-    <EditSaleForm 
-      sale={sale} 
-      wallets={wallets} 
-    />
   );
 }
