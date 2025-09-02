@@ -162,15 +162,15 @@ export default function DeferredSaleClientPage({ availableLivestock, wallets }: 
                 <div className='grid md:grid-cols-3 gap-4'>
                     <div className="grid gap-2">
                     <Label htmlFor="current-weight">الوزن المبدئي (كجم)</Label>
-                    <Input id="current-weight" type="number" value={currentWeight} onChange={(e) => setCurrentWeight(parseFloat(e.target.value) || 0)} required />
+                    <Input id="current-weight" type="number" step="any" value={currentWeight} onChange={(e) => setCurrentWeight(parseFloat(e.target.value) || 0)} required />
                     </div>
                     <div className="grid gap-2">
                     <Label htmlFor="price-per-kg">سعر الكيلو (ج.م)</Label>
-                    <Input id="price-per-kg" type="number" placeholder="أدخل سعر الكيلو" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} required />
+                    <Input id="price-per-kg" type="number" step="any" placeholder="أدخل سعر الكيلو" value={pricePerKg} onChange={(e) => setPricePerKg(parseFloat(e.target.value) || 0)} required />
                     </div>
                     <div className="grid gap-2">
                     <Label htmlFor="total-price-display">السعر الإجمالي المبدئي</Label>
-                    <Input id="total-price-display" type="number" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} required />
+                    <Input id="total-price-display" type="number" step="any" value={totalPrice} onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)} required />
                     </div>
                 </div>
                 )}
@@ -197,7 +197,7 @@ export default function DeferredSaleClientPage({ availableLivestock, wallets }: 
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor={`amount-${index}`}>المبلغ</Label>
-                      <Input id={`amount-${index}`} type="number" placeholder="العربون" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
+                      <Input id={`amount-${index}`} type="number" step="any" placeholder="العربون" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
                     </div>
                     <Button type="button" variant="ghost" size="icon" onClick={() => handleRemovePayment(index)} disabled={payments.length === 1}>
                       <Trash2 className="h-4 w-4 text-destructive" />

@@ -68,6 +68,14 @@ const InvoicePage = () => {
 
   const animal = sale.livestock;
   const isImmediateSale = sale.type === 'Immediate';
+  const isBatchSale = animal.isBatch;
+
+  const description = isBatchSale
+    ? `${sale.quantitySold} x ${animal.livestockType.name} - ${animal.breed}`
+    : `${animal.livestockType.name} - ${animal.breed}`;
+  
+  const quantity = isBatchSale ? sale.quantitySold : 1;
+  const unitPrice = isBatchSale ? sale.totalPrice / (sale.quantitySold || 1) : sale.totalPrice;
 
 
   return (
@@ -88,7 +96,7 @@ const InvoicePage = () => {
                         <Beef className="h-12 w-12 text-primary" />
                         <div>
                             <h1 className="text-2xl font-bold">مدير المواشي</h1>
-                            <p className="text-muted-foreground">{isImmediateSale ? 'فاتورة بيع فوري (POS)' : 'فاتورة بيع آجل'}</p>
+                            <p className="text-muted-foreground">{isImmediateSale ? 'فاتورة بيع فوري' : 'فاتورة بيع آجل'}</p>
                         </div>
                     </div>
                     <div className="text-left">
@@ -105,76 +113,54 @@ const InvoicePage = () => {
                     </div>
                     <div className='text-left'>
                         <h3 className="font-semibold mb-2">بيانات البائع:</h3>
-                        <p>مزرعة المواشي الحديثة</p>
-                        <p>contact@mawashi.com</p>
+                        <p>دير مار جرجس بالرزيقات</p>
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="p-0 mt-6">
-                <h3 className="font-semibold text-lg mb-2">تفاصيل الحيوان</h3>
+                <h3 className="font-semibold text-lg mb-2">تفاصيل الفاتورة</h3>
                  <Table>
                     <TableHeader>
                         <TableRow>
-                        <TableHead>الرقم التعريفي</TableHead>
-                        <TableHead>النوع</TableHead>
-                        <TableHead>السلالة</TableHead>
+                        <TableHead>البيان</TableHead>
+                        <TableHead className='text-center'>الكمية</TableHead>
+                        <TableHead className='text-center'>سعر الوحدة</TableHead>
+                        <TableHead className="text-right">الإجمالي</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         <TableRow>
-                        <TableCell>{animal.tagId}</TableCell>
-                        <TableCell>{animal.livestockType.name}</TableCell>
-                        <TableCell>{animal.breed}</TableCell>
+                            <TableCell>
+                                {description}
+                                <p className='text-xs text-muted-foreground'>
+                                    {isBatchSale ? `متوسط الوزن: ${sale.initialWeight?.toFixed(2)} كجم` : `الوزن: ${sale.initialWeight?.toFixed(2)} كجم`} @ {sale.pricePerKg.toFixed(2)}/كجم
+                                </p>
+                            </TableCell>
+                            <TableCell className='text-center'>{quantity}</TableCell>
+                            <TableCell className='text-center'>{unitPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="text-right">{sale.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                         </TableRow>
                     </TableBody>
                 </Table>
                 
-                <h3 className="font-semibold text-lg mb-2 mt-6">تفاصيل الوزن والسعر</h3>
-                {isImmediateSale ? (
-                     <Table>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell>الوزن عند البيع (كجم)</TableCell>
-                                <TableCell className="text-left font-bold">{sale.initialWeight?.toFixed(2)}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>سعر الكيلو (ج.م)</TableCell>
-                                <TableCell className="text-left font-bold">{sale.pricePerKg.toFixed(2)}</TableCell>
-                            </TableRow>
-                        </TableBody>
-                     </Table>
-                ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>الوصف</TableHead>
-                                <TableHead className="text-center">القيمة</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell>الوزن المبدئي (كجم)</TableCell>
-                                <TableCell className="text-center">{sale.initialWeight?.toFixed(2)}</TableCell>
-                            </TableRow>
-                            {sale.finalWeight && (
-                                <>
+                 {!isImmediateSale && sale.finalWeight && (
+                    <>
+                        <h3 className="font-semibold text-lg mb-2 mt-6">تفاصيل التسوية</h3>
+                        <Table>
+                            <TableBody>
                                 <TableRow>
-                                    <TableCell>الوزن النهائي (كجم)</TableCell>
-                                    <TableCell className="text-center">{sale.finalWeight?.toFixed(2)}</TableCell>
+                                    <TableCell>الوزن النهائي</TableCell>
+                                    <TableCell className="text-right font-bold">{sale.finalWeight.toFixed(2)} كجم</TableCell>
                                 </TableRow>
-                                <TableRow>
-                                    <TableCell>فرق الوزن (كجم)</TableCell>
-                                    <TableCell className="text-center font-bold">{(sale.finalWeight - (sale.initialWeight || 0)).toFixed(2)}</TableCell>
+                                 <TableRow>
+                                    <TableCell>فرق الوزن</TableCell>
+                                    <TableCell className="text-right font-bold">{(sale.finalWeight - (sale.initialWeight || 0)).toFixed(2)} كجم</TableCell>
                                 </TableRow>
-                                </>
-                            )}
-                            <TableRow>
-                                <TableCell>سعر الكيلو (ج.م)</TableCell>
-                                <TableCell className="text-center">{sale.pricePerKg.toFixed(2)}</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                )}
+                            </TableBody>
+                        </Table>
+                    </>
+                 )}
+
 
                  <h3 className="font-semibold text-lg mb-2 mt-6">تفاصيل الدفعات</h3>
                  <Table>
@@ -213,7 +199,7 @@ const InvoicePage = () => {
             </CardFooter>
              <div className="mt-8 text-center text-xs text-muted-foreground">
                 <p>شكرًا لتعاملكم معنا!</p>
-                <p>مزرعة المواشي الحديثة - جميع الحقوق محفوظة © {new Date().getFullYear()}</p>
+                <p>دير مار جرجس بالرزيقات - جميع الحقوق محفوظة © {new Date().getFullYear()}</p>
             </div>
         </Card>
 

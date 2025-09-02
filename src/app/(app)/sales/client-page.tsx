@@ -1,3 +1,4 @@
+
 'use client';
 import { MoreHorizontal, Trash2, Printer, Pencil, ArrowDownUp, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -100,7 +101,7 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
 
   const getAnimalTag = (sale: SaleWithLivestock) => {
     const { livestock } = sale;
-    if (livestock.isBatch) return `دفعة (${livestock.quantity} رأس)`;
+    if (livestock.isBatch) return `دفعة (${sale.quantitySold} رأس)`;
     return livestock.tagId || 'N/A';
   };
   
@@ -356,7 +357,7 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
                 <CardContent className='grid md:grid-cols-3 gap-4'>
                     <div className="grid gap-2">
                       <Label htmlFor="final-weight">الوزن النهائي (كجم)</Label>
-                      <Input id="final-weight" name="finalWeight" type="number" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} />
+                      <Input id="final-weight" name="finalWeight" type="number" step="any" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} />
                        {settleState.errors?.finalWeight && <p className="text-xs text-red-500">{settleState.errors.finalWeight[0]}</p>}
                     </div>
                      <div className="grid gap-2">
@@ -368,7 +369,7 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="final-total-price">السعر الإجمالي النهائي</Label>
-                        <Input id="final-total-price" type="number" value={finalTotalPrice.toFixed(2)} readOnly className='font-bold' />
+                        <Input id="final-total-price" type="number" step="any" value={finalTotalPrice.toFixed(2)} readOnly className='font-bold' />
                     </div>
                 </CardContent>
               </Card>
@@ -398,7 +399,7 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor={`settlement-amount-${index}`}>المبلغ</Label>
-                          <Input id={`settlement-amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handleSettlementPaymentChange(index, 'amount', Number(e.target.value))} />
+                          <Input id={`settlement-amount-${index}`} type="number" step="any" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handleSettlementPaymentChange(index, 'amount', Number(e.target.value))} />
                         </div>
                         <Button
                           type="button"

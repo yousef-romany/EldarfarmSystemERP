@@ -67,6 +67,8 @@ const POSReceiptPage = () => {
 
   const animal = sale.livestock;
   const weight = sale.finalWeight || sale.initialWeight;
+  const itemLabel = animal.isBatch ? `${sale.quantitySold} x ${animal.livestockType.name}` : `${animal.livestockType.name} - ${animal.breed}`;
+  const weightLabel = animal.isBatch ? `${weight?.toFixed(2)} كجم (متوسط)` : `${weight?.toFixed(2)} كجم @ ${sale.pricePerKg.toFixed(2)}/كجم`;
 
   return (
     <div className="bg-gray-100 dark:bg-gray-800 min-h-screen p-4 flex justify-center font-mono printable-area">
@@ -105,12 +107,12 @@ const POSReceiptPage = () => {
                 </thead>
                 <tbody>
                     <tr>
-                        <td className="pt-1">{animal.livestockType.name} - {animal.breed}</td>
-                        <td className="text-center pt-1">1</td>
+                        <td className="pt-1">{itemLabel}</td>
+                        <td className="text-center pt-1">{animal.isBatch ? '' : '1'}</td>
                         <td className="text-left pt-1">{finalPrice.toFixed(2)}</td>
                     </tr>
                     <tr className="text-muted-foreground">
-                        <td colSpan={3} className="text-right text-xs">الرقم: {animal.tagId}, الوزن: {weight?.toFixed(2)} كجم @ {sale.pricePerKg.toFixed(2)}/كجم</td>
+                        <td colSpan={3} className="text-right text-xs">الرقم: {animal.tagId || 'دفعة'}, الوزن: {weightLabel}</td>
                     </tr>
                 </tbody>
             </table>
