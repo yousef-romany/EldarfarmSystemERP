@@ -38,7 +38,6 @@ import {
   Terminal,
   PackagePlus,
   History,
-  Sheep,
   Download,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -65,7 +64,7 @@ export function SidebarNav() {
     { href: '/dashboard', label: 'نظرة عامة', icon: LayoutGrid, permission: user?.permissions.overview?.view },
     { href: '/users', label: 'المستخدمون', icon: Users, permission: user?.permissions.users?.view },
     { href: '/barns', label: 'العنابر', icon: Warehouse, permission: user?.permissions.barns?.view },
-    { href: '/livestock', label: 'إدارة المواشي', icon: Sheep, permission: user?.permissions.livestock?.view },
+    { href: '/livestock', label: 'إدارة المواشي', icon: Beef, permission: user?.permissions.livestock?.view },
     { href: '/livestock-types', label: 'أنواع المواشي', icon: Box, permission: user?.permissions.livestockTypes?.view },
     { href: '/opening-balance', label: 'رصيد افتتاحي للمواشي', icon: PackagePlus, permission: user?.permissions.livestock?.add },
   ];

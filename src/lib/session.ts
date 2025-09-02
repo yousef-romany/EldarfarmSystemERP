@@ -20,7 +20,7 @@ export interface SessionData {
 // Can be called from middleware or server components.
 // Does not access the database.
 export async function getSession(): Promise<IronSession<SessionData>> {
-  return getIronSession<SessionData>(cookies(), sessionOptions);
+  return getIronSession<SessionData>(await cookies(), sessionOptions);
 }
 
 
