@@ -63,7 +63,7 @@ export async function GET(request: Request) {
         source: 'بيع',
         tagId: s.livestock.tagId,
         isBatch: s.livestock.isBatch,
-        quantity: s.livestock.quantity,
+        quantity: s.quantitySold, // Use quantitySold from the sale record
         type: s.livestock.livestockType.name,
         details: s.customerName
     }));
