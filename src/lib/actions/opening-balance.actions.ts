@@ -16,20 +16,30 @@ const openingBalanceSchema = z.object({
   // Livestock fields
   isBatch: z.boolean(),
   tagId: z.string().optional(),
-  quantity: z.coerce.number().positive("الكمية يجب أن تكون رقمًا موجبًا").optional(),
+  quantity: z.coerce.number().optional(),
   livestockTypeId: z.string().min(1, "يجب تحديد نوع الحيوان"),
   breed: z.string().optional(),
   weight: z.coerce.number().positive("الوزن يجب أن يكون رقمًا موجبًا"),
   age: z.coerce.number().positive("العمر يجب أن يكون رقمًا موجبًا"),
   barnId: z.string().min(1, "يجب تحديد العنبر"),
-}).refine(data => {
+}).superRefine((data, ctx) => {
     if (data.isBatch) {
-        return !!data.quantity && data.quantity > 0;
+        if (!data.quantity || data.quantity <= 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "الكمية مطلوبة ويجب أن تكون رقمًا موجبًا عند تسجيل دفعة.",
+                path: ["quantity"],
+            });
+        }
+    } else {
+        if (!data.tagId || data.tagId.trim() === '') {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "الرقم التعريفي مطلوب عند تسجيل حيوان فردي.",
+                path: ["tagId"],
+            });
+        }
     }
-    return true;
-}, {
-    message: "الكمية مطلوبة عند تسجيل دفعة",
-    path: ["quantity"],
 });
 
 
