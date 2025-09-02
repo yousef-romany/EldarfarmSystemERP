@@ -1,5 +1,4 @@
 
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PageHeader } from '@/components/page-header';
@@ -22,65 +21,62 @@ type BookedAnimal = {
 
 export default async function BookedLivestockReportPage() {
   
-  // Fetch all livestock that are either booked for a pending sale or are a vow.
-  const bookedAnimalsData = await prisma.livestock.findMany({
-    where: {
-      status: {
-        in: ['PendingSale', 'Vowed']
-      }
-    },
+  // 1. Fetch pending sales and their associated livestock
+  const pendingSales = await prisma.sale.findMany({
+    where: { status: 'Pending' },
     include: {
-      livestockType: true,
-      barn: true,
-      sales: { // Get the associated sale if it exists
-        where: { status: 'Pending' }
+      livestock: {
+        include: {
+          livestockType: true,
+          barn: true,
+        },
       },
-      vows: true, // Get the associated vow if it exists
     },
-    orderBy: { createdAt: 'asc' }
+    orderBy: { saleDate: 'asc' },
   });
 
-  const bookedLivestock: BookedAnimal[] = bookedAnimalsData.map(animal => {
-    if (animal.status === 'PendingSale' && animal.sales.length > 0) {
-      const sale = animal.sales[0];
-      return {
-        id: animal.id,
-        tagId: animal.tagId,
-        type: animal.livestockType.name,
-        barnName: animal.barn.name,
-        bookingInfo: {
-          type: 'بيع آجل' as const,
-          customer: sale.customerName,
-          date: format(new Date(sale.saleDate), 'yyyy-MM-dd'),
+  // 2. Fetch all vows and their associated livestock
+  const activeVows = await prisma.vow.findMany({
+    include: {
+      livestock: {
+        include: {
+          livestockType: true,
+          barn: true,
         },
-      };
-    } else if (animal.status === 'Vowed' && animal.vows.length > 0) {
-        const vow = animal.vows[0];
-         return {
-            id: animal.id,
-            tagId: animal.tagId,
-            type: animal.livestockType.name,
-            barnName: animal.barn.name,
-            bookingInfo: {
-                type: 'نذر حى' as const,
-                customer: vow.donorName,
-                date: format(new Date(vow.date), 'yyyy-MM-dd'),
-            },
-        };
-    }
-    // This should ideally not be reached if the query is correct
-    return {
-        id: animal.id,
-        tagId: animal.tagId,
-        type: animal.livestockType.name,
-        barnName: animal.barn.name,
-        bookingInfo: {
-            type: animal.status === 'PendingSale' ? 'بيع آجل' : 'نذر حى',
-            customer: 'غير معروف',
-            date: format(new Date(animal.createdAt), 'yyyy-MM-dd'),
-        },
-    }
-  }).sort((a,b) => new Date(a.bookingInfo.date).getTime() - new Date(b.bookingInfo.date).getTime());
+      },
+    },
+    orderBy: { date: 'asc' },
+  });
+
+  // 3. Map both lists to a common structure
+  const salesBookings: BookedAnimal[] = pendingSales.map(sale => ({
+    id: sale.livestock.id,
+    tagId: sale.livestock.tagId,
+    type: sale.livestock.livestockType.name,
+    barnName: sale.livestock.barn.name,
+    bookingInfo: {
+      type: 'بيع آجل',
+      customer: sale.customerName,
+      date: format(new Date(sale.saleDate), 'yyyy-MM-dd'),
+    },
+  }));
+
+  const vowBookings: BookedAnimal[] = activeVows.map(vow => ({
+    id: vow.livestock.id,
+    tagId: vow.livestock.tagId,
+    type: vow.livestock.livestockType.name,
+    barnName: vow.livestock.barn.name,
+    bookingInfo: {
+      type: 'نذر حى',
+      customer: vow.donorName,
+      date: format(new Date(vow.date), 'yyyy-MM-dd'),
+    },
+  }));
+
+  const bookedLivestock = [...salesBookings, ...vowBookings].sort(
+    (a, b) => new Date(a.bookingInfo.date).getTime() - new Date(b.bookingInfo.date).getTime()
+  );
+
 
   return (
     <>
@@ -134,4 +130,3 @@ export default async function BookedLivestockReportPage() {
     </>
   );
 }
-
