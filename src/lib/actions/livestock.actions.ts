@@ -13,21 +13,31 @@ const livestockSchema = z.object({
   cost: z.coerce.number().min(0, "التكلفة التقديرية يجب أن تكون رقمًا موجبًا أو صفر"),
   
   isBatch: z.boolean(),
-  tagId: z.string().nullish().transform(val => val ?? ''),
-  quantity: z.coerce.number().positive("الكمية يجب أن تكون رقمًا موجبًا").optional(),
+  tagId: z.string().optional(),
+  quantity: z.coerce.number().optional(),
   livestockTypeId: z.string().min(1, "يجب تحديد نوع الحيوان"),
-  breed: z.string().nullish().transform(val => val ?? ''),
+  breed: z.string().optional(),
   weight: z.coerce.number().positive("الوزن يجب أن يكون رقمًا موجبًا"),
   age: z.coerce.number().positive("العمر يجب أن يكون رقمًا موجبًا"),
   barnId: z.string().min(1, "يجب تحديد العنبر"),
-}).refine(data => {
+}).superRefine((data, ctx) => {
     if (data.isBatch) {
-        return !!data.quantity && data.quantity > 0;
+        if (!data.quantity || data.quantity <= 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "الكمية مطلوبة ويجب أن تكون رقمًا موجبًا عند تسجيل دفعة.",
+                path: ["quantity"],
+            });
+        }
+    } else {
+        if (!data.tagId || data.tagId.trim() === '') {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "الرقم التعريفي مطلوب عند تسجيل حيوان فردي.",
+                path: ["tagId"],
+            });
+        }
     }
-    return true;
-}, {
-    message: "الكمية مطلوبة عند تسجيل دفعة",
-    path: ["quantity"],
 });
 
 export type LivestockState = {
@@ -52,10 +62,10 @@ export async function updateLivestock(livestockId: string, prevState: LivestockS
     entryDate: formData.get('entryDate'),
     cost: formData.get('cost'),
     isBatch,
-    tagId: formData.get('tagId'),
+    tagId: formData.get('tagId') || '',
     quantity: formData.get('quantity'),
     livestockTypeId: formData.get('livestockTypeId'),
-    breed: formData.get('breed'),
+    breed: formData.get('breed') || '',
     weight: formData.get('weight'),
     age: formData.get('age'),
     barnId: formData.get('barnId'),
@@ -105,6 +115,9 @@ export async function updateLivestock(livestockId: string, prevState: LivestockS
         where: { id: livestockId },
         data: {
           ...livestockData,
+          tagId: isBatch ? null : livestockData.tagId,
+          quantity: isBatch ? livestockData.quantity : null,
+          breed: livestockData.breed || null,
           barnId,
           createdAt: new Date(entryDate),
         }
