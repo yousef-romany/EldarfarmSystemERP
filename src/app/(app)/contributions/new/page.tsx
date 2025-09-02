@@ -1,4 +1,3 @@
-
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +15,8 @@ import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { createContribution } from '@/lib/actions/contribution.actions';
 import type { Wallet } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+
 
 type Payment = {
   walletId: string;
@@ -31,8 +32,8 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
   );
 }
 
-// This component needs wallets passed as a prop from a server component parent
-export default function NewContributionPage({ wallets }: { wallets: Wallet[] }) {
+// This is the Client Component that renders the form
+function NewContributionForm({ wallets }: { wallets: Wallet[] }) {
   const router = useRouter();
   const { toast } = useToast();
   const [createState, createFormAction] = useActionState(createContribution, { message: null, errors: {}, success: false });
@@ -176,4 +177,19 @@ export default function NewContributionPage({ wallets }: { wallets: Wallet[] }) 
       </Card>
     </>
   );
+}
+
+// This is the main Server Component that fetches data
+export default async function NewContributionPageContainer() {
+  const wallets = await prisma.wallet.findMany({ 
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true, balance: true, icon: true, createdAt: true, updatedAt: true } // Explicitly select fields
+  });
+
+  const serializedWallets = wallets.map(wallet => ({
+      ...wallet,
+      balance: wallet.balance
+  }));
+
+  return <NewContributionForm wallets={serializedWallets} />;
 }
