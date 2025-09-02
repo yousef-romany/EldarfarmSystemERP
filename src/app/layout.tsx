@@ -9,6 +9,12 @@ import { ThemeProvider } from '@/components/theme-provider';
 export const metadata: Metadata = {
   title: 'Mawashi Manager',
   description: 'Livestock Management System',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Mawashi Manager',
+  },
 };
 
 export default function RootLayout({
@@ -18,6 +24,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
+       <head>
+        <meta name="theme-color" content="#343a40" />
+      </head>
       <body className={`font-body antialiased`}>
         <ThemeProvider
           attribute="class"

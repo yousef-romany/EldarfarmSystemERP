@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -39,6 +38,7 @@ import {
   PackagePlus,
   History,
   Sheep,
+  Download,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
@@ -46,6 +46,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useSession } from '../session-provider';
 import { logout } from '@/lib/actions/auth.actions';
+import { InstallPwaButton } from '../install-pwa-button';
 
 
 export function SidebarNav() {
@@ -244,6 +245,9 @@ export function SidebarNav() {
       <SidebarSeparator />
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <InstallPwaButton />
+          </SidebarMenuItem>
           {user?.permissions.logs?.view && (
               <SidebarMenuItem>
               <Link href="/logs" className="w-full">

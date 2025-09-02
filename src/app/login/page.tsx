@@ -10,6 +10,7 @@ import { Beef } from 'lucide-react';
 import { login } from '@/lib/actions/auth.actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { InstallPwaButton } from '@/components/install-pwa-button';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -62,6 +63,9 @@ export default function LoginPage() {
           </form>
         </CardContent>
       </Card>
+      <div className="mt-4">
+        <InstallPwaButton />
+      </div>
     </div>
   );
 }
