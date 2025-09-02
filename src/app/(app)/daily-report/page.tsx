@@ -22,7 +22,7 @@ interface DailyReportData {
     icon: string;
   }[];
   cashWalletId: string;
-  cashFlow: {
+  financialSummary: {
     totalIn: number;
     totalOut: number;
     netChange: number;
@@ -47,13 +47,13 @@ export default function DailyReportPage() {
 
   const cashWallet = data.wallets.find(w => w.id === data.cashWalletId);
   const otherWallets = data.wallets.filter(w => w.id !== data.cashWalletId) || [];
-  const { cashFlow, transactions } = data;
+  const { financialSummary, transactions } = data;
 
 
   return (
     <>
       <PageHeader
-        title="التقرير اليومي"
+        title="التقرير المالي اليومي"
         action={
             <div className="flex gap-2">
                 <Popover>
@@ -85,37 +85,37 @@ export default function DailyReportPage() {
 
        <Card className="mb-6">
         <CardHeader>
-          <CardTitle>ملخص الأرصدة وحركة النقدية لليوم</CardTitle>
-          <CardDescription>عرض لأرصدة المحافظ وحركة الخزينة لليوم المحدد.</CardDescription>
+          <CardTitle>ملخص الأرصدة والحركة المالية لليوم</CardTitle>
+          <CardDescription>عرض لأرصدة المحافظ وإجمالي الحركات المالية لليوم المحدد.</CardDescription>
         </CardHeader>
         <CardContent>
            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {/* Daily Cash Flow Cards */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">مقبوضات نقدية</CardTitle>
+                  <CardTitle className="text-sm font-medium">إجمالي المقبوضات</CardTitle>
                   <ArrowDownCircle className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{formatCurrency(cashFlow.totalIn)}</div>
+                  <div className="text-2xl font-bold text-green-600">{formatCurrency(financialSummary.totalIn)}</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">مدفوعات نقدية</CardTitle>
+                  <CardTitle className="text-sm font-medium">إجمالي المدفوعات</CardTitle>
                   <ArrowUpCircle className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{formatCurrency(cashFlow.totalOut)}</div>
+                  <div className="text-2xl font-bold text-red-600">{formatCurrency(financialSummary.totalOut)}</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">صافي الحركة النقدية</CardTitle>
+                  <CardTitle className="text-sm font-medium">صافي الحركة المالية</CardTitle>
                   <MinusCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${cashFlow.netChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(cashFlow.netChange)}</div>
+                  <div className={`text-2xl font-bold ${financialSummary.netChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(financialSummary.netChange)}</div>
                 </CardContent>
               </Card>
                {cashWallet && (
@@ -152,8 +152,8 @@ export default function DailyReportPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>المقبوضات النقدية</CardTitle>
-            <CardDescription>جميع الأموال التي دخلت الخزينة في هذا اليوم.</CardDescription>
+            <CardTitle>سجل المقبوضات</CardTitle>
+            <CardDescription>جميع الأموال التي دخلت كل المحافظ في هذا اليوم.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -174,7 +174,7 @@ export default function DailyReportPage() {
                 ))}
                 {transactions.inflows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground">لا توجد مقبوضات نقدية لهذا اليوم.</TableCell>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">لا توجد مقبوضات لهذا اليوم.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -184,8 +184,8 @@ export default function DailyReportPage() {
         
         <Card>
           <CardHeader>
-            <CardTitle>المدفوعات النقدية</CardTitle>
-            <CardDescription>جميع الأموال التي خرجت من الخزينة في هذا اليوم.</CardDescription>
+            <CardTitle>سجل المدفوعات</CardTitle>
+            <CardDescription>جميع الأموال التي خرجت من كل المحافظ في هذا اليوم.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -206,7 +206,7 @@ export default function DailyReportPage() {
                 ))}
                 {transactions.outflows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground">لا توجد مدفوعات نقدية لهذا اليوم.</TableCell>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">لا توجد مدفوعات لهذا اليوم.</TableCell>
                   </TableRow>
                 )}
               </TableBody>

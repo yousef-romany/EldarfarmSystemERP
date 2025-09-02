@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const startDate = startOfDay(targetDate);
     const endDate = endOfDay(targetDate);
     
-    // Find the cash wallet dynamically
+    // Find the cash wallet dynamically to report its specific balance
     const cashWallet = await prisma.wallet.findFirst({
         where: { icon: 'cash' }
     });
@@ -43,22 +43,8 @@ export async function GET(request: Request) {
       }
     });
 
-    // Handle case where there is no cash wallet defined
-    if (!cashWallet) {
-        // Still return a valid report structure, but with zeroed cash flow
-        const responseData = {
-            wallets: wallets.map(w => ({ ...w, balance: w.balance })),
-            cashWalletId: null,
-            cashFlow: { totalIn: 0, totalOut: 0, netChange: 0 },
-            transactions: { inflows: [], outflows: [] }
-        };
-        return NextResponse.json(responseData);
-    }
-
-    const cashPayments = payments.filter(p => p.walletId === cashWallet.id);
-
-    const inflows = cashPayments.filter(p => p.type === 'Income');
-    const outflows = cashPayments.filter(p => p.type === 'Expense');
+    const inflows = payments.filter(p => p.type === 'Income');
+    const outflows = payments.filter(p => p.type === 'Expense');
 
     const totalIn = inflows.reduce((sum, p) => sum + p.amount, 0);
     const totalOut = outflows.reduce((sum, p) => sum + p.amount, 0);
@@ -95,7 +81,7 @@ export async function GET(request: Request) {
     const responseData = {
       wallets: wallets.map(w => ({ ...w, balance: w.balance })),
       cashWalletId: cashWallet?.id || null,
-      cashFlow: {
+      financialSummary: {
         totalIn,
         totalOut,
         netChange,
