@@ -22,61 +22,65 @@ type BookedAnimal = {
 
 export default async function BookedLivestockReportPage() {
   
-  const pendingSales = await prisma.sale.findMany({
-    where: { status: 'Pending' },
-    include: {
-      livestock: {
-        include: {
-          livestockType: true,
-          barn: true,
-        },
-      },
-    },
-    orderBy: { saleDate: 'asc' }
-  });
-
-  const vows = await prisma.vow.findMany({
+  // Fetch all livestock that are either booked for a pending sale or are a vow.
+  const bookedAnimalsData = await prisma.livestock.findMany({
     where: {
-        livestock: {
-            status: 'Vowed'
-        }
+      status: {
+        in: ['PendingSale', 'Vowed']
+      }
     },
     include: {
-        livestock: {
-            include: {
-                livestockType: true,
-                barn: true,
-            }
-        }
+      livestockType: true,
+      barn: true,
+      sales: { // Get the associated sale if it exists
+        where: { status: 'Pending' }
+      },
+      vows: true, // Get the associated vow if it exists
     },
-    orderBy: { date: 'asc' }
+    orderBy: { createdAt: 'asc' }
   });
 
-
-  const bookedLivestock: BookedAnimal[] = [
-    ...pendingSales.map(s => ({
-      id: s.livestock.id,
-      tagId: s.livestock.tagId,
-      type: s.livestock.livestockType.name,
-      barnName: s.livestock.barn.name,
-      bookingInfo: {
-        type: 'بيع آجل' as const,
-        customer: s.customerName,
-        date: format(new Date(s.saleDate), 'yyyy-MM-dd'),
-      },
-    })),
-     ...vows.map(v => ({
-      id: v.livestock.id,
-      tagId: v.livestock.tagId,
-      type: v.livestock.livestockType.name,
-      barnName: v.livestock.barn.name,
-      bookingInfo: {
-        type: 'نذر حى' as const,
-        customer: v.donorName,
-        date: format(new Date(v.date), 'yyyy-MM-dd'),
-      },
-    }))
-  ].sort((a,b) => new Date(a.bookingInfo.date).getTime() - new Date(b.bookingInfo.date).getTime());
+  const bookedLivestock: BookedAnimal[] = bookedAnimalsData.map(animal => {
+    if (animal.status === 'PendingSale' && animal.sales.length > 0) {
+      const sale = animal.sales[0];
+      return {
+        id: animal.id,
+        tagId: animal.tagId,
+        type: animal.livestockType.name,
+        barnName: animal.barn.name,
+        bookingInfo: {
+          type: 'بيع آجل' as const,
+          customer: sale.customerName,
+          date: format(new Date(sale.saleDate), 'yyyy-MM-dd'),
+        },
+      };
+    } else if (animal.status === 'Vowed' && animal.vows.length > 0) {
+        const vow = animal.vows[0];
+         return {
+            id: animal.id,
+            tagId: animal.tagId,
+            type: animal.livestockType.name,
+            barnName: animal.barn.name,
+            bookingInfo: {
+                type: 'نذر حى' as const,
+                customer: vow.donorName,
+                date: format(new Date(vow.date), 'yyyy-MM-dd'),
+            },
+        };
+    }
+    // This should ideally not be reached if the query is correct
+    return {
+        id: animal.id,
+        tagId: animal.tagId,
+        type: animal.livestockType.name,
+        barnName: animal.barn.name,
+        bookingInfo: {
+            type: animal.status === 'PendingSale' ? 'بيع آجل' : 'نذر حى',
+            customer: 'غير معروف',
+            date: format(new Date(animal.createdAt), 'yyyy-MM-dd'),
+        },
+    }
+  }).sort((a,b) => new Date(a.bookingInfo.date).getTime() - new Date(b.bookingInfo.date).getTime());
 
   return (
     <>
@@ -85,7 +89,7 @@ export default async function BookedLivestockReportPage() {
         <CardHeader>
           <CardTitle>قائمة الحيوانات المحجوزة</CardTitle>
           <CardDescription>
-            هذا التقرير يعرض جميع الحيوانات المرتبطة بعمليات بيع آجلة أو التي تم استلامها كنذور حية.
+            هذا التقرير يعرض جميع الحيوانات المرتبطة بعمليات بيع آجلة (لم تتم تسويتها) أو التي تم استلامها كنذور حية.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,3 +134,4 @@ export default async function BookedLivestockReportPage() {
     </>
   );
 }
+
