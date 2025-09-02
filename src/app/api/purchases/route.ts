@@ -1,4 +1,6 @@
 
+'use server';
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
@@ -33,10 +35,15 @@ export async function GET(request: Request) {
       totalCost: p.totalCost,
       amountPaid: p.amountPaid,
       remainingAmount: p.remainingAmount,
-      livestock: {
+      livestock: p.livestock ? { // Check if livestock exists
         ...p.livestock,
         weight: p.livestock.weight,
         cost: p.livestock.cost,
+      } : { // Provide a fallback structure if it doesn't
+          ...(p.livestockData as any),
+          id: p.id, // use purchase id as a key fallback
+          livestockType: { name: (p.livestockData as any)?.breed || 'N/A' },
+          barn: { name: 'N/A' },
       },
       payments: p.payments.map(payment => ({
         ...payment,
