@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
@@ -124,7 +123,7 @@ export default function SettlementPage() {
       <div className="mt-6 flex justify-end">
           <AlertDialog>
               <AlertDialogTrigger asChild>
-                 <Button size="lg" disabled={isSettling || grandTotal === 0}>
+                 <Button size="lg" disabled={isSettling}>
                     {isSettling ? 'جاري التسوية...' : 'بدء عملية التسوية والطباعة'}
                 </Button>
               </AlertDialogTrigger>
