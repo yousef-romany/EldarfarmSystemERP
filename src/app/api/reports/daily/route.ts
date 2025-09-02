@@ -45,12 +45,14 @@ export async function GET(request: Request) {
 
     // Handle case where there is no cash wallet defined
     if (!cashWallet) {
-        return NextResponse.json({
-            wallets: wallets.map(w => ({ ...w, balance: w.balance })),
+        // Still return a valid report structure, but with zeroed cash flow
+        const responseData = {
+            wallets: wallets.map(w => ({ ...w, balance: w.balance.toNumber() })),
             cashWalletId: null,
             cashFlow: { totalIn: 0, totalOut: 0, netChange: 0 },
             transactions: { inflows: [], outflows: [] }
-        });
+        };
+        return NextResponse.json(responseData);
     }
 
     const cashPayments = payments.filter(p => p.walletId === cashWallet.id);
@@ -58,8 +60,8 @@ export async function GET(request: Request) {
     const inflows = cashPayments.filter(p => p.type === 'Income');
     const outflows = cashPayments.filter(p => p.type === 'Expense');
 
-    const totalIn = inflows.reduce((sum, p) => sum + p.amount, 0);
-    const totalOut = outflows.reduce((sum, p) => sum + p.amount, 0);
+    const totalIn = inflows.reduce((sum, p) => sum + p.amount.toNumber(), 0);
+    const totalOut = outflows.reduce((sum, p) => sum + p.amount.toNumber(), 0);
     const netChange = totalIn - totalOut;
 
     const formattedInflows = inflows.map(p => {
@@ -73,7 +75,7 @@ export async function GET(request: Request) {
           type = 'نذر نقدى';
           description = `نذر من ${p.contribution.donorName}`;
         }
-        return { type, description, amount: p.amount };
+        return { type, description, amount: p.amount.toNumber() };
     });
 
     const formattedOutflows = outflows.map(p => {
@@ -87,11 +89,11 @@ export async function GET(request: Request) {
           type = 'شراء';
           description = `شراء من ${p.purchase.supplier || 'مورد غير محدد'}`;
         }
-        return { type, description, amount: p.amount };
+        return { type, description, amount: p.amount.toNumber() };
     });
 
     const responseData = {
-      wallets: wallets.map(w => ({ ...w, balance: w.balance })),
+      wallets: wallets.map(w => ({ ...w, balance: w.balance.toNumber() })),
       cashWalletId: cashWallet?.id || null,
       cashFlow: {
         totalIn,

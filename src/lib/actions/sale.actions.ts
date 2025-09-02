@@ -65,7 +65,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
     };
   }
 
-  const { livestockId, totalPrice, payments } = validatedFields.data;
+  const { livestockId, totalPrice, payments, saleDate } = validatedFields.data;
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
   if (totalPaid === 0) {
@@ -108,7 +108,7 @@ export async function createSale(prevState: SaleState, formData: FormData): Prom
             amount: p.amount,
             walletId: p.walletId,
             saleId: sale.id,
-            date: new Date(),
+            date: new Date(saleDate), // Use the sale date for payment records
             type: 'Income',
             description: `[مسودة] دفعة من بيع الحيوان ${livestock.tagId || livestock.id}`
           }))
@@ -274,8 +274,8 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
 
     const finalTotalPrice = finalWeight * sale.pricePerKg;
     const newPaymentsTotal = payments.reduce((acc, p) => acc + p.amount, 0);
-    const totalPaid = sale.amountPaid + newPaymentsTotal;
-    const remainingBalance = finalTotalPrice - sale.amountPaid;
+    const totalPaid = sale.amountPaid.toNumber() + newPaymentsTotal;
+    const remainingBalance = finalTotalPrice - sale.amountPaid.toNumber();
     
     if (Math.abs(newPaymentsTotal - remainingBalance) > 0.01) {
         return { message: `المبلغ المدفوع للتسوية (${newPaymentsTotal}) لا يطابق المبلغ المتبقي (${remainingBalance.toFixed(2)}).`, success: false };
@@ -304,7 +304,7 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
             amount: p.amount,
             walletId: p.walletId,
             saleId: sale.id,
-            date: settlementDate, // Use settlement date for payment record
+            date: sale.saleDate, // <<<< CRITICAL FIX: Use the original sale date for the payment record
             type: 'Income',
             description: `تسوية بيع الحيوان ${sale.livestock.tagId || sale.livestock.id}`
           }))
@@ -384,23 +384,23 @@ export async function getSaleById(id: string) {
         // Serialize Decimal fields before returning
         return {
             ...sale,
-            pricePerKg: sale.pricePerKg,
-            totalPrice: sale.totalPrice,
-            amountPaid: sale.amountPaid,
-            remainingAmount: sale.remainingAmount,
-            initialWeight: sale.initialWeight,
-            finalWeight: sale.finalWeight,
+            pricePerKg: sale.pricePerKg.toNumber(),
+            totalPrice: sale.totalPrice.toNumber(),
+            amountPaid: sale.amountPaid.toNumber(),
+            remainingAmount: sale.remainingAmount.toNumber(),
+            initialWeight: sale.initialWeight ? sale.initialWeight.toNumber() : null,
+            finalWeight: sale.finalWeight ? sale.finalWeight.toNumber() : null,
             livestock: {
                 ...sale.livestock,
-                weight: sale.livestock.weight,
-                cost: sale.livestock.cost,
+                weight: sale.livestock.weight.toNumber(),
+                cost: sale.livestock.cost.toNumber(),
             },
             payments: sale.payments.map(p => ({
                 ...p,
-                amount: p.amount,
+                amount: p.amount.toNumber(),
                 wallet: {
                     ...p.wallet,
-                    balance: p.wallet.balance
+                    balance: p.wallet.balance.toNumber()
                 }
             }))
         };
@@ -613,5 +613,3 @@ export async function deleteSale(id: string) {
         return { message: 'فشل في حذف عملية البيع.', success: false };
     }
 }
-
-    
