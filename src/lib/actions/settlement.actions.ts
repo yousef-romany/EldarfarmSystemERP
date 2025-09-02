@@ -1,3 +1,4 @@
+
 'use server';
 
 import { prisma } from '@/lib/prisma';
@@ -33,19 +34,14 @@ export async function settleDay(): Promise<SettlementState> {
         throw new Error("لا توجد محافظ لتسويتها.");
       }
       
-      const totalToSettle = wallets.reduce((sum, wallet) => sum + wallet.balance.toNumber(), 0);
-
-      if (totalToSettle === 0) {
-        // Allow settling even if balance is zero, to create a record.
-        // throw new Error("لا توجد أرصدة لتسويتها.");
-      }
+      const totalToSettle = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
 
       // 2. Create a settlement record
       const settlement = await tx.settlement.create({
         data: {
           settledById: session.user.id,
           amount: totalToSettle,
-          details: wallets.map(w => ({ name: w.name, balance: w.balance.toNumber() })),
+          details: wallets.map(w => ({ name: w.name, balance: w.balance })),
         },
       });
 
@@ -105,7 +101,7 @@ export async function getSettlements() {
         });
         return settlements.map(s => ({
             ...s,
-            amount: s.amount.toNumber(),
+            amount: s.amount,
             details: s.details as any[]
         }));
     } catch (error) {
