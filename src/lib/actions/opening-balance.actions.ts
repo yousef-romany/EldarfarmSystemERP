@@ -11,14 +11,14 @@ import { Prisma } from '@prisma/client';
 const openingBalanceSchema = z.object({
   entryDate: z.string().min(1, "تاريخ الإدخال مطلوب"),
   estimatedCost: z.coerce.number().min(0, "التكلفة التقديرية يجب أن تكون رقمًا موجبًا أو صفر"),
-  notes: z.string().nullish().transform(val => val ?? ''),
+  notes: z.string().optional(),
   
   // Livestock fields
   isBatch: z.boolean(),
-  tagId: z.string().nullish().transform(val => val ?? ''),
+  tagId: z.string().optional(),
   quantity: z.coerce.number().positive("الكمية يجب أن تكون رقمًا موجبًا").optional(),
   livestockTypeId: z.string().min(1, "يجب تحديد نوع الحيوان"),
-  breed: z.string().nullish().transform(val => val ?? ''),
+  breed: z.string().optional(),
   weight: z.coerce.number().positive("الوزن يجب أن يكون رقمًا موجبًا"),
   age: z.coerce.number().positive("العمر يجب أن يكون رقمًا موجبًا"),
   barnId: z.string().min(1, "يجب تحديد العنبر"),
@@ -45,7 +45,6 @@ export async function createOpeningBalanceLivestock(prevState: OpeningBalanceSta
     redirect('/login');
   }
   
-  // Opening balance is part of livestock management
   if (!session.user.permissions?.livestock?.add) {
     return { message: 'ليس لديك الصلاحية لإضافة أرصدة افتتاحية.', success: false };
   }
@@ -55,12 +54,12 @@ export async function createOpeningBalanceLivestock(prevState: OpeningBalanceSta
   const validatedFields = openingBalanceSchema.safeParse({
     entryDate: formData.get('entryDate'),
     estimatedCost: formData.get('estimatedCost'),
-    notes: formData.get('notes'),
+    notes: formData.get('notes') || '',
     isBatch,
-    tagId: formData.get('tagId'),
+    tagId: formData.get('tagId') || '',
     quantity: formData.get('quantity'),
     livestockTypeId: formData.get('livestockTypeId'),
-    breed: formData.get('breed'),
+    breed: formData.get('breed') || '',
     weight: formData.get('weight'),
     age: formData.get('age'),
     barnId: formData.get('barnId'),
@@ -88,6 +87,8 @@ export async function createOpeningBalanceLivestock(prevState: OpeningBalanceSta
       const livestock = await tx.livestock.create({
         data: {
           ...livestockData,
+          tagId: isBatch ? null : livestockData.tagId,
+          quantity: isBatch ? livestockData.quantity : null,
           barnId,
           status: 'Available', // Set as available immediately
           cost: estimatedCost,
