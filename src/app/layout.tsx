@@ -10,7 +10,7 @@ import Script from 'next/script';
 export const metadata: Metadata = {
   title: 'Mawashi Manager',
   description: 'Livestock Management System',
-  manifest: '/manifest.json',
+  manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
