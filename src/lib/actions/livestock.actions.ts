@@ -88,10 +88,10 @@ export async function updateLivestock(livestockId: string, prevState: LivestockS
     }
 
     await prisma.$transaction(async (tx) => {
-      // 1. Revert barn occupancy if barn or quantity changes
       const occupancyNeeded = livestockData.quantity || 1;
       const originalOccupancy = originalLivestock.quantity || 1;
 
+      // Only update occupancy if barn or quantity changes
       if (originalLivestock.barnId !== barnId || originalOccupancy !== occupancyNeeded) {
         // Decrement from old barn
         await tx.barn.update({

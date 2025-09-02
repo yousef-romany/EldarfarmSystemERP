@@ -266,7 +266,7 @@ export async function deletePurchase(id: string) {
             }
 
             // If the purchase was already completed, revert the transactions
-            if (purchase.status === 'Completed') {
+            if (purchase.status === 'Completed' && purchase.livestock) {
                 // 1. Reverse wallet transactions
                 for (const payment of purchase.payments) {
                     await tx.wallet.update({
@@ -275,27 +275,26 @@ export async function deletePurchase(id: string) {
                     });
                 }
 
-                // 2. Decrement barn occupancy if livestock exists
-                if (purchase.livestock) {
-                    const occupancyToDecrement = purchase.livestock.quantity || 1;
-                    await tx.barn.update({
-                        where: { id: purchase.livestock.barnId },
-                        data: { currentOccupancy: { decrement: occupancyToDecrement } }
-                    });
-                     // 5. Delete the livestock record
-                    await tx.livestock.delete({
-                        where: { id: purchase.livestockId! }
-                    });
-                }
+                // 2. Decrement barn occupancy
+                const occupancyToDecrement = purchase.livestock.quantity || 1;
+                await tx.barn.update({
+                    where: { id: purchase.livestock.barnId },
+                    data: { currentOccupancy: { decrement: occupancyToDecrement } }
+                });
+                
+                // 3. Delete the livestock record
+                await tx.livestock.delete({
+                    where: { id: purchase.livestockId! }
+                });
             }
 
 
-            // 3. Delete associated payments
+            // 4. Delete associated payments (for both draft and completed)
             await tx.payment.deleteMany({
                 where: { purchaseId: id }
             });
 
-            // 4. Delete the purchase record
+            // 5. Delete the purchase record
             await tx.purchase.delete({
                 where: { id }
             });
