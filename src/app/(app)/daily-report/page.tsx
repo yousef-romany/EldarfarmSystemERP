@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, ArrowUpCircle, ArrowDownCircle, MinusCircle, Wallet as WalletIcon, Banknote, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, ArrowUpCircle, ArrowDownCircle, MinusCircle, Wallet as WalletIcon, Banknote, Printer } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import useSWR from 'swr';
@@ -21,7 +21,6 @@ interface DailyReportData {
     balance: number;
     icon: string;
   }[];
-  cashWalletId: string;
   financialSummary: {
     totalIn: number;
     totalOut: number;
@@ -40,14 +39,17 @@ export default function DailyReportPage() {
   const { data, error, isLoading } = useSWR<DailyReportData>(`/api/reports/daily?date=${dateString}`, fetcher);
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(amount);
+
+  const handlePrint = () => {
+    const url = `/reports/daily/print?date=${dateString}`;
+    window.open(url, '_blank');
+  };
   
   if (error) return <div>فشل في تحميل البيانات...</div>
   if (isLoading) return <div>جاري تحميل التقرير...</div>
   if (!data) return <div>لا توجد بيانات لهذا اليوم.</div>
 
-  const cashWallet = data.wallets.find(w => w.id === data.cashWalletId);
-  const otherWallets = data.wallets.filter(w => w.id !== data.cashWalletId) || [];
-  const { financialSummary, transactions } = data;
+  const { financialSummary, transactions, wallets } = data;
 
 
   return (
@@ -75,9 +77,9 @@ export default function DailyReportPage() {
                     />
                     </PopoverContent>
                 </Popover>
-                 <Button variant="outline" size="icon">
-                    <Download className="h-4 w-4" />
-                    <span className="sr-only">تنزيل</span>
+                 <Button variant="outline" size="icon" onClick={handlePrint}>
+                    <Printer className="h-4 w-4" />
+                    <span className="sr-only">طباعة</span>
                 </Button>
             </div>
         }
@@ -89,7 +91,7 @@ export default function DailyReportPage() {
           <CardDescription>عرض لأرصدة المحافظ وإجمالي الحركات المالية لليوم المحدد.</CardDescription>
         </CardHeader>
         <CardContent>
-           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {/* Daily Cash Flow Cards */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -118,22 +120,10 @@ export default function DailyReportPage() {
                   <div className={`text-2xl font-bold ${financialSummary.netChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(financialSummary.netChange)}</div>
                 </CardContent>
               </Card>
-               {cashWallet && (
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">الرصيد الحالي للخزينة</CardTitle>
-                      <WalletIcon className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{formatCurrency(cashWallet.balance)}</div>
-                       <p className="text-xs text-muted-foreground">يتم تحديثه مع كل عملية</p>
-                    </CardContent>
-                  </Card>
-               )}
             </div>
              <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                {/* Other Wallet Balances */}
-                {otherWallets.map(wallet => (
+                {wallets.map(wallet => (
                   <Card key={wallet.id}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">{wallet.name}</CardTitle>
