@@ -274,8 +274,8 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
 
     const finalTotalPrice = finalWeight * sale.pricePerKg;
     const newPaymentsTotal = payments.reduce((acc, p) => acc + p.amount, 0);
-    const totalPaid = sale.amountPaid.toNumber() + newPaymentsTotal;
-    const remainingBalance = finalTotalPrice - sale.amountPaid.toNumber();
+    const totalPaid = sale.amountPaid + newPaymentsTotal;
+    const remainingBalance = finalTotalPrice - sale.amountPaid;
     
     if (Math.abs(newPaymentsTotal - remainingBalance) > 0.01) {
         return { message: `المبلغ المدفوع للتسوية (${newPaymentsTotal}) لا يطابق المبلغ المتبقي (${remainingBalance.toFixed(2)}).`, success: false };
@@ -304,7 +304,7 @@ export async function settleSale(saleId: string, prevState: SettleSaleState, for
             amount: p.amount,
             walletId: p.walletId,
             saleId: sale.id,
-            date: sale.saleDate, // <<<< CRITICAL FIX: Use the original sale date for the payment record
+            date: settlementDate, // Use the settlement date for the payment record
             type: 'Income',
             description: `تسوية بيع الحيوان ${sale.livestock.tagId || sale.livestock.id}`
           }))
@@ -381,26 +381,26 @@ export async function getSaleById(id: string) {
 
         if (!sale) return null;
 
-        // Serialize Decimal fields before returning
+        // The values are already numbers from Prisma, no need to convert
         return {
             ...sale,
-            pricePerKg: sale.pricePerKg.toNumber(),
-            totalPrice: sale.totalPrice.toNumber(),
-            amountPaid: sale.amountPaid.toNumber(),
-            remainingAmount: sale.remainingAmount.toNumber(),
-            initialWeight: sale.initialWeight ? sale.initialWeight.toNumber() : null,
-            finalWeight: sale.finalWeight ? sale.finalWeight.toNumber() : null,
+            pricePerKg: sale.pricePerKg,
+            totalPrice: sale.totalPrice,
+            amountPaid: sale.amountPaid,
+            remainingAmount: sale.remainingAmount,
+            initialWeight: sale.initialWeight ?? null,
+            finalWeight: sale.finalWeight ?? null,
             livestock: {
                 ...sale.livestock,
-                weight: sale.livestock.weight.toNumber(),
-                cost: sale.livestock.cost.toNumber(),
+                weight: sale.livestock.weight,
+                cost: sale.livestock.cost,
             },
             payments: sale.payments.map(p => ({
                 ...p,
-                amount: p.amount.toNumber(),
+                amount: p.amount,
                 wallet: {
                     ...p.wallet,
-                    balance: p.wallet.balance.toNumber()
+                    balance: p.wallet.balance
                 }
             }))
         };
@@ -502,7 +502,7 @@ export async function updateSale(saleId: string, prevState: SaleState, formData:
             // Log the update
             await tx.log.create({
                 data: {
-                    userId: session.user.id,
+                    userId: session.user!.id,
                     action: 'UPDATE',
                     entityType: 'SALE_DRAFT',
                     entityId: saleId,
@@ -613,3 +613,5 @@ export async function deleteSale(id: string) {
         return { message: 'فشل في حذف عملية البيع.', success: false };
     }
 }
+
+    
