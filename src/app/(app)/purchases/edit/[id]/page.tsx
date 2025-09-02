@@ -18,7 +18,7 @@ export default async function EditPurchasePageContainer({ params }: { params: { 
     notFound();
   }
   
-  const serializedWallets = wallets.map(w => ({...w, balance: w.balance.toNumber()}));
+  const serializedWallets = wallets.map(w => ({...w, balance: w.balance}));
 
   return (
     <EditPurchasePageClient 

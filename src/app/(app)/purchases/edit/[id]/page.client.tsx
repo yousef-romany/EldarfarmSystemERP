@@ -18,14 +18,26 @@ import { updatePurchase, PurchaseState } from '@/lib/actions/purchase.actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { Purchase, Livestock, LivestockType, Barn, Wallet, Payment } from '@prisma/client';
 
-type PurchaseWithDetails = Omit<Purchase, 'totalCost'|'amountPaid'|'remainingAmount' | 'livestock' | 'payments'> & {
+type LivestockData = {
+    isBatch: boolean;
+    tagId?: string;
+    quantity?: number;
+    livestockTypeId: string;
+    breed: string;
+    weight: number;
+    age: number;
+    barnId: string;
+}
+
+type PurchaseWithDetails = Omit<Purchase, 'totalCost'|'amountPaid'|'remainingAmount' | 'livestock' | 'payments' | 'livestockData'> & {
     totalCost: number;
     amountPaid: number;
     remainingAmount: number;
-    livestock: Omit<Livestock, 'weight'|'cost'> & {
+    livestockData: LivestockData;
+    livestock: (Omit<Livestock, 'weight'|'cost'> & {
         weight: number;
         cost: number;
-    };
+    }) | null;
     payments: (Omit<Payment, 'amount'> & { amount: number, wallet: Wallet })[];
 };
 
@@ -59,7 +71,7 @@ export default function EditPurchasePageClient({ purchase, barns, livestockTypes
     const [updateState, updateFormAction] = useActionState<PurchaseState, FormData>(updatePurchaseWithId, { message: null, errors: {}, success: false });
 
     // Component state initialized from purchase prop
-    const [registrationType, setRegistrationType] = useState(purchase.livestock.isBatch ? 'batch' : 'individual');
+    const [registrationType, setRegistrationType] = useState(purchase.livestockData.isBatch ? 'batch' : 'individual');
     const [payments, setPayments] = useState<Partial<PaymentState[]>>(purchase.payments.map(p => ({ id: p.id, walletId: p.walletId, amount: p.amount })));
     const [totalCost, setTotalCost] = useState(purchase.totalCost);
 
@@ -143,37 +155,37 @@ export default function EditPurchasePageClient({ purchase, barns, livestockTypes
                     {registrationType === 'individual' && (
                       <div className="grid gap-2">
                         <Label htmlFor="tagId">الرقم التعريفي</Label>
-                        <Input name="tagId" id="tagId" defaultValue={purchase.livestock.tagId || ''} placeholder="e.g., COW-005" />
+                        <Input name="tagId" id="tagId" defaultValue={purchase.livestockData.tagId || ''} placeholder="e.g., COW-005" />
                       </div>
                     )}
                     <div className="grid gap-2">
                         <Label htmlFor="livestockTypeId">النوع</Label>
-                        <Select name="livestockTypeId" defaultValue={purchase.livestock.livestockTypeId} required>
+                        <Select name="livestockTypeId" defaultValue={purchase.livestockData.livestockTypeId} required>
                         <SelectTrigger id="livestockTypeId"><SelectValue placeholder="اختر النوع" /></SelectTrigger>
                         <SelectContent>{livestockTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="breed">السلالة</Label>
-                        <Input name="breed" id="breed" defaultValue={purchase.livestock.breed} placeholder="e.g., هولشتاين" required />
+                        <Input name="breed" id="breed" defaultValue={purchase.livestockData.breed} placeholder="e.g., هولشتاين" required />
                     </div>
                     {registrationType === 'batch' && (
                       <div className="grid gap-2">
                         <Label htmlFor="quantity">الكمية</Label>
-                        <Input name="quantity" id="quantity" type="number" defaultValue={purchase.livestock.quantity || ''} placeholder="عدد الرؤوس في الدفعة" required />
+                        <Input name="quantity" id="quantity" type="number" defaultValue={purchase.livestockData.quantity || ''} placeholder="عدد الرؤوس في الدفعة" required />
                       </div>
                     )}
                     <div className="grid gap-2">
                         <Label htmlFor="weight">الوزن (كجم)</Label>
-                        <Input name="weight" id="weight" type="number" defaultValue={purchase.livestock.weight} placeholder={registrationType === 'individual' ? "وزن الحيوان" : "متوسط وزن الرأس"} required />
+                        <Input name="weight" id="weight" type="number" defaultValue={purchase.livestockData.weight} placeholder={registrationType === 'individual' ? "وزن الحيوان" : "متوسط وزن الرأس"} required />
                     </div>
                      <div className="grid gap-2">
                         <Label htmlFor="age">العمر (أشهر)</Label>
-                        <Input name="age" id="age" type="number" defaultValue={purchase.livestock.age} placeholder="e.g., 18" required />
+                        <Input name="age" id="age" type="number" defaultValue={purchase.livestockData.age} placeholder="e.g., 18" required />
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="barnId">العنبر</Label>
-                        <Select name="barnId" defaultValue={purchase.livestock.barnId} required>
+                        <Select name="barnId" defaultValue={purchase.livestockData.barnId} required>
                             <SelectTrigger id="barnId"><SelectValue placeholder="اختر عنبر التسكين" /></SelectTrigger>
                             <SelectContent>{barns.map(b => <SelectItem key={b.id} value={b.id}>{b.name} (المتاح: {b.capacity - b.currentOccupancy})</SelectItem>)}</SelectContent>
                         </Select>
