@@ -4,6 +4,8 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import Script from 'next/script';
+import { InstallPwaButton } from '@/components/install-pwa-button';
+
 
 // const inter = Inter({ subsets: ['latin'], variable: '--font-inter' }); // Removed to prevent network errors
 
