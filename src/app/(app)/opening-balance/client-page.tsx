@@ -1,4 +1,3 @@
-
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,7 +64,7 @@ export default function OpeningBalanceClientPage({ barns, livestockTypes }: { ba
               </div>
                <div className="grid gap-2">
                 <Label htmlFor="estimatedCost">التكلفة التقديرية للرأس (ج.م)</Label>
-                <Input id="estimatedCost" name="estimatedCost" type="number" placeholder="e.g., 15000" required defaultValue="0" />
+                <Input id="estimatedCost" name="estimatedCost" type="number" step="any" placeholder="e.g., 15000" required defaultValue="0" />
                  {createState?.errors?.estimatedCost && <p className="text-xs text-red-500">{createState.errors.estimatedCost[0]}</p>}
               </div>
             </div>
@@ -120,7 +119,7 @@ export default function OpeningBalanceClientPage({ barns, livestockTypes }: { ba
               )}
               <div className="grid gap-2">
                 <Label htmlFor="weight">الوزن الحالي (كجم)</Label>
-                <Input id="weight" name="weight" type="number" placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required />
+                <Input id="weight" name="weight" type="number" step="any" placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required />
                 {createState?.errors?.weight && <p className="text-xs text-red-500">{createState.errors.weight[0]}</p>}
               </div>
               <div className="grid gap-2">

@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -362,7 +361,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                         )}
                         <div className="grid gap-2">
                             <Label htmlFor="weight">الوزن (كجم)</Label>
-                            <Input name="weight" id="weight" type="number" placeholder={registrationType === 'individual' ? "وزن الحيوان" : "متوسط وزن الرأس"} required />
+                            <Input name="weight" id="weight" type="number" step="any" placeholder={registrationType === 'individual' ? "وزن الحيوان" : "متوسط وزن الرأس"} required />
                         </div>
                          <div className="grid gap-2">
                             <Label htmlFor="age">العمر (أشهر)</Label>
@@ -383,7 +382,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
                             <Label htmlFor="totalCost">التكلفة الإجمالية</Label>
-                            <Input name="totalCost" id="totalCost" type="number" placeholder="التكلفة الإجمالية للشراء" required value={totalCost} onChange={(e) => setTotalCost(parseFloat(e.target.value) || 0)}/>
+                            <Input name="totalCost" id="totalCost" type="number" step="any" placeholder="التكلفة الإجمالية للشراء" required value={totalCost} onChange={(e) => setTotalCost(parseFloat(e.target.value) || 0)}/>
                         </div>
                          <div className="space-y-3">
                             {payments.map((payment, index) => (
@@ -401,7 +400,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                                 </div>
                                 <div className="grid gap-2">
                                 <Label htmlFor={`amount-${index}`}>المبلغ</Label>
-                                <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
+                                <Input id={`amount-${index}`} type="number" step="any" placeholder="المبلغ" value={payment.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
                                 </div>
                                 <Button type="button" variant="ghost" size="icon" onClick={() => handleRemovePayment(index)} disabled={payments.length === 1}>
                                 <Trash2 className="h-4 w-4 text-destructive" />

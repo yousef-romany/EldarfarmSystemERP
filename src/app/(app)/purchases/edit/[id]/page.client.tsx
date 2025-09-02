@@ -1,4 +1,3 @@
-
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -177,7 +176,7 @@ export default function EditPurchasePageClient({ purchase, barns, livestockTypes
                     )}
                     <div className="grid gap-2">
                         <Label htmlFor="weight">الوزن (كجم)</Label>
-                        <Input name="weight" id="weight" type="number" defaultValue={purchase.livestockData.weight} placeholder={registrationType === 'individual' ? "وزن الحيوان" : "متوسط وزن الرأس"} required />
+                        <Input name="weight" id="weight" type="number" step="any" defaultValue={purchase.livestockData.weight} placeholder={registrationType === 'individual' ? "وزن الحيوان" : "متوسط وزن الرأس"} required />
                     </div>
                      <div className="grid gap-2">
                         <Label htmlFor="age">العمر (أشهر)</Label>
@@ -198,7 +197,7 @@ export default function EditPurchasePageClient({ purchase, barns, livestockTypes
                 <CardContent className="space-y-4">
                     <div className="grid gap-2">
                         <Label htmlFor="totalCost">التكلفة الإجمالية</Label>
-                        <Input name="totalCost" id="totalCost" type="number" value={totalCost} placeholder="التكلفة الإجمالية للشراء" required onChange={(e) => setTotalCost(parseFloat(e.target.value) || 0)}/>
+                        <Input name="totalCost" id="totalCost" type="number" step="any" value={totalCost} placeholder="التكلفة الإجمالية للشراء" required onChange={(e) => setTotalCost(parseFloat(e.target.value) || 0)}/>
                     </div>
                      <div className="space-y-3">
                         {payments.map((payment, index) => (
@@ -216,7 +215,7 @@ export default function EditPurchasePageClient({ purchase, barns, livestockTypes
                             </div>
                             <div className="grid gap-2">
                             <Label htmlFor={`amount-${index}`}>المبلغ</Label>
-                            <Input id={`amount-${index}`} type="number" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
+                            <Input id={`amount-${index}`} type="number" step="any" placeholder="المبلغ" value={payment?.amount || ''} onChange={(e) => handlePaymentChange(index, 'amount', Number(e.target.value))} />
                             </div>
                             <Button type="button" variant="ghost" size="icon" onClick={() => handleRemovePayment(index)}>
                             <Trash2 className="h-4 w-4 text-destructive" />

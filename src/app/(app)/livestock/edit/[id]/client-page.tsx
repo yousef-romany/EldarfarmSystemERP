@@ -1,4 +1,3 @@
-
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,7 +70,7 @@ export default function EditLivestockClientPage({ livestock, barns, livestockTyp
               </div>
                <div className="grid gap-2">
                 <Label htmlFor="estimatedCost">التكلفة (ج.م)</Label>
-                <Input id="estimatedCost" name="cost" type="number" placeholder="e.g., 15000" required defaultValue={livestock.cost} />
+                <Input id="estimatedCost" name="cost" type="number" step="any" placeholder="e.g., 15000" required defaultValue={livestock.cost} />
                  {state?.errors?.cost && <p className="text-xs text-red-500">{state.errors.cost[0]}</p>}
               </div>
             </div>
@@ -126,7 +125,7 @@ export default function EditLivestockClientPage({ livestock, barns, livestockTyp
               )}
               <div className="grid gap-2">
                 <Label htmlFor="weight">الوزن الحالي (كجم)</Label>
-                <Input id="weight" name="weight" type="number" defaultValue={livestock.weight} placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required />
+                <Input id="weight" name="weight" type="number" step="any" defaultValue={livestock.weight} placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required />
                 {state?.errors?.weight && <p className="text-xs text-red-500">{state.errors.weight[0]}</p>}
               </div>
               <div className="grid gap-2">

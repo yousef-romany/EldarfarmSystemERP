@@ -114,7 +114,7 @@ export default function NewVowPageClient({ barns, livestockTypes }: { barns: Bar
               )}
               <div className="grid gap-2">
                 <Label htmlFor="weight">الوزن عند الاستلام (كجم)</Label>
-                <Input id="weight" name="weight" type="number" placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required />
+                <Input id="weight" name="weight" type="number" step="any" placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required />
                 {createState?.errors?.weight && <p className="text-xs text-red-500">{createState.errors.weight[0]}</p>}
               </div>
               <div className="grid gap-2">

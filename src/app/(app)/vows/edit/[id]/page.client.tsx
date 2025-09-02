@@ -142,7 +142,7 @@ export default function EditVowPageClient({ vow, barns, livestockTypes }: EditVo
               )}
               <div className="grid gap-2">
                 <Label htmlFor="weight">الوزن عند الاستلام (كجم)</Label>
-                <Input name="weight" id="weight" type="number" defaultValue={vow.livestock.weight} placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required/>
+                <Input name="weight" id="weight" type="number" step="any" defaultValue={vow.livestock.weight} placeholder={registrationType === 'individual' ? "e.g., 450" : "متوسط وزن الواحدة"} required/>
                  {updateState?.errors?.weight && <p className="text-xs text-red-500">{updateState.errors.weight[0]}</p>}
               </div>
               <div className="grid gap-2">
