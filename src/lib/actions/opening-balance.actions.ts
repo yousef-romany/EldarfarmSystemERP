@@ -45,8 +45,8 @@ export async function createOpeningBalanceLivestock(prevState: OpeningBalanceSta
     redirect('/login');
   }
   
-  // Using 'barns.add' as a proxy permission for this one-time setup action
-  if (!session.user.permissions?.barns?.add) {
+  // Opening balance is part of livestock management
+  if (!session.user.permissions?.livestock?.add) {
     return { message: 'ليس لديك الصلاحية لإضافة أرصدة افتتاحية.', success: false };
   }
 
@@ -91,6 +91,7 @@ export async function createOpeningBalanceLivestock(prevState: OpeningBalanceSta
           barnId,
           status: 'Available', // Set as available immediately
           cost: estimatedCost,
+          createdAt: new Date(entryDate),
           // No purchase or vow link
         }
       });
@@ -115,6 +116,7 @@ export async function createOpeningBalanceLivestock(prevState: OpeningBalanceSta
 
     revalidatePath('/dashboard');
     revalidatePath('/barns');
+    revalidatePath('/livestock');
     return { message: 'تم إدخال الرصيد الافتتاحي بنجاح!', success: true };
 
   } catch (error) {
