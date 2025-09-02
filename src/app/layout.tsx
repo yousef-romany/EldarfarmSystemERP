@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
+import Script from 'next/script';
 
 // const inter = Inter({ subsets: ['latin'], variable: '--font-inter' }); // Removed to prevent network errors
 
@@ -37,6 +38,19 @@ export default function RootLayout({
           {children}
           <Toaster />
         </ThemeProvider>
+         <Script id="service-worker-registration">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                  console.log('Service Worker registered with scope:', registration.scope);
+                }).catch(error => {
+                  console.log('Service Worker registration failed:', error);
+                });
+              });
+            }
+          `}
+        </Script>
       </body>
     </html>
   );
