@@ -11,7 +11,7 @@ export default async function LivestockPage() {
     const session = await getFullSession();
     const user = session.user;
 
-    const livestock = await prisma.livestock.findMany({
+    const livestockData = await prisma.livestock.findMany({
         where: {
             status: {
                 not: 'Sold'
@@ -25,6 +25,13 @@ export default async function LivestockPage() {
             createdAt: 'desc',
         },
     });
+
+    const livestock = livestockData.map(l => ({
+        ...l,
+        weight: l.weight,
+        cost: l.cost
+    }));
+
 
     return (
         <>

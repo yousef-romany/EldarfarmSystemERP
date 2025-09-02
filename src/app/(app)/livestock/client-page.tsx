@@ -16,10 +16,13 @@ import { useToast } from '@/hooks/use-toast';
 import { deleteLivestock } from '@/lib/actions/livestock.actions';
 
 
-type LivestockWithDetails = Livestock & {
-  livestockType: LivestockType;
-  barn: Barn;
+type LivestockWithDetails = Omit<Livestock, 'weight' | 'cost'> & {
+    weight: number;
+    cost: number;
+    livestockType: LivestockType;
+    barn: Barn;
 };
+
 
 type LivestockClientPageProps = {
     initialLivestock: LivestockWithDetails[];
@@ -99,7 +102,7 @@ export default function LivestockClientPage({ initialLivestock }: LivestockClien
                         </TableCell>
                         <TableCell>{getTypeText(animal)}</TableCell>
                         <TableCell>{animal.breed}</TableCell>
-                        <TableCell>{animal.weight.toNumber()} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
+                        <TableCell>{animal.weight} {animal.isBatch && <span className="text-xs text-muted-foreground">(متوسط)</span>}</TableCell>
                         <TableCell>{animal.age}</TableCell>
                         <TableCell>{animal.barn.name}</TableCell>
                         <TableCell>
