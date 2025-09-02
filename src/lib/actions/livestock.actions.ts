@@ -149,20 +149,22 @@ export async function deleteLivestock(livestockId: string) {
     try {
         const livestockToDelete = await prisma.livestock.findUnique({
             where: { id: livestockId },
-            include: { vow: true, purchase: true }
+            include: { sales: true }
         });
         if (!livestockToDelete) {
             return { message: 'الماشية غير موجودة.', success: false };
         }
         
-        // This action should not be possible anymore from the UI, but as a safeguard:
-        if (livestockToDelete.vow || livestockToDelete.purchase) {
-            return { message: 'لا يمكن حذف الماشية مباشرة. يرجى حذف النذر أو عملية الشراء المرتبطة بها.', success: false };
+        // This action is only for opening balance livestock, which should have no purchase or vow.
+        if (livestockToDelete.purchaseId || livestockToDelete.vowId) {
+            return { message: 'لا يمكن حذف الماشية من هنا، يجب حذفها من سجل الشراء أو النذر الأصلي.', success: false };
+        }
+
+        // Check if it's involved in any sale (even draft)
+        if (livestockToDelete.sales && livestockToDelete.sales.length > 0) {
+            return { message: 'لا يمكن الحذف. هذا الحيوان مرتبط بعملية بيع. يرجى إلغاء البيع أولاً.', success: false };
         }
         
-        if (livestockToDelete.status !== 'Available') {
-            return { message: 'لا يمكن حذف إلا المواشي المتاحة فقط والتي ليس لها سجل مرتبط.', success: false };
-        }
 
         await prisma.$transaction(async (tx) => {
             // 1. Decrement barn occupancy
@@ -193,8 +195,8 @@ export async function deleteLivestock(livestockId: string) {
         return { message: 'تم حذف الماشية بنجاح.', success: true };
     } catch (error: any) {
         console.error('Error deleting livestock:', error);
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
-             return { message: 'فشل الحذف. هذا الحيوان مرتبط بعملية بيع. يرجى إلغاء البيع أولاً.', success: false };
+         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+             return { message: 'فشل الحذف. هذا الحيوان مرتبط بسجلات أخرى (مثل المبيعات).', success: false };
         }
         return { message: error.message || 'فشل في حذف الماشية.', success: false };
     }

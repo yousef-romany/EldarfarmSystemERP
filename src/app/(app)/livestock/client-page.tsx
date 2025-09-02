@@ -70,6 +70,12 @@ export default function LivestockClientPage({ initialLivestock }: LivestockClien
       }
   }
 
+  const isDeletable = (animal: LivestockWithDetails) => {
+    // Only allow deleting livestock that was entered as opening balance (no purchase or vow link)
+    // and is not currently involved in a sale.
+    return !animal.purchaseId && !animal.vowId && (animal.status === 'Available' || animal.status === 'Vowed');
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -125,6 +131,13 @@ export default function LivestockClientPage({ initialLivestock }: LivestockClien
                                         </Link>
                                     </DropdownMenuItem>
                                 )}
+                                {user?.permissions.livestock.delete && isDeletable(animal) && (
+                                    <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                            <Trash2 className="mr-2 h-4 w-4" /> حذف
+                                        </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </TableCell>
@@ -133,7 +146,7 @@ export default function LivestockClientPage({ initialLivestock }: LivestockClien
                         <AlertDialogHeader>
                         <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
                         <AlertDialogDescription>
-                            سيتم حذف سجل هذا الحيوان نهائيًا. لا يمكن التراجع عن هذا الإجراء.
+                            سيتم حذف سجل هذا الحيوان (الرصيد الافتتاحي) نهائيًا. لا يمكن التراجع عن هذا الإجراء.
                         </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

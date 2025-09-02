@@ -29,7 +29,7 @@ export default async function LivestockPage() {
     const livestock = livestockData.map(l => ({
         ...l,
         weight: l.weight,
-        cost: l.cost
+        cost: l.cost,
     }));
 
 
