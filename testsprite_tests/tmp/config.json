@@ -1,0 +1,17 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "loginUser": "admin",
+  "loginPassword": "admin123",
+  "executionArgs": {
+    "projectName": "EldarfarmSystemERP",
+    "projectPath": "/home/yousefx00/Documents/Programing Projects/EldarfarmSystemERP",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-50sVA7jY-C9HJKzPfIRhNIdBN96Yx2iahzYaFLTunqcjC9LfhNHnVDEsvyyFgGiaEqvuMDdwiwY9KYf8exKqulWzP5THatVgVYKl3ZwQPxDFWU9p1h-ZLc6caB0X2A_jfeY"
+    }
+  }
+}

@@ -1,0 +1,793 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Login with Valid Credentials and Role-Based Access",
+    "description": "Verify that a user can log in with valid credentials and is granted correct permissions based on assigned role.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page"
+      },
+      {
+        "type": "action",
+        "description": "Enter valid username and password for each role (DEVELOPER, ADMIN, MANAGER, STAFF)"
+      },
+      {
+        "type": "action",
+        "description": "Click on login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is authenticated and redirected to dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that UI elements and features reflect correct access permissions for the user's role"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Login Failure with Invalid Credentials",
+    "description": "Ensure user cannot login with invalid username or password and is shown an appropriate error message.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page"
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid username or password"
+      },
+      {
+        "type": "action",
+        "description": "Click login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login is rejected and an error message is displayed"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Dashboard Data Accuracy and Refresh",
+    "description": "Verify the dashboard displays accurate livestock metrics, financial summaries, and interactive charts with up-to-date data.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as a user with dashboard access"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to dashboard page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify key performance indicators and financial summaries match backend data"
+      },
+      {
+        "type": "action",
+        "description": "Trigger data changes (e.g., add livestock or record transaction)"
+      },
+      {
+        "type": "action",
+        "description": "Refresh or revisit dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify dashboard reflects updated data correctly"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Barn Management CRUD Operations",
+    "description": "Test Create, Read, Update, and Delete operations on barns including capacity and occupancy validation.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to barn management page"
+      },
+      {
+        "type": "action",
+        "description": "Create a new barn with valid data (name, capacity)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify new barn is listed and saved correctly"
+      },
+      {
+        "type": "action",
+        "description": "Edit existing barn details and update capacity"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify changes are saved and reflected in barn list"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to delete a barn with no assigned livestock"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify barn is deleted successfully"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to delete a barn with assigned livestock"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify deletion is prevented or warns user appropriately"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Livestock Management and Status Update",
+    "description": "Verify livestock batch and individual animal creation, status updates, barn assignment, and opening balance management.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to livestock management page"
+      },
+      {
+        "type": "action",
+        "description": "Add a new livestock batch with valid attributes, including type and quantity"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify new batch is listed and details correct"
+      },
+      {
+        "type": "action",
+        "description": "Update status of individual livestock (e.g. sold, deceased)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify status change is saved and visually indicated"
+      },
+      {
+        "type": "action",
+        "description": "Assign livestock to barns and update occupancy"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify barn capacity updates accordingly"
+      },
+      {
+        "type": "action",
+        "description": "Set opening balances and verify accurate calculations"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Livestock Types CRUD Management",
+    "description": "Test creation, update, deletion, and listing of different livestock types (Cow, Sheep, Goat, Chicken, etc.).",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to livestock types management page"
+      },
+      {
+        "type": "action",
+        "description": "Create a new livestock type with required details"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify livestock type is added successfully"
+      },
+      {
+        "type": "action",
+        "description": "Edit livestock type details"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify updates are saved correctly"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to delete livestock type in use by existing livestock"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system prevents deletion or warns user"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Purchase Workflow and Livestock Creation Automation",
+    "description": "Verify purchase creation with supplier and payment details, draft to confirmed workflow and automatic livestock record creation.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to purchase management page"
+      },
+      {
+        "type": "action",
+        "description": "Create a new purchase record with supplier, livestock details, and payment information"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify purchase is saved as draft initially"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the purchase"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify purchase status updates to confirmed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify livestock records are created automatically based on purchase data"
+      },
+      {
+        "type": "action",
+        "description": "Attempt purchase creation with missing mandatory fields"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation errors are displayed and purchase not saved"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Sales Management with POS and Deferred Payments",
+    "description": "Validate sales processing through POS and deferred payment options including invoice and receipt generation.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to sales POS interface"
+      },
+      {
+        "type": "action",
+        "description": "Process an immediate sale with valid livestock and payment data"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify sale is recorded, livestock status updated, and receipt generated correctly"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to deferred sales page"
+      },
+      {
+        "type": "action",
+        "description": "Create a deferred sale with installment plan"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify sale pending payments and invoice generated"
+      },
+      {
+        "type": "action",
+        "description": "Make payment installment and verify partial payment tracking"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify payment is recorded and receipt issued"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to create sale without required fields"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify form validation prevents submission"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Islamic Charitable Vows (Nadhr) Recording and Receipt Generation",
+    "description": "Test recording of donated livestock for vows with donor information and generation of donation receipts.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to vows management page"
+      },
+      {
+        "type": "action",
+        "description": "Record a new vow with donor data and livestock details"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify vow is saved and visible in list"
+      },
+      {
+        "type": "action",
+        "description": "Generate and print receipt for vow donation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify receipt contains accurate donor and livestock info"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Financial Contributions Tracking and Multi-Wallet Payment",
+    "description": "Verify capability to track cash donations split across multiple wallets and generate donor receipts.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access contributions management page"
+      },
+      {
+        "type": "action",
+        "description": "Create a new financial contribution specifying multiple wallets for payment distribution"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify contribution is recorded with correct wallet balances updated"
+      },
+      {
+        "type": "action",
+        "description": "Generate and view receipt for donor"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify receipt has complete and accurate contribution data"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Expense Management with Categorization and Payment Support",
+    "description": "Test adding, editing, and categorizing operating expenses and handling payments with wallet selection.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to expense management section"
+      },
+      {
+        "type": "action",
+        "description": "Add operating expense categorized under Feed with valid payment details and wallet"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify expense is saved and wallet balance updated"
+      },
+      {
+        "type": "action",
+        "description": "Edit existing expense and change category and payment wallet"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify updates persist and wallet balances are correct"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to add expense without mandatory fields"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation errors appear and expense not saved"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Wallet and Cash Register Management with Real-Time Balances",
+    "description": "Verify wallet creation, balance tracking, and detailed transaction history correctness.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to wallets page"
+      },
+      {
+        "type": "action",
+        "description": "Create a new wallet with initial balance"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify wallet appears in list with correct balance"
+      },
+      {
+        "type": "action",
+        "description": "Perform transactions affecting wallet balance (income and expenses)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify wallet balance updates in real-time"
+      },
+      {
+        "type": "action",
+        "description": "View wallet transaction history"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all transactions are listed accurately and chronologically"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "User Management with Role Assignment and Password Handling",
+    "description": "Verify user creation, role assignment, permission overrides, and password reset functionality.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to user management page"
+      },
+      {
+        "type": "action",
+        "description": "Create a new user with assigned role and custom permissions"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is listed with correct roles and permissions"
+      },
+      {
+        "type": "action",
+        "description": "Edit user to change role and permissions"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify changes saved and reflected in user access"
+      },
+      {
+        "type": "action",
+        "description": "Initiate password reset for user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify password reset process completes successfully"
+      },
+      {
+        "type": "action",
+        "description": "Attempt unauthorized role modifications by non-admin user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system prevents unauthorized changes"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Report Generation with Filters, Export, and Print",
+    "description": "Validate daily, advanced, and livestock movement reports generation with filtering, exporting, and printing capabilities.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to report hub and select daily report"
+      },
+      {
+        "type": "action",
+        "description": "Apply date range and category filters"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify report data matches filters and is accurate"
+      },
+      {
+        "type": "action",
+        "description": "Export daily report in supported formats (PDF, CSV)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify exported file opens and contains correct data"
+      },
+      {
+        "type": "action",
+        "description": "Print report preview"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify print layout is correct and complete"
+      },
+      {
+        "type": "action",
+        "description": "Repeat above steps for advanced and livestock movement reports"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Settlement System Daily Close-Out and Audit Logging",
+    "description": "Test performing daily settlement including wallet balance snapshots, logging settlements actions, and reviewing history.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to settlement page"
+      },
+      {
+        "type": "action",
+        "description": "Perform daily settlement close-out"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify wallet balances are captured and settlement recorded"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify audit log captures settlement action with user and timestamp"
+      },
+      {
+        "type": "action",
+        "description": "View settlement history"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify historical settlement records display correctly with details"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Audit Logging Captures User and System Activities",
+    "description": "Verify audit log records all critical user actions and system changes including login events, data CRUDs, and settlements.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Perform a series of actions: login, barn CRUD, purchase creation, sale processing, and settlement"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to audit logs page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each action is logged with correct user, timestamp, action type, and affected entities"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Database Backup and Restore Workflow",
+    "description": "Verify system can perform MySQL database backup and restore operations without data loss or corruption.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to backup management page"
+      },
+      {
+        "type": "action",
+        "description": "Trigger a database backup"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify backup file is created and download available"
+      },
+      {
+        "type": "action",
+        "description": "Perform restore operation from a valid backup file"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify database state matches backed up data with no corruption"
+      },
+      {
+        "type": "action",
+        "description": "Attempt restore with invalid or corrupted backup file"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system rejects restore and shows error"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Global Search Accuracy and Performance",
+    "description": "Test global search feature returns accurate, relevant results efficiently across all system entities.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to global search interface"
+      },
+      {
+        "type": "action",
+        "description": "Enter varied search queries for barns, livestock, users, purchases, sales, and reports"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search results include relevant matching records"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response time remains within acceptable performance thresholds"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Settings Management for Roles and Permissions",
+    "description": "Verify role and permission configurations can be modified and applied correctly to users system-wide.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to settings management page"
+      },
+      {
+        "type": "action",
+        "description": "Edit a user role's permissions, adding and removing rights"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify changes are saved and enforced immediately"
+      },
+      {
+        "type": "action",
+        "description": "Assign modified roles to users and test access restrictions"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify users gain or lose features as per updated permissions"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "UI Components Render Consistently and Responsively",
+    "description": "Verify the application UI components including forms, buttons, tables, dialogs, and charts render correctly and maintain usability across devices and browsers.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate through the application on desktop browser"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all UI components render without layout issues or visual glitches"
+      },
+      {
+        "type": "action",
+        "description": "Access the application on mobile device and simulate different screen sizes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI components adjust layout responsively and remain functional"
+      },
+      {
+        "type": "action",
+        "description": "Test key UI interactions like modals, dropdowns, and forms"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify smooth interaction and accessibility compliance"
+      }
+    ]
+  },
+  {
+    "id": "TC021",
+    "title": "Theme Toggle Dark/Light Mode Functionality",
+    "description": "Verify application toggles between dark and light modes smoothly without layout breakages or loss of functionality.",
+    "category": "ui",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Locate and activate the theme toggle control"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI switches to dark mode correctly with consistent styling"
+      },
+      {
+        "type": "action",
+        "description": "Toggle back to light mode"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI returns to light mode with consistent styling"
+      },
+      {
+        "type": "action",
+        "description": "Perform several UI interactions while toggling themes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no UI components break or display inconsistently"
+      }
+    ]
+  },
+  {
+    "id": "TC022",
+    "title": "Session and PWA Support Preserve User State",
+    "description": "Verify that client-side session management and PWA installation preserve user authentication state and settings between sessions and page reloads.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login to the application and perform various actions"
+      },
+      {
+        "type": "action",
+        "description": "Reload the page or close and re-open tab"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user remains logged in and session is maintained"
+      },
+      {
+        "type": "action",
+        "description": "Install application as PWA on supported device"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify app launches correctly with user state preserved"
+      },
+      {
+        "type": "action",
+        "description": "Test offline behavior by disconnecting from network"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify PWA delivers expected offline functionality or error messages"
+      }
+    ]
+  },
+  {
+    "id": "TC023",
+    "title": "Performance Monitoring Metrics collection & threshold compliance",
+    "description": "Test the collection of API performance metrics including timing, averages, and percentile statistics and validate compliance with responsiveness thresholds.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Perform typical user operations across modules (login, CRUD, reports)"
+      },
+      {
+        "type": "action",
+        "description": "Access performance monitoring interface or logs"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify metrics are recorded with operation timing and statistics"
+      },
+      {
+        "type": "assertion",
+        "description": "Validate that recorded performance values meet defined responsiveness thresholds"
+      }
+    ]
+  }
+]
