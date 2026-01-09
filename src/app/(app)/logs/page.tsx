@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
+import { formatDateTimeArabic } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import type { LogAction, EntityType } from '@prisma/client';
 
@@ -55,6 +56,7 @@ export default async function LogsPage() {
         CONTRIBUTION: 'مساهمة',
         EXPENSE: 'مصروف',
         WALLET: 'محفظة',
+        SETTLEMENT: 'تسوية',
     };
     return map[entity] || entity;
   }
@@ -81,7 +83,7 @@ export default async function LogsPage() {
             <TableBody>
               {logs.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell>{format(new Date(log.createdAt), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
+                  <TableCell>{formatDateTimeArabic(log.createdAt)}</TableCell>
                   <TableCell>{log.user.username}</TableCell>
                   <TableCell>
                     <Badge variant={getActionVariant(log.action)}>{getActionText(log.action)}</Badge>

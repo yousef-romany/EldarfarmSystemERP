@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
+import { formatDateTimeArabic } from '@/lib/utils';
 import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import useSWR from 'swr';
@@ -65,7 +66,7 @@ export default function SettlementHistoryPage() {
               {settlements && settlements.length > 0 ? (
                 settlements.map((settlement) => (
                   <TableRow key={settlement.id}>
-                    <TableCell>{format(new Date(settlement.createdAt), 'yyyy-MM-dd, hh:mm a')}</TableCell>
+                    <TableCell>{formatDateTimeArabic(settlement.createdAt)}</TableCell>
                     <TableCell>{settlement.settledBy.username}</TableCell>
                     <TableCell className="font-bold">{formatCurrency(settlement.amount)}</TableCell>
                     <TableCell>
@@ -94,7 +95,7 @@ export default function SettlementHistoryPage() {
           <DialogHeader>
             <DialogTitle>تفاصيل التسوية</DialogTitle>
             <DialogDescription>
-              عرض لأرصدة المحافظ في وقت التسوية بتاريخ {selectedSettlement && format(new Date(selectedSettlement.createdAt), 'yyyy-MM-dd hh:mm a')}
+              عرض لأرصدة المحافظ في وقت التسوية بتاريخ {selectedSettlement && formatDateTimeArabic(selectedSettlement.createdAt)}
             </DialogDescription>
           </DialogHeader>
           {selectedSettlement && (

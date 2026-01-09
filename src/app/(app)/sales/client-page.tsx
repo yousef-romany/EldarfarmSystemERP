@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
+import { formatDateArabic, formatDateForInput } from '@/lib/utils';
 import { useState, useEffect, useActionState, useRef } from 'react';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -92,11 +93,11 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
   const weightDifference = settlementSale ? finalWeight - (settlementSale.initialWeight || 0) : 0;
 
   // Form state for settlement action
-  const settleSaleWithId = settlementSale ? settleSale.bind(null, settlementSale.id) : async () => {};
-  const [settleState, settleFormAction] = useActionState(settleSaleWithId, { message: null, errors: {}, success: false });
+  const settleSaleWithId = settlementSale ? settleSale.bind(null, settlementSale.id) : async () => ({ message: '', errors: {}, success: false });
+  const [settleState, settleFormAction] = useActionState(settleSaleWithId, { message: '', errors: {}, success: false });
 
   // Form state for confirmation action
-  const [confirmState, confirmFormAction] = useActionState(confirmSale, { message: null, success: false });
+  const [confirmState, confirmFormAction] = useActionState(confirmSale, { message: '', success: false });
 
 
   const getAnimalTag = (sale: SaleWithLivestock) => {
@@ -215,7 +216,7 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
                           <TableCell>{getStatusBadge(sale.status)}</TableCell>
                           <TableCell className="font-medium">{sale.customerName}</TableCell>
                           <TableCell>{getAnimalTag(sale)}</TableCell>
-                          <TableCell>{format(new Date(sale.saleDate), 'yyyy-MM-dd')}</TableCell>
+                          <TableCell>{formatDateArabic(sale.saleDate)}</TableCell>
                           <TableCell>
                               <Badge variant={sale.type === 'Deferred' ? 'secondary' : 'default'}>
                                   {sale.type === 'Deferred' ? 'آجل' : 'فوري'}
@@ -358,7 +359,6 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
                     <div className="grid gap-2">
                       <Label htmlFor="final-weight">الوزن النهائي (كجم)</Label>
                       <Input id="final-weight" name="finalWeight" type="number" step="any" value={finalWeight} onChange={(e) => setFinalWeight(parseFloat(e.target.value) || 0)} />
-                       {settleState.errors?.finalWeight && <p className="text-xs text-red-500">{settleState.errors.finalWeight[0]}</p>}
                     </div>
                      <div className="grid gap-2">
                         <Label>فرق الوزن</Label>
@@ -412,7 +412,6 @@ export default function SalesPageClient({ wallets }: { wallets: Wallet[]}) {
                         </Button>
                       </div>
                     ))}
-                     {settleState.errors?.payments && <p className="text-xs text-red-500">{settleState.errors.payments[0]}</p>}
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={handleAddSettlementPayment}>
                     <PlusCircle className="mr-2 h-4 w-4" />

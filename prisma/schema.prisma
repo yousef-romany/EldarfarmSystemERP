@@ -70,6 +70,11 @@ model Livestock {
   
   sales Sale[]
   vows  Vow[]
+  
+  @@index([barnId, status])
+  @@index([livestockTypeId, status])
+  @@index([status, createdAt])
+  @@index([createdAt])
 }
 
 enum LivestockStatus {
@@ -97,6 +102,9 @@ model Purchase {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  @@index([purchaseDate])
+  @@index([status, purchaseDate])
 }
 
 enum PurchaseStatus {
@@ -130,6 +138,10 @@ model Sale {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  @@index([saleDate])
+  @@index([status, saleDate])
+  @@index([type, status])
 }
 
 enum SaleType {
@@ -184,6 +196,9 @@ model Expense {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  @@index([date])
+  @@index([category, date])
 }
 
 enum ExpenseCategory {
@@ -228,6 +243,8 @@ model Payment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  @@index([date])
+  @@index([walletId, date])
   @@index([purchaseId])
   @@index([saleId])
   @@index([contributionId])

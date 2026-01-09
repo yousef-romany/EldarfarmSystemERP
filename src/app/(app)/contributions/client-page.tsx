@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
+import { formatDateArabic } from '@/lib/utils';
 import Link from 'next/link';
 import type { Contribution } from '@prisma/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -66,7 +67,7 @@ export default function ContributionsClientPage({ contributions }: { contributio
                   <TableRow>
                     <TableCell className="font-medium">{contribution.donorName}</TableCell>
                     <TableCell>{contribution.description}</TableCell>
-                    <TableCell>{format(new Date(contribution.date), 'yyyy-MM-dd')}</TableCell>
+                    <TableCell>{formatDateArabic(contribution.date)}</TableCell>
                     <TableCell className="text-center">{contribution.totalAmount.toLocaleString()} ج.م</TableCell>
                     <TableCell>
                       <DropdownMenu>

@@ -18,6 +18,18 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Performance optimizations
+  swcMinify: true,
+  compress: true,
+  poweredByHeader: false,
+  // Optimize production builds
+  productionBrowserSourceMaps: false,
+  // Cache optimization
+  generateEtags: true,
+  // Experimental features for better performance
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
+  },
 };
 
 export default nextConfig;

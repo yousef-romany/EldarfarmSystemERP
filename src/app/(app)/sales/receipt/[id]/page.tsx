@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
+import { formatDateTimeArabic } from '@/lib/utils';
 import { Printer } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { getSaleById } from '@/lib/actions/sale.actions';
@@ -85,7 +86,7 @@ const POSReceiptPage = () => {
             <div className="text-center">
                 <h2 className="text-lg font-bold">مدير المواشي</h2>
                 <p className="text-xs">دير مار جرجس بالرزيقات</p>
-                <p className="text-xs">{format(new Date(), "yyyy-MM-dd hh:mm a")}</p>
+                <p className="text-xs">{formatDateTimeArabic(new Date())}</p>
             </div>
 
             <Separator className="my-2 border-dashed border-black" />

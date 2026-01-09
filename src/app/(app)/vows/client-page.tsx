@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
+import { formatDateArabic } from '@/lib/utils';
 import Link from 'next/link';
 import type { Vow, Livestock, LivestockType } from '@prisma/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,7 +83,7 @@ export default function VowsClientPage({ vows }: { vows: VowWithDetails[] }) {
                 <TableRow>
                   <TableCell className="font-medium">{vow.donorName}</TableCell>
                   <TableCell>{vow.receiptId || 'N/A'}</TableCell>
-                  <TableCell>{format(new Date(vow.date), 'yyyy-MM-dd')}</TableCell>
+                  <TableCell>{formatDateArabic(vow.date)}</TableCell>
                   <TableCell>{getLivestockDetails(vow.livestock)}</TableCell>
                   <TableCell>
                     <DropdownMenu>

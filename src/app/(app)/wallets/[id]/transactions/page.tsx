@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { formatDateTimeArabic } from '@/lib/utils';
 import { ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -67,7 +68,7 @@ export default async function WalletTransactionsPage({ params }: { params: { id:
               {wallet.payments.length > 0 ? (
                 wallet.payments.map((payment) => (
                   <TableRow key={payment.id}>
-                    <TableCell>{format(new Date(payment.date), 'yyyy-MM-dd HH:mm')}</TableCell>
+                    <TableCell>{formatDateTimeArabic(payment.date)}</TableCell>
                     <TableCell>
                       <Badge variant={payment.type === 'Income' ? 'default' : 'destructive'}>
                         {payment.type === 'Income' ? <ArrowDownCircle className="mr-1 h-4 w-4" /> : <ArrowUpCircle className="mr-1 h-4 w-4" />}

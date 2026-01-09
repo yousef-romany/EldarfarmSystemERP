@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarIcon, ArrowUpCircle, ArrowDownCircle, MinusCircle, Wallet as WalletIcon, Banknote, Printer } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { formatDateArabic } from '@/lib/utils';
 import useSWR from 'swr';
 import Image from 'next/image';
 
@@ -65,7 +66,7 @@ export default function DailyReportPage() {
                         className="w-[280px] justify-start text-left font-normal"
                     >
                         <CalendarIcon className="ml-2 h-4 w-4" />
-                        {date ? format(date, "PPP") : <span>اختر تاريخًا</span>}
+                        {date ? formatDateArabic(date) : <span>اختر تاريخًا</span>}
                     </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">

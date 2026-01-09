@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
+import { formatDateArabic } from '@/lib/utils';
 import { Gift, Printer } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -87,7 +88,7 @@ const VowReceiptPage = () => {
                     </div>
                     <div className="text-left">
                         <p><strong>إيصال رقم:</strong> {vow.receiptId || vow.id}</p>
-                        <p><strong>تاريخ الاستلام:</strong> {format(new Date(vow.date), 'yyyy-MM-dd')}</p>
+                        <p><strong>تاريخ الاستلام:</strong> {formatDateArabic(vow.date)}</p>
                     </div>
                 </div>
                 <Separator className="my-6" />

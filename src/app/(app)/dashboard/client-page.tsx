@@ -1,8 +1,22 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useMemo, useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart, Package, Users, Warehouse, DollarSign, Search } from 'lucide-react';
+import {
+  BarChart,
+  Package,
+  Users,
+  Warehouse,
+  DollarSign,
+  Search,
+  TrendingUp,
+  TrendingDown,
+  ShoppingCart,
+  Receipt,
+  Heart,
+  ArrowUpRight,
+  ArrowDownRight
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -12,11 +26,12 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { PieChart, Pie, Cell } from "recharts"
+import { PieChart, Pie, Cell, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts"
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import useSWR from 'swr';
 import { useDebounce } from 'use-debounce';
+import { formatDateArabic, formatCurrency } from '@/lib/utils';
 
 
 type DashboardStats = {
@@ -25,6 +40,36 @@ type DashboardStats = {
   totalValue: number;
   statusCounts: Record<LivestockStatus, number>;
   typeCounts: { name: string, count: number }[];
+  sales: {
+    allTime: { total: number; paid: number; remaining: number; count: number };
+    thisMonth: { total: number; paid: number; remaining: number; count: number };
+    today: { total: number; paid: number; remaining: number; count: number };
+    yesterday: { total: number; count: number };
+  };
+  expenses: {
+    allTime: { total: number; count: number };
+    thisMonth: { total: number; count: number };
+    today: { total: number; count: number };
+    yesterday: { total: number; count: number };
+  };
+  purchases: {
+    allTime: { total: number; count: number };
+    thisMonth: { total: number; count: number };
+  };
+  contributions: {
+    allTime: { total: number; count: number };
+    thisMonth: { total: number; count: number };
+  };
+  vows: {
+    allTime: { count: number };
+    thisMonth: { count: number };
+  };
+  profit: {
+    allTime: number;
+    thisMonth: number;
+    today: number;
+  };
+  dailyData: { date: string; sales: number; expenses: number; profit: number }[];
 };
 
 type LivestockWithDetails = Omit<Livestock, 'weight' | 'cost'> & {
@@ -84,8 +129,8 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
     });
   }, [debouncedSearchTerm, typeFilter, barnFilter, pathname, router]);
   
-  // Helper functions for rendering
-  const getStatusText = (status: string) => {
+  // Helper functions for rendering - memoized for performance
+  const getStatusText = useCallback((status: string) => {
     switch (status) {
       case 'Available': return 'متاح';
       case 'Sold': return 'مباع';
@@ -93,9 +138,9 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
       case 'PendingSale': return 'بيع آجل';
       default: return status;
     }
-  };
+  }, []);
 
-  const getStatusVariant = (status: Livestock['status']) => {
+  const getStatusVariant = useCallback((status: Livestock['status']) => {
     switch (status) {
       case 'Available': return 'default';
       case 'Sold': return 'destructive';
@@ -103,27 +148,38 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
       case 'PendingSale': return 'secondary';
       default: return 'outline';
     }
-  };
+  }, []);
   
-  const getTypeText = (animal: LivestockWithDetails) => {
+  const getTypeText = useCallback((animal: LivestockWithDetails) => {
     if (animal.isBatch) {
       return `دفعة ${animal.livestockType.name}`;
     }
     return animal.livestockType.name;
+  }, []);
+
+  // Calculate percentage change
+  const calculateChange = (current: number, previous: number) => {
+    if (previous === 0) return 0;
+    return ((current - previous) / previous) * 100;
   };
+
+  const salesChange = calculateChange(stats.sales.today.total, stats.sales.yesterday.total);
+  const expensesChange = calculateChange(stats.expenses.today.total, stats.expenses.yesterday.total);
   
-  // Chart configuration
-  const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
-  const chartConfig = stats.typeCounts.reduce((acc, type, index) => {
+  // Chart configuration - memoized for performance
+  const COLORS = useMemo(() => ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"], []);
+  const chartConfig = useMemo(() => stats.typeCounts.reduce((acc, type, index) => {
       acc[type.name] = {
         label: type.name,
         color: COLORS[index % COLORS.length]
       };
       return acc;
-  }, {} as any);
+  }, {} as any), [stats.typeCounts, COLORS]);
+
 
   return (
     <div className="space-y-6">
+      {/* Main Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -141,7 +197,7 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(stats.totalValue)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(stats.totalValue)}</div>
             <p className="text-xs text-muted-foreground">تكلفة المواشي المتاحة حاليًا</p>
           </CardContent>
         </Card>
@@ -167,6 +223,69 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
         </Card>
       </div>
 
+      {/* Financial Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">مبيعات اليوم</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(stats.sales.today.total)}</div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              {salesChange >= 0 ? (
+                <><ArrowUpRight className="h-3 w-3 text-green-500" /> +{salesChange.toFixed(1)}% من أمس</>
+              ) : (
+                <><ArrowDownRight className="h-3 w-3 text-red-500" /> {salesChange.toFixed(1)}% من أمس</>
+              )}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">مصروفات اليوم</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(stats.expenses.today.total)}</div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              {expensesChange >= 0 ? (
+                <><ArrowUpRight className="h-3 w-3 text-red-500" /> +{expensesChange.toFixed(1)}% من أمس</>
+              ) : (
+                <><ArrowDownRight className="h-3 w-3 text-green-500" /> {expensesChange.toFixed(1)}% من أمس</>
+              )}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">ربح اليوم</CardTitle>
+            {stats.profit.today >= 0 ? (
+              <TrendingUp className="h-4 w-4 text-green-500" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-500" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${stats.profit.today >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(stats.profit.today)}
+            </div>
+            <p className="text-xs text-muted-foreground">صافي الربح اليومي</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">تبرعات الشهر</CardTitle>
+            <Heart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(stats.contributions.thisMonth.total)}</div>
+            <p className="text-xs text-muted-foreground">{stats.contributions.thisMonth.count} تبرع هذا الشهر</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Section */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -223,6 +342,141 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
         </Card>
       </div>
 
+      {/* Daily Sales and Expenses Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>المبيعات والمصروفات اليومية</CardTitle>
+          <CardDescription>عرض المبيعات والمصروفات والأرباح خلال آخر 30 يوم.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsBarChart data={stats.dailyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getDate()}/${date.getMonth() + 1}`;
+                  }}
+                />
+                <YAxis 
+                  tickFormatter={(value) => {
+                    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+                    return value;
+                  }}
+                />
+                <ChartTooltip 
+                  content={<ChartTooltipContent />}
+                  labelFormatter={(value) => {
+                    const date = new Date(value);
+                    return formatDateArabic(date);
+                  }}
+                  formatter={(value: number, name: string) => {
+                    if (name === 'sales') return ['المبيعات', formatCurrency(value)];
+                    if (name === 'expenses') return ['المصروفات', formatCurrency(value)];
+                    if (name === 'profit') return ['الربح', formatCurrency(value)];
+                    return [name, value];
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="sales" name="المبيعات" fill="hsl(var(--chart-1))" />
+                <Bar dataKey="expenses" name="المصروفات" fill="hsl(var(--chart-2))" />
+                <Bar dataKey="profit" name="الربح" fill="hsl(var(--chart-3))" />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Financial Summary */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>ملخص المبيعات</CardTitle>
+            <CardDescription>إحصائيات المبيعات المختلفة</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">إجمالي المبيعات</span>
+              <span className="font-semibold">{formatCurrency(stats.sales.allTime.total)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">مدفوع</span>
+              <span className="font-semibold text-green-600">{formatCurrency(stats.sales.allTime.paid)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">متبقي</span>
+              <span className="font-semibold text-orange-600">{formatCurrency(stats.sales.allTime.remaining)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">عدد العمليات</span>
+              <span className="font-semibold">{stats.sales.allTime.count}</span>
+            </div>
+            <div className="pt-4 border-t">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">مبيعات الشهر</span>
+                <span className="font-semibold">{formatCurrency(stats.sales.thisMonth.total)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>ملخص المصروفات</CardTitle>
+            <CardDescription>إحصائيات المصروفات المختلفة</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">إجمالي المصروفات</span>
+              <span className="font-semibold">{formatCurrency(stats.expenses.allTime.total)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">عدد العمليات</span>
+              <span className="font-semibold">{stats.expenses.allTime.count}</span>
+            </div>
+            <div className="pt-4 border-t">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">مصروفات الشهر</span>
+                <span className="font-semibold">{formatCurrency(stats.expenses.thisMonth.total)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>ملخص المشتريات والتبرعات</CardTitle>
+            <CardDescription>إحصائيات المشتريات والتبرعات</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">المشتريات</span>
+              <span className="font-semibold">{formatCurrency(stats.purchases.allTime.total)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">التبرعات</span>
+              <span className="font-semibold">{formatCurrency(stats.contributions.allTime.total)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">النذور</span>
+              <span className="font-semibold">{stats.vows.allTime.count} نذر</span>
+            </div>
+            <div className="pt-4 border-t">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">الربح الإجمالي</span>
+                <span className={`font-semibold ${stats.profit.allTime >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(stats.profit.allTime)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Livestock List */}
       <Card>
         <CardHeader>
           <CardTitle>قائمة جميع المواشي</CardTitle>

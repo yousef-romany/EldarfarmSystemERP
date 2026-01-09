@@ -4,8 +4,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { startOfDay, endOfDay } from 'date-fns';
+import { PerformanceMonitor } from '@/lib/performance';
 
 export async function GET(request: Request) {
+  const endTimer = PerformanceMonitor.startTimer('api:reports:daily');
+  
   try {
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date');
@@ -92,8 +95,10 @@ export async function GET(request: Request) {
       }
     };
 
+    endTimer();
     return NextResponse.json(responseData);
   } catch (error) {
+    endTimer();
     console.error('Failed to generate daily report:', error);
     return NextResponse.json({ error: 'Failed to generate daily report' }, { status: 500 });
   }

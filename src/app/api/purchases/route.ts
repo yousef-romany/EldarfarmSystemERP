@@ -4,29 +4,58 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
+import { PerformanceMonitor } from '@/lib/performance';
 
 export async function GET(request: Request) {
+  const endTimer = PerformanceMonitor.startTimer('api:purchases:list');
+  
   const session = await getSession();
   if (!session.isLoggedIn) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const purchasesData = await prisma.purchase.findMany({ 
+    const purchasesData = await prisma.purchase.findMany({
       orderBy: { purchaseDate: 'desc' },
-      include: { 
-        livestock: { 
-          include: { 
-            livestockType: true, 
-            barn: true 
-          } 
+      include: {
+        livestock: {
+          select: {
+            id: true,
+            tagId: true,
+            isBatch: true,
+            quantity: true,
+            weight: true,
+            cost: true,
+            livestockType: {
+              select: {
+                id: true,
+                name: true,
+              }
+            },
+            barn: {
+              select: {
+                id: true,
+                name: true,
+              }
+            }
+          }
         },
         payments: {
-          include: {
-            wallet: true
+          select: {
+            id: true,
+            amount: true,
+            date: true,
+            wallet: {
+              select: {
+                id: true,
+                name: true,
+                balance: true,
+              }
+            }
           }
         }
-      }
+      },
+      take: 100, // Limit results for better performance
     });
 
     // Values are already numbers, no need to convert
@@ -55,9 +84,15 @@ export async function GET(request: Request) {
       }))
     }));
 
-    return NextResponse.json(purchases);
+    endTimer();
+    return NextResponse.json(purchases, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
+    });
 
   } catch (error) {
+    endTimer();
     console.error('Failed to fetch purchases:', error);
     return NextResponse.json({ error: 'Failed to fetch purchases' }, { status: 500 });
   }

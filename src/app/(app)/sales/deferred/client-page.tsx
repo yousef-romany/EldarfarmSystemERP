@@ -136,12 +136,12 @@ export default function DeferredSaleClientPage({ availableLivestock, wallets }: 
                             </PopoverTrigger>
                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                 <Command>
-                                    <CommandInput placeholder="ابحث بالرقم التعريفي..." />
+                                    <CommandInput placeholder="ابحث بالرقم التعريفي أو السلالة..." />
                                     <CommandList>
                                         <CommandEmpty>لم يتم العثور على حيوان.</CommandEmpty>
                                         <CommandGroup>
                                             {availableLivestock.map((animal) => (
-                                                <CommandItem key={animal.id} value={animal.id} onSelect={() => handleAnimalSelect(animal.id)}>
+                                                <CommandItem key={animal.id} value={`${animal.tagId} ${animal.breed} ${animal.id}`} onSelect={() => handleAnimalSelect(animal.id)}>
                                                     <Check className={cn("mr-2 h-4 w-4", selectedAnimal?.id === animal.id ? "opacity-100" : "opacity-0")} />
                                                     {animal.tagId} - {animal.breed} - {animal.weight} كجم
                                                 </CommandItem>

@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { createPurchase, deletePurchase, confirmPurchase } from '@/lib/actions/purchase.actions';
 import type { Barn, LivestockType, Wallet, Purchase, Livestock, Payment, PurchaseStatus } from '@prisma/client';
 import { format } from 'date-fns';
+import { formatDateArabic, formatDateForInput } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -210,7 +211,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                   {purchases && purchases.map(p => (
                     <TableRow key={p.id} className={p.status === 'Draft' ? 'bg-muted/50' : ''}>
                       <TableCell>{getStatusBadge(p.status)}</TableCell>
-                      <TableCell>{format(new Date(p.purchaseDate), 'yyyy-MM-dd')}</TableCell>
+                      <TableCell>{formatDateArabic(p.purchaseDate)}</TableCell>
                       <TableCell className="font-medium">{p.livestock.isBatch ? `${p.livestock.quantity} رأس` : p.livestock.tagId}</TableCell>
                       <TableCell>{p.supplier || 'غير محدد'}</TableCell>
                       <TableCell>{new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(p.totalCost as number)}</TableCell>
@@ -315,7 +316,7 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <div className="grid gap-2">
                         <Label htmlFor="purchaseDate">تاريخ الشراء</Label>
-                        <Input name="purchaseDate" id="purchaseDate" type="date" defaultValue={format(new Date(), 'yyyy-MM-dd')} required />
+                        <Input name="purchaseDate" id="purchaseDate" type="date" defaultValue={formatDateForInput(new Date())} required />
                      </div>
                      <div className="grid gap-2">
                         <Label htmlFor="supplier">المورد (اختياري)</Label>

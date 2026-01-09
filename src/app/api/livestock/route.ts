@@ -1,8 +1,11 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { PerformanceMonitor } from '@/lib/performance';
 
 export async function GET(request: Request) {
+  const endTimer = PerformanceMonitor.startTimer('api:livestock:list');
+  
   const { searchParams } = new URL(request.url);
   const searchTerm = searchParams.get('search');
   const typeFilter = searchParams.get('type');
@@ -31,12 +34,23 @@ export async function GET(request: Request) {
     const livestockData = await prisma.livestock.findMany({
       where,
       include: {
-        barn: true,
-        livestockType: true,
+        barn: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        livestockType: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
+      take: 100, // Limit results for better performance
     });
 
     // Values are already numbers from Prisma, no need to convert
@@ -46,8 +60,15 @@ export async function GET(request: Request) {
       cost: animal.cost,
     }));
 
-    return NextResponse.json(livestock);
+    endTimer();
+    // Add caching headers
+    return NextResponse.json(livestock, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
+    });
   } catch (error) {
+    endTimer();
     console.error('Failed to fetch livestock:', error);
     return NextResponse.json({ error: 'Failed to fetch livestock' }, { status: 500 });
   }

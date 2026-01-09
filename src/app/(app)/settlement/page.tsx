@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarIcon, Printer, AlertTriangle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { formatDateArabic } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -66,7 +67,7 @@ export default function SettlementPage() {
             <PopoverTrigger asChild>
               <Button variant={"outline"} className="w-[280px] justify-start text-left font-normal">
                 <CalendarIcon className="ml-2 h-4 w-4" />
-                {date ? format(date, "PPP") : <span>اختر تاريخًا</span>}
+                {date ? formatDateArabic(date) : <span>اختر تاريخًا</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">

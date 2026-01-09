@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { formatDateArabic, formatDateForInput } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useState, useEffect, useActionState, useMemo, useRef } from 'react';
@@ -201,11 +202,11 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                     {dateFilter?.from ? (
                       dateFilter.to ? (
                         <>
-                          {format(dateFilter.from, "LLL dd, y")} -{" "}
-                          {format(dateFilter.to, "LLL dd, y")}
+                          {formatDateArabic(dateFilter.from)} -{" "}
+                          {formatDateArabic(dateFilter.to)}
                         </>
                       ) : (
-                        format(dateFilter.from, "LLL dd, y")
+                        formatDateArabic(dateFilter.from)
                       )
                     ) : (
                       <span>اختر نطاق زمني</span>
@@ -242,7 +243,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
               {filteredExpenses.map((expense) => (
                 <AlertDialog key={expense.id}>
                 <TableRow>
-                  <TableCell>{format(new Date(expense.date), 'yyyy-MM-dd')}</TableCell>
+                  <TableCell>{formatDateArabic(expense.date)}</TableCell>
                   <TableCell>
                     <Badge variant={getCategoryVariant(expense.category)}>{getCategoryText(expense.category)}</Badge>
                   </TableCell>
@@ -328,7 +329,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                       <Label htmlFor="expense-date">التاريخ</Label>
-                      <Input id="expense-date" name="date" type="date" defaultValue={format(new Date(), 'yyyy-MM-dd')} />
+                      <Input id="expense-date" name="date" type="date" defaultValue={formatDateForInput(new Date())} />
                        {createState?.errors?.date && <p className="col-span-4 text-xs text-red-500">{createState.errors.date[0]}</p>}
                   </div>
                   <div className="grid gap-2">

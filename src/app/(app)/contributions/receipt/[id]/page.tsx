@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
+import { formatDateArabic } from '@/lib/utils';
 import { Printer, Coins } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -76,7 +77,7 @@ const ContributionReceiptPage = () => {
                     </div>
                     <div className="text-left">
                         <p><strong>إيصال رقم:</strong> {contribution.id.substring(0,8)}</p>
-                        <p><strong>تاريخ الاستلام:</strong> {format(new Date(contribution.date), 'yyyy-MM-dd')}</p>
+                        <p><strong>تاريخ الاستلام:</strong> {formatDateArabic(contribution.date)}</p>
                     </div>
                 </div>
                 <Separator className="my-6" />

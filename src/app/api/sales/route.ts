@@ -2,8 +2,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
+import { PerformanceMonitor } from '@/lib/performance';
 
 export async function GET(request: Request) {
+  const endTimer = PerformanceMonitor.startTimer('api:sales:list');
+  
   const session = await getSession();
   if (!session.isLoggedIn) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -14,9 +17,15 @@ export async function GET(request: Request) {
       orderBy: { saleDate: 'desc' },
       include: {
         livestock: {
-          select: { tagId: true, isBatch: true, quantity: true }
+          select: {
+            tagId: true,
+            isBatch: true,
+            quantity: true,
+            id: true,
+          }
         }
-      }
+      },
+      take: 100, // Limit results for better performance
     });
 
     // Values are already numbers, no need to convert
@@ -30,9 +39,15 @@ export async function GET(request: Request) {
       finalWeight: s.finalWeight ?? null,
     }));
 
-    return NextResponse.json(sales);
+    endTimer();
+    return NextResponse.json(sales, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
+    });
 
   } catch (error) {
+    endTimer();
     console.error('Failed to fetch sales:', error);
     return NextResponse.json({ error: 'Failed to fetch sales' }, { status: 500 });
   }

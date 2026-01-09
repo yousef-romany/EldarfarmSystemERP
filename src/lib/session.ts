@@ -3,6 +3,7 @@ import { getIronSession, IronSession, SessionOptions } from 'iron-session';
 import { cookies } from 'next/headers';
 import type { SessionUser } from './types';
 import { prisma } from './prisma';
+import { getDefaultPermissions } from './permissions';
 
 const sessionOptions: SessionOptions = {
   password: process.env.SECRET_COOKIE_PASSWORD as string,
@@ -44,6 +45,14 @@ export async function getFullSession(): Promise<{ isLoggedIn: boolean; user: Ses
     return { isLoggedIn: false, user: null };
   }
 
+  // Merge default permissions with custom permissions
+  const defaultPermissions = getDefaultPermissions(user.role as SessionUser['role']);
+  const customPermissions = user.permissions ? JSON.parse(user.permissions as string) : undefined;
+  const mergedPermissions = {
+    ...defaultPermissions,
+    ...customPermissions,
+  };
+
   // Return fresh, complete user data
   return {
     isLoggedIn: true,
@@ -51,7 +60,7 @@ export async function getFullSession(): Promise<{ isLoggedIn: boolean; user: Ses
       id: user.id,
       username: user.username,
       role: user.role as SessionUser['role'],
-      permissions: JSON.parse(user.permissions as string),
+      permissions: mergedPermissions,
     },
   };
 }

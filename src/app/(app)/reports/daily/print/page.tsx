@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
+import { formatDateArabic } from '@/lib/utils';
 import { Printer, FileText } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -83,7 +84,7 @@ const ReportContent = () => {
                                 </div>
                             </div>
                             <div className="text-left">
-                                <p><strong>تاريخ التقرير:</strong> {format(reportDate, 'yyyy-MM-dd')}</p>
+                                <p><strong>تاريخ التقرير:</strong> {formatDateArabic(reportDate)}</p>
                             </div>
                         </div>
                     </CardHeader>

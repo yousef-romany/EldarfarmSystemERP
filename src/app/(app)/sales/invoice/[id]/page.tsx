@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
+import { formatDateArabic, formatDateTimeArabic } from '@/lib/utils';
 import { Beef, Printer } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -101,8 +102,8 @@ const InvoicePage = () => {
                     </div>
                     <div className="text-left">
                         <p><strong>فاتورة رقم:</strong> {sale.id.substring(0,8)}</p>
-                        <p><strong>تاريخ البيع:</strong> {format(new Date(sale.saleDate), 'yyyy-MM-dd')}</p>
-                        {sale.settlementDate && <p><strong>تاريخ التسوية:</strong> {format(new Date(sale.settlementDate), 'yyyy-MM-dd')}</p>}
+                        <p><strong>تاريخ البيع:</strong> {formatDateArabic(sale.saleDate)}</p>
+                        {sale.settlementDate && <p><strong>تاريخ التسوية:</strong> {formatDateArabic(sale.settlementDate)}</p>}
                     </div>
                 </div>
                 <Separator className="my-6" />
@@ -174,7 +175,7 @@ const InvoicePage = () => {
                     <TableBody>
                          {sale.payments?.map((p, i) => (
                             <TableRow key={i}>
-                                 <TableCell>{p.date ? format(new Date(p.date), 'yyyy-MM-dd') : '-'}</TableCell>
+                                 <TableCell>{p.date ? formatDateArabic(p.date) : '-'}</TableCell>
                                  <TableCell>دفعة من {p.wallet.name}</TableCell>
                                  <TableCell className="text-right">{p.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                             </TableRow>

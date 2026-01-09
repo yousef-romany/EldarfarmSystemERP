@@ -3,9 +3,8 @@
 
 import { useState, useEffect, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { PlusCircle, Warehouse, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, Warehouse, MoreHorizontal, Edit, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { PageHeader } from '@/components/page-header';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -19,6 +18,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 import { useSession } from '@/components/session-provider';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 
 function SubmitButton({ pendingText = 'جاري الحفظ...', text = 'حفظ' }) {
@@ -38,12 +39,12 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
   const { toast } = useToast();
 
   // Form state for creating a barn
-  const [createState, createFormAction] = useActionState(createBarn, { message: null, errors: {}, success: false });
+  const [createState, createFormAction] = useActionState(createBarn, { message: '', errors: {}, success: false });
 
   // Form state for updating a barn
   // We need to bind the barn ID to the update action
-  const updateBarnWithId = selectedBarn ? updateBarn.bind(null, selectedBarn.id) : async () => {};
-  const [updateState, updateFormAction] = useActionState(updateBarnWithId, { message: null, errors: {}, success: false });
+  const updateBarnWithId = selectedBarn ? updateBarn.bind(null, selectedBarn.id) : async () => ({ message: '', errors: {}, success: false });
+  const [updateState, updateFormAction] = useActionState(updateBarnWithId, { message: '', errors: {}, success: false });
   
 
   useEffect(() => {
@@ -114,61 +115,80 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
           )
         }
       />
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {barns.map((barn) => (
-          <AlertDialog key={barn.id}>
-            <Card>
-              <CardHeader>
-                  <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                          <Warehouse className="h-8 w-8 text-muted-foreground" />
-                          <div>
-                              <CardTitle>{barn.name}</CardTitle>
-                              <CardDescription>
-                                  السعة: {barn.capacity} رأس
-                              </CardDescription>
-                          </div>
-                      </div>
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">فتح القائمة</span>
-                          </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                          {user?.permissions.barns.edit && (
-                            <DropdownMenuItem onClick={() => handleEditClick(barn)}>تعديل</DropdownMenuItem>
-                          )}
-                          {user?.permissions.barns.view && (
-                            <DropdownMenuItem asChild>
-                              <Link href={`/barns/${barn.id}/livestock`}>عرض الحيوانات</Link>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>اسم العنبر</TableHead>
+              <TableHead>السعة</TableHead>
+              <TableHead>الإشغال</TableHead>
+              <TableHead>نسبة الإشغال</TableHead>
+              <TableHead>مساحة فارغة</TableHead>
+              <TableHead>الإجراءات</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {barns.map((barn) => (
+              <AlertDialog key={barn.id}>
+                <TableRow>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Warehouse className="h-4 w-4 text-muted-foreground" />
+                      {barn.name}
+                    </div>
+                  </TableCell>
+                  <TableCell>{barn.capacity} رأس</TableCell>
+                  <TableCell>{barn.currentOccupancy} رأس</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Progress value={(barn.currentOccupancy / barn.capacity) * 100} className="w-24 h-2" />
+                      <span className="text-sm text-muted-foreground">
+                        {Math.round((barn.currentOccupancy / barn.capacity) * 100)}%
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={barn.capacity - barn.currentOccupancy > 0 ? "default" : "destructive"}>
+                      {barn.capacity - barn.currentOccupancy} رأس
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">فتح القائمة</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                        {user?.permissions.barns.edit && (
+                          <DropdownMenuItem onClick={() => handleEditClick(barn)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            تعديل
+                          </DropdownMenuItem>
+                        )}
+                        {user?.permissions.barns.view && (
+                          <DropdownMenuItem asChild>
+                            <Link href={`/barns/${barn.id}/livestock`}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              عرض الحيوانات
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
+                        {user?.permissions.barns.delete && (
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              حذف
                             </DropdownMenuItem>
-                          )}
-                          {user?.permissions.barns.delete && (
-                            <AlertDialogTrigger asChild>
-                                <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                                    حذف
-                                </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                          )}
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                  </div>
-              </CardHeader>
-              <CardContent>
-                  <div className="text-sm text-muted-foreground mb-2">
-                      الإشغال: {barn.currentOccupancy} / {barn.capacity}
-                  </div>
-                <Progress value={(barn.currentOccupancy / barn.capacity) * 100} className="h-3" />
-              </CardContent>
-              <CardFooter>
-                <p className="text-sm text-muted-foreground">
-                  مساحة فارغة لـ {barn.capacity - barn.currentOccupancy} رأس
-                </p>
-              </CardFooter>
-              <AlertDialogContent>
+                          </AlertDialogTrigger>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+                <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -185,9 +205,10 @@ export function BarnsClient({ barns }: { barns: Barn[] }) {
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
-            </Card>
-          </AlertDialog>
-        ))}
+              </AlertDialog>
+            ))}
+          </TableBody>
+        </Table>
       </div>
 
        {/* Add Barn Dialog */}

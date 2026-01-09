@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { formatDateArabic } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 import type { Sale, Livestock, LivestockType, Barn } from '@prisma/client';
 
@@ -60,7 +61,7 @@ export default async function DeferredSalesReportPage() {
                     <TableCell>{sale.livestock.livestockType.name}</TableCell>
                     <TableCell>{sale.livestock.barn.name}</TableCell>
                     <TableCell>{sale.customerName}</TableCell>
-                    <TableCell>{format(new Date(sale.saleDate), 'yyyy-MM-dd')}</TableCell>
+                    <TableCell>{formatDateArabic(sale.saleDate)}</TableCell>
                   </TableRow>
                 ))
               ) : (
