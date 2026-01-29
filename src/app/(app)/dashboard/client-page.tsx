@@ -168,13 +168,22 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
   
   // Chart configuration - memoized for performance
   const COLORS = useMemo(() => ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"], []);
-  const chartConfig = useMemo(() => stats.typeCounts.reduce((acc, type, index) => {
+  const chartConfig = useMemo(() => {
+    const config = stats.typeCounts.reduce((acc, type, index) => {
       acc[type.name] = {
         label: type.name,
         color: COLORS[index % COLORS.length]
       };
       return acc;
-  }, {} as any), [stats.typeCounts, COLORS]);
+    }, {} as any);
+    
+    // Add bar chart config
+    config.sales = { label: 'المبيعات', color: "hsl(var(--chart-1))" };
+    config.expenses = { label: 'المصروفات', color: "hsl(var(--chart-2))" };
+    config.profit = { label: 'الربح', color: "hsl(var(--chart-3))" };
+    
+    return config;
+  }, [stats.typeCounts, COLORS]);
 
 
   return (
@@ -349,44 +358,42 @@ export default function DashboardClientPage({ stats }: { stats: DashboardStats }
           <CardDescription>عرض المبيعات والمصروفات والأرباح خلال آخر 30 يوم.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartsBarChart data={stats.dailyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getDate()}/${date.getMonth() + 1}`;
-                  }}
-                />
-                <YAxis 
-                  tickFormatter={(value) => {
-                    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
-                    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
-                    return value;
-                  }}
-                />
-                <ChartTooltip 
-                  content={<ChartTooltipContent />}
-                  labelFormatter={(value) => {
-                    const date = new Date(value);
-                    return formatDateArabic(date);
-                  }}
-                  formatter={(value: number, name: string) => {
-                    if (name === 'sales') return ['المبيعات', formatCurrency(value)];
-                    if (name === 'expenses') return ['المصروفات', formatCurrency(value)];
-                    if (name === 'profit') return ['الربح', formatCurrency(value)];
-                    return [name, value];
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="sales" name="المبيعات" fill="hsl(var(--chart-1))" />
-                <Bar dataKey="expenses" name="المصروفات" fill="hsl(var(--chart-2))" />
-                <Bar dataKey="profit" name="الربح" fill="hsl(var(--chart-3))" />
-              </RechartsBarChart>
-            </ResponsiveContainer>
-          </div>
+          <ChartContainer config={chartConfig} className="h-[400px] w-full">
+            <RechartsBarChart data={stats.dailyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  return `${date.getDate()}/${date.getMonth() + 1}`;
+                }}
+              />
+              <YAxis 
+                tickFormatter={(value) => {
+                  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+                  return value;
+                }}
+              />
+              <ChartTooltip 
+                content={<ChartTooltipContent />}
+                labelFormatter={(value) => {
+                  const date = new Date(value);
+                  return formatDateArabic(date);
+                }}
+                formatter={(value: number, name: string) => {
+                  if (name === 'sales') return ['المبيعات', formatCurrency(value)];
+                  if (name === 'expenses') return ['المصروفات', formatCurrency(value)];
+                  if (name === 'profit') return ['الربح', formatCurrency(value)];
+                  return [name, value];
+                }}
+              />
+              <Legend />
+              <Bar dataKey="sales" name="المبيعات" fill="hsl(var(--chart-1))" />
+              <Bar dataKey="expenses" name="المصروفات" fill="hsl(var(--chart-2))" />
+              <Bar dataKey="profit" name="الربح" fill="hsl(var(--chart-3))" />
+            </RechartsBarChart>
+          </ChartContainer>
         </CardContent>
       </Card>
 
