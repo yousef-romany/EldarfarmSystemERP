@@ -99,6 +99,8 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
 
 
   const [registrationType, setRegistrationType] = useState('individual');
+  const [livestockTypeId, setLivestockTypeId] = useState('');
+  const [barnId, setBarnId] = useState('');
   const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);
   const [totalCost, setTotalCost] = useState<number>(0);
 
@@ -127,9 +129,10 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
 
   const resetFormState = () => {
     setRegistrationType('individual');
+    setLivestockTypeId('');
+    setBarnId('');
     setPayments([{}]);
     setTotalCost(0);
-    // You might need to reset the form itself if it's not part of this component's state
     const form = document.getElementById('new-purchase-form') as HTMLFormElement;
     form?.reset();
   };
@@ -345,7 +348,8 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                         )}
                         <div className="grid gap-2">
                             <Label htmlFor="livestockTypeId">النوع</Label>
-                            <Select name="livestockTypeId" required>
+                            <input type="hidden" name="livestockTypeId" value={livestockTypeId} />
+                            <Select value={livestockTypeId} onValueChange={setLivestockTypeId} required>
                             <SelectTrigger id="livestockTypeId"><SelectValue placeholder="اختر النوع" /></SelectTrigger>
                             <SelectContent>{livestockTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
                             </Select>
@@ -370,7 +374,8 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="barnId">العنبر</Label>
-                            <Select name="barnId" required>
+                            <input type="hidden" name="barnId" value={barnId} />
+                            <Select value={barnId} onValueChange={setBarnId} required>
                                 <SelectTrigger id="barnId"><SelectValue placeholder="اختر عنبر التسكين" /></SelectTrigger>
                                 <SelectContent>{barns.map(b => <SelectItem key={b.id} value={b.id}>{b.name} (المتاح: {b.capacity - b.currentOccupancy})</SelectItem>)}</SelectContent>
                             </Select>
