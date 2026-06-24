@@ -49,6 +49,8 @@ export default function EditVowPageClient({ vow, barns, livestockTypes }: EditVo
   const [updateState, updateFormAction] = useActionState(updateVowWithId, { message: null, errors: {}, success: false });
 
   const [registrationType, setRegistrationType] = useState(vow.livestock.isBatch ? 'batch' : 'individual');
+  const [livestockTypeId, setLivestockTypeId] = useState(vow.livestock.livestockTypeId);
+  const [barnId, setBarnId] = useState(vow.livestock.barnId);
 
   useEffect(() => {
     if (updateState.success) {
@@ -116,7 +118,8 @@ export default function EditVowPageClient({ vow, barns, livestockTypes }: EditVo
               )}
                <div className="grid gap-2">
                 <Label htmlFor="type">النوع</Label>
-                <Select name="livestockTypeId" defaultValue={vow.livestock.livestockTypeId} required>
+                <input type="hidden" name="livestockTypeId" value={livestockTypeId} />
+                <Select value={livestockTypeId} onValueChange={setLivestockTypeId} required>
                   <SelectTrigger id="type">
                     <SelectValue placeholder="اختر النوع" />
                   </SelectTrigger>
@@ -152,7 +155,8 @@ export default function EditVowPageClient({ vow, barns, livestockTypes }: EditVo
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="barn">العنبر</Label>
-                <Select name="barnId" defaultValue={vow.livestock.barnId} required>
+                <input type="hidden" name="barnId" value={barnId} />
+                <Select value={barnId} onValueChange={setBarnId} required>
                   <SelectTrigger id="barn">
                     <SelectValue placeholder="اختر العنبر للتسكين" />
                   </SelectTrigger>

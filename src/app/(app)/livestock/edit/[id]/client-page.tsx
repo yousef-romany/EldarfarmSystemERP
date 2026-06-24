@@ -39,6 +39,8 @@ export default function EditLivestockClientPage({ livestock, barns, livestockTyp
   const [state, formAction] = useActionState(updateLivestockWithId, { message: null, errors: {}, success: false });
 
   const [registrationType, setRegistrationType] = useState(livestock.isBatch ? 'batch' : 'individual');
+  const [livestockTypeId, setLivestockTypeId] = useState(livestock.livestockTypeId);
+  const [barnId, setBarnId] = useState(livestock.barnId);
 
   useEffect(() => {
     if (state.success) {
@@ -99,7 +101,8 @@ export default function EditLivestockClientPage({ livestock, barns, livestockTyp
               )}
               <div className="grid gap-2">
                 <Label htmlFor="type">النوع</Label>
-                <Select name="livestockTypeId" required defaultValue={livestock.livestockTypeId}>
+                <input type="hidden" name="livestockTypeId" value={livestockTypeId} />
+                <Select value={livestockTypeId} onValueChange={setLivestockTypeId} required>
                   <SelectTrigger id="type">
                     <SelectValue placeholder="اختر النوع" />
                   </SelectTrigger>
@@ -135,7 +138,8 @@ export default function EditLivestockClientPage({ livestock, barns, livestockTyp
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="barn">العنبر</Label>
-                <Select name="barnId" required defaultValue={livestock.barnId}>
+                <input type="hidden" name="barnId" value={barnId} />
+                <Select value={barnId} onValueChange={setBarnId} required>
                   <SelectTrigger id="barn">
                     <SelectValue placeholder="اختر العنبر للتسكين" />
                   </SelectTrigger>

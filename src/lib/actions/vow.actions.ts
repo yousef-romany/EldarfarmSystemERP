@@ -16,8 +16,8 @@ const vowSchema = z.object({
   
   // Livestock fields
   isBatch: z.boolean(),
-  tagId: z.string().optional(),
-  quantity: z.coerce.number().optional(),
+  tagId: z.string().nullish(),
+  quantity: z.coerce.number().nullish(),
   livestockTypeId: z.string().min(1, "يجب تحديد نوع الحيوان"),
   breed: z.string().optional(),
   weight: z.coerce.number().positive("الوزن يجب أن يكون رقمًا موجبًا"),

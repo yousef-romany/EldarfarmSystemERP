@@ -50,6 +50,8 @@ export default function UsersClientPage({ users }: { users: UserWithParsedPermis
   // State for selected user
   const [selectedUser, setSelectedUser] = useState<UserWithParsedPermissions | null>(null);
   const [currentPermissions, setCurrentPermissions] = useState(defaultPermissions);
+  const [createRole, setCreateRole] = useState('');
+  const [editRole, setEditRole] = useState('');
   
   // Form states
   const [createState, createFormAction] = useActionState(createUser, { message: null, errors: {}, success: false });
@@ -61,6 +63,7 @@ export default function UsersClientPage({ users }: { users: UserWithParsedPermis
     if (createState?.success) {
       toast({ title: 'نجاح', description: createState.message });
       setIsAddDialogOpen(false);
+      setCreateRole('');
     } else if (createState?.message && !createState.success) {
       toast({ title: 'خطأ', description: createState.message, variant: 'destructive' });
     }
@@ -72,6 +75,7 @@ export default function UsersClientPage({ users }: { users: UserWithParsedPermis
       toast({ title: 'نجاح', description: updateState.message });
       setIsEditDialogOpen(false);
       setSelectedUser(null);
+      setEditRole('');
     } else if (updateState?.message && !updateState.success) {
       toast({ title: 'خطأ', description: updateState.message, variant: 'destructive' });
     }
@@ -79,6 +83,7 @@ export default function UsersClientPage({ users }: { users: UserWithParsedPermis
 
   const handleEditClick = (user: UserWithParsedPermissions) => {
     setSelectedUser(user);
+    setEditRole(user.role);
     setIsEditDialogOpen(true);
   };
 
@@ -247,7 +252,8 @@ export default function UsersClientPage({ users }: { users: UserWithParsedPermis
                     </div>
                      <div className="grid gap-2">
                         <Label htmlFor="role">الدور</Label>
-                        <Select name="role">
+                        <input type="hidden" name="role" value={createRole} />
+                        <Select value={createRole} onValueChange={setCreateRole}>
                           <SelectTrigger id="role"><SelectValue placeholder="اختر دورًا" /></SelectTrigger>
                           <SelectContent>
                               <SelectItem value="STAFF">موظف</SelectItem>
@@ -281,7 +287,8 @@ export default function UsersClientPage({ users }: { users: UserWithParsedPermis
                     </div>
                      <div className="grid gap-2">
                         <Label htmlFor="edit-role">الدور</Label>
-                        <Select name="role" defaultValue={selectedUser?.role}>
+                        <input type="hidden" name="role" value={editRole} />
+                        <Select value={editRole} onValueChange={setEditRole}>
                           <SelectTrigger id="edit-role"><SelectValue placeholder="اختر دورًا" /></SelectTrigger>
                           <SelectContent>
                               <SelectItem value="STAFF">موظف</SelectItem>

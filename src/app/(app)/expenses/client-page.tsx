@@ -59,6 +59,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
   
   const [payments, setPayments] = useState<Partial<PaymentDetails>[]>([{}]);
   const [totalCost, setTotalCost] = useState<number>(0);
+  const [category, setCategory] = useState('');
 
   const totalPaid = useMemo(() => payments.reduce((acc, p) => acc + (p?.amount || 0), 0), [payments]);
   const remainingBalance = useMemo(() => totalCost - totalPaid, [totalCost, totalPaid]);
@@ -89,6 +90,7 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
       formRef.current?.reset();
       setPayments([{}]);
       setTotalCost(0);
+      setCategory('');
     } else if (createState.message && !createState.success) {
       toast({ title: 'خطأ', description: createState.message, variant: 'destructive' });
     }
@@ -332,9 +334,10 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                       <Input id="expense-date" name="date" type="date" defaultValue={formatDateForInput(new Date())} />
                        {createState?.errors?.date && <p className="col-span-4 text-xs text-red-500">{createState.errors.date[0]}</p>}
                   </div>
-                  <div className="grid gap-2">
-                      <Label htmlFor="expense-category">النوع</Label>
-                       <Select name="category">
+                   <div className="grid gap-2">
+                       <Label htmlFor="expense-category">النوع</Label>
+                       <input type="hidden" name="category" value={category} />
+                        <Select value={category} onValueChange={setCategory}>
                           <SelectTrigger id="expense-category">
                           <SelectValue placeholder="اختر نوع المصروف" />
                           </SelectTrigger>
@@ -344,9 +347,9 @@ export default function ExpensesClientPage({ expenses, wallets, totalExpenses }:
                           <SelectItem value="Maintenance">صيانة</SelectItem>
                           <SelectItem value="Other">أخرى</SelectItem>
                           </SelectContent>
-                      </Select>
-                       {createState?.errors?.category && <p className="col-span-4 text-xs text-red-500">{createState.errors.category[0]}</p>}
-                  </div>
+                       </Select>
+                        {createState?.errors?.category && <p className="col-span-4 text-xs text-red-500">{createState.errors.category[0]}</p>}
+                   </div>
               </div>
                <div className="grid gap-2">
                   <Label htmlFor="expense-description">الوصف</Label>

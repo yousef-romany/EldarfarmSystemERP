@@ -31,6 +31,8 @@ export default function NewVowPageClient({ barns, livestockTypes }: { barns: Bar
   const [createState, createFormAction] = useActionState(createVow, { message: null, errors: {}, success: false });
 
   const [registrationType, setRegistrationType] = useState('individual');
+  const [livestockTypeId, setLivestockTypeId] = useState('');
+  const [barnId, setBarnId] = useState('');
 
   useEffect(() => {
     if (createState.success) {
@@ -88,7 +90,8 @@ export default function NewVowPageClient({ barns, livestockTypes }: { barns: Bar
               )}
               <div className="grid gap-2">
                 <Label htmlFor="type">النوع</Label>
-                <Select name="livestockTypeId" required>
+                <input type="hidden" name="livestockTypeId" value={livestockTypeId} />
+                <Select value={livestockTypeId} onValueChange={setLivestockTypeId} required>
                   <SelectTrigger id="type">
                     <SelectValue placeholder="اختر النوع" />
                   </SelectTrigger>
@@ -124,7 +127,8 @@ export default function NewVowPageClient({ barns, livestockTypes }: { barns: Bar
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="barn">العنبر</Label>
-                <Select name="barnId" required>
+                <input type="hidden" name="barnId" value={barnId} />
+                <Select value={barnId} onValueChange={setBarnId} required>
                   <SelectTrigger id="barn">
                     <SelectValue placeholder="اختر العنبر للتسكين" />
                   </SelectTrigger>
