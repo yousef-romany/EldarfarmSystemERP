@@ -156,17 +156,25 @@ export default function PurchasesPageClient({ barns, livestockTypes, wallets }: 
   };
 
   const handleDelete = async (id: string) => {
-    const result = await deletePurchase(id);
-    if (result.success) {
-      toast({
-        title: "نجاح",
-        description: result.message,
-      });
-       mutate(); // Re-fetch data after deletion
-    } else {
+    try {
+      const result = await deletePurchase(id);
+      if (result.success) {
+        toast({
+          title: "نجاح",
+          description: result.message,
+        });
+         mutate(); // Re-fetch data after deletion
+      } else {
+        toast({
+          title: "خطأ",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
       toast({
         title: "خطأ",
-        description: result.message,
+        description: "حدث خطأ غير متوقع أثناء الحذف.",
         variant: "destructive",
       });
     }

@@ -3,8 +3,6 @@
 // These types are for client-side usage and mock data.
 // The source of truth is now prisma/schema.prisma
 
-import type { Session } from "next-auth";
-
 export type Permission = {
   view: boolean;
   add: boolean;

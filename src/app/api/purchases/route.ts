@@ -1,6 +1,4 @@
 
-'use server';
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
@@ -58,7 +56,6 @@ export async function GET(request: Request) {
       take: 100, // Limit results for better performance
     });
 
-    // Values are already numbers, no need to convert
     const purchases = purchasesData.map(p => ({
       ...p,
       totalCost: p.totalCost,

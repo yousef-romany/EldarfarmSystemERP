@@ -17,7 +17,7 @@ const paymentSchema = z.object({
 
 const purchaseSchema = z.object({
   isBatch: z.boolean(),
-  tagId: z.string().nullish(),
+  tagId: z.string().optional(),
   quantity: z.coerce.number().nullish(),
   livestockTypeId: z.string().min(1, "يجب تحديد نوع الحيوان"),
   breed: z.string().min(1, "السلالة مطلوبة"),
@@ -28,10 +28,28 @@ const purchaseSchema = z.object({
   supplier: z.string().optional(),
   totalCost: z.coerce.number().positive("التكلفة الإجمالية يجب أن تكون أكبر من صفر"),
   payments: z.array(paymentSchema),
+}).superRefine((data, ctx) => {
+  if (data.isBatch) {
+    if (!data.quantity || data.quantity <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "الكمية مطلوبة ويجب أن تكون رقمًا موجبًا عند شراء دفعة.",
+        path: ["quantity"],
+      });
+    }
+  } else {
+    if (!data.tagId || data.tagId.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "الرقم التعريفي مطلوب عند شراء حيوان فردي.",
+        path: ["tagId"],
+      });
+    }
+  }
 });
 
 export type PurchaseState = {
-  errors?: z.ZodError<typeof purchaseSchema>['formErrors']['fieldErrors'];
+  errors?: Record<string, string[] | undefined>;
   message?: string | null;
   success?: boolean;
 }
@@ -179,8 +197,11 @@ export async function confirmPurchase(prevState: ConfirmState, formData: FormDat
                 }
             }
             
-            // 2. Check barn capacity
-            const barn = await tx.barn.findUnique({ where: { id: livestockData.barnId } });
+            // 2. Check barn capacity with row-level lock to prevent race conditions
+            const barnRows = await tx.$queryRaw<{ id: string; capacity: number; currentOccupancy: number }[]>`
+              SELECT id, capacity, currentOccupancy FROM Barn WHERE id = ${livestockData.barnId} FOR UPDATE
+            `;
+            const barn = barnRows[0];
             if (!barn || barn.capacity - barn.currentOccupancy < occupancyNeeded) {
                 throw new Error('سعة العنبر المحددة غير كافية.');
             }
@@ -227,7 +248,7 @@ export async function confirmPurchase(prevState: ConfirmState, formData: FormDat
             // 7. Log the confirmation
             await tx.log.create({
                 data: {
-                    userId: session.user.id,
+                    userId: session.user!.id,
                     action: 'UPDATE',
                     entityType: 'PURCHASE',
                     entityId: purchase.id,
@@ -349,7 +370,6 @@ export async function getPurchaseById(id: string) {
 
         if (!purchase) return null;
 
-        // Serialize Decimal fields before returning
         return {
             ...purchase,
             totalCost: purchase.totalCost,
